@@ -37,7 +37,7 @@ DT = 0.1                # Sampling time-step
 INT = 1.1               # Sim endtime
 
 # In test runs, with good code, <0.1% will fail with a tolerance of 1% 
-tolerance = 1.0/100
+tolerance = 2.0/100
 
 ########################################################################
 

@@ -848,13 +848,14 @@ TEST_CASE("distmesh_findNextIntersection_fromVert") {
         }                                                                    \
     } while (0)
 
-TEST_CASE("distmesh_intersect") {
+
+TEST_CASE("distmesh_localIntersect") {
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
 
     const auto compute_ans = [&](const std::vector<double>& pp) {
-        auto ans = mesh.intersect(pp.data(), pp.size() / 3);
+        auto ans = mesh.localIntersect(pp.data(), pp.size() / 3);
         for (auto& i: ans) {
             std::sort(i.begin(), i.end(), [](const auto& p0, const auto& p1) {
                 return p0.first < p1.first;
@@ -998,13 +999,13 @@ TEST_CASE("distmesh_intersect") {
     REQUIRE_EQUAL_INTERSECTION_LISTS(compute_ans(pp), expected);
 }
 
-TEST_CASE("distmesh_intersectIndependentSegments") {
+TEST_CASE("distmesh_localIntersectIndependentSegments") {
     const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
                            "3_tets.msh";
     steps::dist::DistMesh mesh(lib, mesh_file.string());
 
     const auto compute_ans = [&](const std::vector<double>& pp) {
-        auto ans = mesh.intersectIndependentSegments(pp.data(), pp.size() / 3);
+        auto ans = mesh.localIntersectIndependentSegments(pp.data(), pp.size() / 3);
         for (auto& i: ans) {
             std::sort(i.begin(), i.end(), [](const auto& p0, const auto& p1) {
                 return p0.first < p1.first;

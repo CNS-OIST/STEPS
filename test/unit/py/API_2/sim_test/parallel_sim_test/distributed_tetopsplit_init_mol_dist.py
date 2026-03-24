@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -65,7 +65,7 @@ class DistTetopsplitInitMolDist(unittest.TestCase):
 
         with self.model:
             vsys = VolumeSystem.Create()
-            SC = Species.Create()
+            SC, SD = Species.Create()
             with vsys:
                 # we need a dummy reaction or diffusion to make STEPS put the molecules
                 DC = Diffusion.Create(SC, 0)
@@ -91,6 +91,12 @@ class DistTetopsplitInitMolDist(unittest.TestCase):
 
         self.base_count = Params(1e5, distributionMethod)
         self.sim.comp1.SC.Count = self.base_count
+
+    def test_tetopsplit_init_mol_unknown_spec_n2(self):
+        """Ensure an error is raised when assigning to a spec that is not defined in the compartment"""
+        self.sim.newRun()
+        with self.assertRaises(SolverCallError):
+            self.sim.comp1.SD.Count = 12
 
     def test_tetopsplit_init_mol_overflow_dist_n2(self):
         """Ensure an error is raised when assigning more molecules

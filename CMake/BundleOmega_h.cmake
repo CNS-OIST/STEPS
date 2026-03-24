@@ -19,9 +19,12 @@ ExternalProject_Add(
   BINARY_DIR "${tpdir}/omega_h-build"
   INSTALL_DIR "${tpdir}/omega_h-install"
   UPDATE_DISCONNECTED TRUE
-  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=../omega_h-install -DOmega_h_USE_MPI:BOOL=ON
-             -DCMAKE_CXX_COMPILER:FILEPATH=mpicxx -DOmega_h_USE_Gmsh_DEFAULT:BOOL=ON
-             -DOmega_h_USE_Gmsh:BOOL=ON -DCMAKE_CXX_FLAGS=-O3
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=../omega_h-install
+             -DOmega_h_USE_MPI:BOOL=ON
+             -DCMAKE_CXX_COMPILER:FILEPATH=mpicxx
+             -DOmega_h_USE_Gmsh_DEFAULT:BOOL=ON
+             -DOmega_h_USE_Gmsh:BOOL=ON
+             -DCMAKE_CXX_FLAGS=-O3
              -DGmsh_INCLUDE_DIRS=${Gmsh_INCLUDE_DIRS}
              -DGmsh_EXECUTABLE=${Gmsh_EXECUTABLE}
              -DGmsh_LIBRARIES=${Gmsh_LIBRARIES}

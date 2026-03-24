@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,15 +31,19 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <memory>
 #include <vector>
 
 // STEPS headers.
 #include "math/point.hpp"
 #include "mpi/tetvesicle/comp_vesraft.hpp"
+#include "mpi/tetvesicle/path.hpp"
 #include "mpi/tetvesicle/pointspec.hpp"
 #include "mpi/tetvesicle/qtable.hpp"
 #include "rng/rng.hpp"
+#include "solver/fwd.hpp"
 #include "solver/vesicledef.hpp"
+#include "solver/vessdiffdef.hpp"
 
 #include <fau.de/overlap.hpp>
 
@@ -48,6 +52,7 @@ namespace steps::mpi::tetvesicle {
 // Forward declaration
 class Exocytosis;
 class LinkSpec;
+class Path;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -57,7 +62,9 @@ class Vesicle {
             CompVesRaft* comp,
             const math::position_abs& pos,
             solver::vesicle_individual_id unique_index,
-            const std::map<tetrahedron_global_id, double>& overlap);
+            const std::map<tetrahedron_global_id, double>& overlap,
+            const double diam,
+            const double dcst);
     Vesicle(solver::Vesicledef* vesdef,
             CompVesRaft* comp,
             solver::vesicle_individual_id unique_index,
@@ -96,11 +103,15 @@ class Vesicle {
     }
 
     inline double getDcst() const noexcept {
-        return pDef->dcst();
+        return pDcst;
+    }
+
+    inline void setDcst(double dcst) noexcept {
+        pDcst = dcst;
     }
 
     inline double getDiam() const noexcept {
-        return pDef->diameter();
+        return pDiam;
     }
 
     TetVesicleVesRaft* solver() const noexcept;
@@ -122,8 +133,14 @@ class Vesicle {
         return pPos;
     }
 
+    void updatePathBindingRates();
+
     // Update mobility, which can be 0 (free-moving) or non-zero (fixed in place)
     void updImmobility(int mob_upd);
+
+    inline void setImmobility(uint immob) noexcept {
+        pImmobility = immob;
+    }
 
     inline uint getImmobility() const noexcept {
         return pImmobility;
@@ -170,14 +187,22 @@ class Vesicle {
     // Diffuse species and link species on the vesicle surface
     void doSurfaceDiffusion();
 
+    void _recalcQtable_spec(solver::spec_global_id spec_gidx, double d);
+    void _recalcQtable_linkspec(solver::linkspec_global_id linkspec_gidx);
+    void recalcQtables_();
+
+    double getQPhiSpec_(solver::spec_global_id spec_gidx) const noexcept;
+    double getQPhiLinkspec_(solver::linkspec_global_id linkspec_gidx) const noexcept;
+
     /////////////////// SURFACE SPECIES //////////////////////////
 
     // Add (or remove if the number is lower) one type of species
     void setSurfSpecCount(solver::spec_global_id spec_gidx, uint count);
 
-    inline uint getSurfSpecCount(solver::spec_global_id spec_gidx) noexcept {
-        if (pSurfSpecs.count(spec_gidx) > 0) {
-            return pSurfSpecs[spec_gidx].size();
+    inline uint getSurfSpecCount(solver::spec_global_id spec_gidx) const noexcept {
+        const auto it = pSurfSpecs.find(spec_gidx);
+        if (it != pSurfSpecs.end()) {
+            return it->second.size();
         } else {
             return 0;
         }
@@ -268,22 +293,12 @@ class Vesicle {
     // Add one surface link spec
     void addLinkSpec(solver::linkspec_individual_id linkspec_uniqueid, LinkSpec* link_spec);
 
-    /*
-      // Remove one surface link spec
-      void remLinkSpec(solver::linkspec_individual_id linkspec_uniqueid);
-      */
-
     // Just for a bit of extra safety in the debug phase, include the expected
     // LinkSpec too
     void remLinkSpec(solver::linkspec_individual_id linkspec_uniqueid, LinkSpec* linkspec);
 
 
     LinkSpec* getLinkSpec(solver::linkspec_individual_id linkspec_uniqueid) const;
-
-    /*
-      uint getLinkSpecCount(solver::linkspec_global_id linkspec_gidx,
-                            tetrahedron_global_id tet_gidx);
-      */
 
     uint getLinkSpecCount(solver::linkspec_global_id linkspec_gidx) const;
 
@@ -318,9 +333,15 @@ class Vesicle {
     // PATHS (simple virtual actin etc)
     ////////////////////////////////////////////////////////////////////////
 
-    void setPathPositions(const std::vector<std::pair<double, math::position_abs>>& path_positions);
+    void checkPathBinding(double dt);
+
+    void checkPathUnbinding(double dt);
 
     inline bool onPath() const noexcept {
+        return pOnPath != nullptr;
+    }
+
+    inline const std::shared_ptr<Path>& getPath() const {
         return pOnPath;
     }
 
@@ -330,6 +351,8 @@ class Vesicle {
 
     void updatePositionOnPath(
         std::vector<std::pair<double, math::position_abs>>::const_iterator end);
+
+    std::pair<std::shared_ptr<Path>, math::position_abs> getCurrentPathPosition() const;
 
     void removeFromPath();
 
@@ -354,6 +377,9 @@ class Vesicle {
     solver::vesicle_individual_id pIndex;
     math::position_abs pPos;
 
+    double pDiam;
+    double pDcst;
+
     tetrahedron_global_id pCentral_tet;
 
     std::map<tetrahedron_global_id, double> pTets_overlap_gidx;
@@ -369,13 +395,21 @@ class Vesicle {
 
     uint pImmobility;
 
+    std::map<solver::spec_global_id, std::shared_ptr<Qtable>> pQtables_spec;
+    std::map<solver::linkspec_global_id, std::shared_ptr<Qtable>> pQtables_linkspec;
+
     // PATHS
+    util::strongid_vector<solver::path_global_id, double> pPathBindingRates;  // Binding rate to
+                                                                              // each path
+    double pTotalPathBindingRate;
+
     std::vector<std::pair<double, math::position_abs>> pPathPositions;
     std::vector<std::pair<double, math::position_abs>>::const_iterator pPath_curr_pos;
     std::vector<std::pair<double, math::position_abs>>::const_iterator
         pPath_next_pos_end;  // End iterator for the possible next positions on the path. This
                              // allows several positions to be tested, starting with the furthest.
-    bool pOnPath;
+    std::shared_ptr<Path> pOnPath;
+    math::position_abs pPath_starting_shift;
     double pTime_accum;       // the accumulated time since the last changed position
     double pTime_accum_next;  // 'next' is stored because move may be invalid
 

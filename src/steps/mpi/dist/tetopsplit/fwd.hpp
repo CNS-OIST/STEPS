@@ -9,15 +9,17 @@ namespace steps::dist {
 
 class SimulationInput;
 
-enum class NextEventSearchMethod { Direct, GibsonBruck };
+enum class NextEventSearchMethod { Direct = 0, GibsonBruck, RLeaping };
 
-enum class SSAMethod { SSA, RSSA };
+enum class SSAMethod { SSA = 0, RSSA, RLeaping };
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
+enum class DiffusionMethod { ConstantDiffDt = 0, TauLeapingDiffDt };
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
 class SimulationData;
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-using SimulationDataPtr = std::unique_ptr<SimulationData<SSA, SearchMethod>>;
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+using SimulationDataPtr = std::unique_ptr<SimulationData<SSA, SearchMethod, DiffMethod>>;
 
 class MolState;
 
@@ -34,6 +36,8 @@ static inline std::string to_string(steps::dist::SSAMethod method) {
     switch (method) {
     case steps::dist::SSAMethod::SSA:
         return "DIRECT";
+    case steps::dist::SSAMethod::RLeaping:
+        return "RLEAPING";
     case steps::dist::SSAMethod::RSSA:
         return "RSSA";
     }

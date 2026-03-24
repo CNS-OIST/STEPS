@@ -288,7 +288,6 @@ class TestRDMPISpatialTetvesicle(unittest.TestCase):
                 sim.setPatchSpecCount('patch1', 'B_so2d', COUNTB_so2d)
 
             if (i==0): sim.checkpoint('./validation_cp_mpi/cp/spatial')
-            sim.reset()
             sim.restore('./validation_cp_mpi/cp/spatial')
             rng.initialize(seed)
             seed += 1

@@ -117,11 +117,20 @@ if(SKBUILD_PROJECT_NAME)
   # library
   set(relative_rpaths "../../../" "../cmeel.prefix/lib" "../lib" "../petsc/lib")
   foreach(relative_rpath ${relative_rpaths})
-    set(linker_rpaths "-Wl,-rpath,\\$ORIGIN/${relative_rpath} ${linker_rpaths}")
+    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang")
+      set(linker_rpaths "-Wl,-rpath,@loader_path/${relative_rpath} ${linker_rpaths}")
+    else()
+      set(linker_rpaths "-Wl,-rpath,\\$ORIGIN/${relative_rpath} ${linker_rpaths}")
+    endif()
   endforeach()
 
-  set_target_properties(cysteps PROPERTIES BUILD_WITH_INSTALL_RPATH FALSE
-                                           LINK_FLAGS "${linker_rpaths} -Wl,-z,origin")
+  if(${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang")
+    set_target_properties(cysteps PROPERTIES BUILD_WITH_INSTALL_RPATH FALSE
+                                             LINK_FLAGS "${linker_rpaths} -Wl,-rpath,@loader_path")
+  else()
+    set_target_properties(cysteps PROPERTIES BUILD_WITH_INSTALL_RPATH FALSE
+                                             LINK_FLAGS "${linker_rpaths} -Wl,-z,origin")
+  endif()
 
   # Install compiled lib
   install(TARGETS cysteps LIBRARY DESTINATION "${Python_INSTALL_PREFIX}/steps/")

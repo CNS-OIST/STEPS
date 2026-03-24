@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -199,6 +199,37 @@ def Check(sim, printmsgs=True):
                         f'It is not the case for {patch}.'
                     )
 
+    # Check for surface reactions that involve charged species
+    chargedSpecReacs = []
+    for reac in sim.model.ALL(nmodel.Reaction):
+        if reac._isSurfaceReac() and not (reac._isVesicleSurfReac() or reac._isRaftSurfReac()):
+            elems = reac._getAllElems(nmodel.Location.IN) | reac._getAllElems(nmodel.Location.OUT)
+            charged_specs = set([
+                spec for spec in elems
+                if isinstance(spec, nmodel.Species) and spec.valence != 0
+            ])
+            if reac.Charge is None and len(charged_specs) > 0:
+                if nutils.VERBOSITY > 1:
+                    warnings.append(
+                        f'Surface reaction {reac} involves species that have a defined valence '
+                        f'({charged_specs}) but the Charge property of the reaction is not set and '
+                        f'so no current will be modeled. It is advised to set the Charge property '
+                        f'(with e.g. "r[1].Charge = 2") so that the corresponding current is taken into '
+                        f'account when computing membrane potential. If no current is intended, the '
+                        f'Charge property should be set to 0 to suppress this warning.'
+                    )
+                else:
+                    chargedSpecReacs.append((reac, charged_specs))
+    if len(chargedSpecReacs) > 0:
+        reac, specs = chargedSpecReacs[0]
+        warnings.append(
+            f'{len(chargedSpecReacs)} surface reactions (e.g. {reac}) involve species that have a '
+            f'defined valence ({",".join(map(str,specs))}) but the Charge property of the reactions '
+            f'is not set and so no current will be modeled. A detailed list of these reactions can be '
+            f'seen when using a verbosity level > 1. Verbosity level can be set with a call to e.g. '
+            f'steps.utils.SetVerbosity(2).'
+        )
+
     if isinstance(sim.geom, ngeom._BaseTetMesh):
         # Check that the tetrahedrons are not too small
         smallTetRatio = sum(1 for tet in sim.geom.tets if tet.Vol <
@@ -333,7 +364,7 @@ def Check(sim, printmsgs=True):
                         warnings.append(
                             f'The following elements do not diffuse in compartment {comp.name} and could '
                             f'thus stay present in tetrahedrons that are fully overlapped by a vesicle: '
-                            f'{", ".join(map(str, noDiffElems))}. Note that depending on the shapes of'
+                            f'{", ".join(map(str, noDiffElems))}. Note that depending on the shapes of '
                             f'tetrahedrons, this might not happen for this specific mesh.'
                         )
 

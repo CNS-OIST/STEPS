@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -38,13 +38,13 @@
 namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
-/// Complex surface reaction.
+/// Complex surface reaction base class.
 ///
 /// A ComplexSReac object describes a reaction which takes place on a surface system,
 /// i.e. a patch between two compartments and involves complexes.
 ///
 /// \warning Methods start with an underscore are not exposed to Python.
-class ComplexSReac {
+class ComplexSReacBase {
   public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
@@ -66,21 +66,21 @@ class ComplexSReac {
     /// \param icompEvs Complex events in the inner compartment
     /// \param scompEvs Complex events on the surface
     /// \param ocompEvs Complex events in the outer compartment
-    /// \param kcst Rate constant of the reaction.
-    ComplexSReac(std::string const& id,
-                 Surfsys& surfsys,
-                 std::vector<Spec*> const& ilhs = {},
-                 std::vector<Spec*> const& slhs = {},
-                 std::vector<Spec*> const& olhs = {},
-                 std::vector<Spec*> const& irhs = {},
-                 std::vector<Spec*> const& srhs = {},
-                 std::vector<Spec*> const& orhs = {},
-                 std::vector<ComplexEvent*> const& icompEvs = {},
-                 std::vector<ComplexEvent*> const& scompEvs = {},
-                 std::vector<ComplexEvent*> const& ocompEvs = {},
-                 double kcst = 0.0);
+    /// \param charge Charge carried by the reaction across an efield membrane.
+    ComplexSReacBase(std::string const& id,
+                     Surfsys& surfsys,
+                     std::vector<Spec*> const& ilhs = {},
+                     std::vector<Spec*> const& slhs = {},
+                     std::vector<Spec*> const& olhs = {},
+                     std::vector<Spec*> const& irhs = {},
+                     std::vector<Spec*> const& srhs = {},
+                     std::vector<Spec*> const& orhs = {},
+                     std::vector<ComplexEvent*> const& icompEvs = {},
+                     std::vector<ComplexEvent*> const& scompEvs = {},
+                     std::vector<ComplexEvent*> const& ocompEvs = {},
+                     int charge = 0);
 
-    ~ComplexSReac() = default;
+    ~ComplexSReacBase() = default;
 
     ////////////////////////////////////////////////////////////////////////
     // REACTION RULE PROPERTIES
@@ -98,11 +98,11 @@ class ComplexSReac {
         return pModel;
     }
 
-    const std::vector<ComplexUpdateEvent*>& getUPDEvents(ComplexLocation loc) const noexcept;
+    const std::vector<ComplexUpdateEvent*>& getUPDEvents(Location loc) const noexcept;
 
-    const std::vector<ComplexDeleteEvent*>& getDELEvents(ComplexLocation loc) const noexcept;
+    const std::vector<ComplexDeleteEvent*>& getDELEvents(Location loc) const noexcept;
 
-    const std::vector<ComplexCreateEvent*>& getCREEvents(ComplexLocation loc) const noexcept;
+    const std::vector<ComplexCreateEvent*>& getCREEvents(Location loc) const noexcept;
 
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON):
@@ -172,24 +172,24 @@ class ComplexSReac {
         return pORHS;
     }
 
+    /// Get the charge carried by the reaction across the membrane.
+    ///
+    /// \return Charge carried by the reaction.
+    inline int getCharge() const noexcept {
+        return pCharge;
+    }
+
+    /// Set the charge carried by the reaction across the membrane.
+    ///
+    /// \param Charge carried by the reaction.
+    void setCharge(int charge);
+
     /// Get the order of the surface reaction.
     ///
     /// \return Order of the reaction.
     uint getOrder() const noexcept {
         return pOrder;
     }
-
-    /// Get the rate constant of the surface reaction.
-    ///
-    /// \return Rate constant of the surface reaction.
-    double getKcst() const noexcept {
-        return pKcst;
-    }
-
-    /// Set the rate constant of the surface reaction.
-    ///
-    /// \param Rate constant of the surface reaction.
-    void setKcst(double kcst);
 
     /// Get a list of all species.
     ///
@@ -198,8 +198,8 @@ class ComplexSReac {
     /// and does not contain any duplicate members.
     util::flat_set<Spec*> getAllSpecs() const;
 
-  private:
-    void _addEvent(ComplexEvent* ev, ComplexLocation loc);
+  protected:
+    void _addEvent(ComplexEvent* ev, Location loc);
 
     const std::string pID;
     Model& pModel;
@@ -213,17 +213,108 @@ class ComplexSReac {
     const std::vector<Spec*> pIRHS;
     const std::vector<Spec*> pSRHS;
     const std::vector<Spec*> pORHS;
-    std::map<ComplexLocation, std::vector<ComplexUpdateEvent*>> pCompUPD;
-    std::map<ComplexLocation, std::vector<ComplexDeleteEvent*>> pCompDEL;
-    std::map<ComplexLocation, std::vector<ComplexCreateEvent*>> pCompCRE;
-    std::map<ComplexLocation, uint> pLocOrder;
+    std::map<Location, std::vector<ComplexUpdateEvent*>> pCompUPD;
+    std::map<Location, std::vector<ComplexDeleteEvent*>> pCompDEL;
+    std::map<Location, std::vector<ComplexCreateEvent*>> pCompCRE;
+    std::map<Location, uint> pLocOrder;
     uint pOrder{};
+    int pCharge;
+};
+
+inline bool operator<(const ComplexSReacBase& lhs, const ComplexSReacBase& rhs) {
+    return lhs.getID() < rhs.getID();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// Complex surface reaction with rate constant
+class ComplexSReac: public ComplexSReacBase {
+  public:
+    ComplexSReac(std::string const& id,
+                 Surfsys& surfsys,
+                 std::vector<Spec*> const& ilhs = {},
+                 std::vector<Spec*> const& slhs = {},
+                 std::vector<Spec*> const& olhs = {},
+                 std::vector<Spec*> const& irhs = {},
+                 std::vector<Spec*> const& srhs = {},
+                 std::vector<Spec*> const& orhs = {},
+                 std::vector<ComplexEvent*> const& icompEvs = {},
+                 std::vector<ComplexEvent*> const& scompEvs = {},
+                 std::vector<ComplexEvent*> const& ocompEvs = {},
+                 double kcst = 0.0,
+                 int charge = 0);
+
+    /// Get the rate constant of the surface reaction.
+    ///
+    /// \return Rate constant of the surface reaction.
+    double getKcst() const noexcept {
+        return pKcst;
+    }
+
+    /// Set the rate constant of the surface reaction.
+    ///
+    /// \param Rate constant of the surface reaction.
+    void setKcst(double kcst);
+
+  private:
     double pKcst{};
 };
 
-inline bool operator<(const ComplexSReac& lhs, const ComplexSReac& rhs) {
-    return lhs.getID() < rhs.getID();
-}
+////////////////////////////////////////////////////////////////////////////////
+/// Complex surface reaction with voltage-dependent rate
+class VDepComplexSReac: public ComplexSReacBase {
+  public:
+    VDepComplexSReac(std::string const& id,
+                     Surfsys& surfsys,
+                     std::vector<Spec*> const& ilhs = {},
+                     std::vector<Spec*> const& slhs = {},
+                     std::vector<Spec*> const& olhs = {},
+                     std::vector<Spec*> const& irhs = {},
+                     std::vector<Spec*> const& srhs = {},
+                     std::vector<Spec*> const& orhs = {},
+                     std::vector<ComplexEvent*> const& icompEvs = {},
+                     std::vector<ComplexEvent*> const& scompEvs = {},
+                     std::vector<ComplexEvent*> const& ocompEvs = {},
+                     std::vector<double> ktab = {},
+                     double vmin = 0.0,
+                     double vmax = 0.0,
+                     double dv = 0.0,
+                     uint tablesize = 0,
+                     int charge = 0);
+
+    /// Get the table of transition rates.
+    ///
+    inline const auto& getK() const noexcept {
+        return pK;
+    }
+
+    inline const auto& _getK() const noexcept {
+        return pK;
+    }
+
+    inline double _getVMin() const noexcept {
+        return pVMin;
+    }
+
+    inline double _getVMax() const noexcept {
+        return pVMax;
+    }
+
+    inline double _getDV() const noexcept {
+        return pDV;
+    }
+
+    inline uint _getTablesize() const noexcept {
+        return pTablesize;
+    }
+
+  private:
+    std::vector<double> pK;
+
+    double pVMin;
+    double pVMax;
+    double pDV;
+    uint pTablesize;
+};
 
 
 }  // namespace steps::model

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,6 +28,7 @@
 
 #include "chanstate.hpp"
 #include "model.hpp"
+#include "model/complexevents.hpp"
 #include "spec.hpp"
 #include "surfsys.hpp"
 
@@ -38,17 +39,15 @@ namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-GHKcurr::GHKcurr(std::string const& id,
-                 Surfsys& surfsys,
-                 ChanState& chanstate,
-                 Spec& ion,
-                 bool computeflux,
-                 double virtual_oconc,
-                 double vshift)
+GHKcurrBase::GHKcurrBase(std::string const& id,
+                         Surfsys& surfsys,
+                         Spec& ion,
+                         bool computeflux,
+                         double virtual_oconc,
+                         double vshift)
     : pID(id)
     , pModel(surfsys.getModel())
     , pSurfsys(surfsys)
-    , pChanState(&chanstate)
     , pIon(&ion)
     , pRealFlux(computeflux)
     , pG(0.0)
@@ -64,19 +63,11 @@ GHKcurr::GHKcurr(std::string const& id,
     pValence = pIon->getValence();
 
     ArgErrLogIf(pValence == 0, "Ion provided to GHKcurr initializer function has valence zero");
-
-    pSurfsys._handleGHKcurrAdd(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-GHKcurr::~GHKcurr() {
-    _handleSelfDelete();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void GHKcurr::setID(std::string const& id) {
+void GHKcurrBase::setID(std::string const& id) {
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -88,13 +79,7 @@ void GHKcurr::setID(std::string const& id) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void GHKcurr::setChanState(ChanState& chanstate) {
-    pChanState = &chanstate;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void GHKcurr::setIon(Spec& ion) {
+void GHKcurrBase::setIon(Spec& ion) {
     ArgErrLogIf(ion.getValence() == 0, "Ion provided to GHK::setIon function has valence zero");
 
     pValence = ion.getValence();  /// TODO Tristan fixed bug?
@@ -107,7 +92,7 @@ void GHKcurr::setIon(Spec& ion) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void GHKcurr::setP(double p) {
+void GHKcurrBase::setP(double p) {
     ArgErrLogIf(p <= 0.0,
                 "Permeability provided to GHKcurr::setP function can't "
                 "be negative or zero");
@@ -129,7 +114,7 @@ void GHKcurr::setP(double p) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc) {
+void GHKcurrBase::setPInfo(double g, double V, double T, double oconc, double iconc) {
     if (pP != 0.0) {
         CLOG(WARNING, "general_log") << "Permeability previously defined for "
                                         "GHKcurr object will be overwritten.";
@@ -172,30 +157,76 @@ void GHKcurr::setPInfo(double g, double V, double T, double oconc, double iconc)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double GHKcurr::_P() const {
+double GHKcurrBase::_P() const {
     AssertLog(_infosupplied() == true);
     return pP;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int GHKcurr::_valence() const {
+int GHKcurrBase::_valence() const {
     AssertLog(_infosupplied() == true);
     return pValence;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+GHKcurr::GHKcurr(std::string const& id,
+                 Surfsys& surfsys,
+                 ChanState& chanstate,
+                 Spec& ion,
+                 bool computeflux,
+                 double virtual_oconc,
+                 double vshift)
+    : GHKcurrBase(id, surfsys, ion, computeflux, virtual_oconc, vshift)
+    , pChanState(&chanstate) {
+    pSurfsys._handleGHKcurrAdd(*this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+GHKcurr::~GHKcurr() {
+    _handleSelfDelete();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void GHKcurr::setChanState(ChanState& chanstate) {
+    pChanState = &chanstate;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void GHKcurr::_handleSelfDelete() {
     pSurfsys._handleGHKcurrDel(*this);
-    pG = 0.0;
-    pValence = 0;
-    pV = 0.0;
-    pTemp = 0.0;
-    pInnerConc = 0.0;
-    pOuterConc = 0.0;
-    pP = 0.0;
-    pInfoSupplied = false;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ComplexGHKcurr::ComplexGHKcurr(std::string const& id,
+                               Surfsys& surfsys,
+                               std::string const& cplx,
+                               const std::vector<std::vector<SubunitStateFilter>>& filt,
+                               Spec& ion,
+                               bool computeflux,
+                               double virtual_oconc,
+                               double vshift)
+    : GHKcurrBase(id, surfsys, ion, computeflux, virtual_oconc, vshift)
+    , pChanState(cplx, filt) {
+    pSurfsys._handleComplexGHKcurrAdd(*this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ComplexUpdateEvent ComplexGHKcurr::getUpdEvent() const noexcept {
+    assert(not pChanState.filters.empty());
+    std::vector<uint> reactants(pChanState.filters.back().size(), 0);
+    std::vector<ComplexUpdate> updates;
+    return {pChanState.complexId, pChanState.filters, reactants, updates, Location::PATCH_SURF};
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 }  // namespace steps::model

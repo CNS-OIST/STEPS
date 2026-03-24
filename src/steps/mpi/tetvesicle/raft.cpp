@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -409,13 +409,11 @@ bool Raft::getRaftSReacActive(solver::raftsreac_global_id rsridx) const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void Raft::updImmobility(int mob_upd) {
-    if (pImmobility == 0 and mob_upd < 0) {
-        std::ostringstream os;
-        os << "Negative immobility is not possible for raft. Model error. ";
-        ProgErrLog(os.str());
+    if (mob_upd < 0 and static_cast<int>(pImmobility) < -mob_upd) {
+        pImmobility = 0;
+    } else {
+        pImmobility += mob_upd;
     }
-
-    pImmobility += mob_upd;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -42,13 +42,15 @@ SReac::SReac(std::string const& id,
              std::vector<Spec*> const& irhs,
              std::vector<Spec*> const& srhs,
              std::vector<Spec*> const& orhs,
-             double kcst)
+             double kcst,
+             int charge)
     : pID(id)
     , pModel(surfsys.getModel())
     , pSurfsys(surfsys)
     , pOuter(false)
     , pOrder(0)
-    , pKcst(kcst) {
+    , pKcst(kcst)
+    , pCharge(charge) {
     ArgErrLogIf(pKcst < 0.0, "Surface reaction constant can't be negative");
 
     // Can't have species on the lhs in the inner and outer compartment
@@ -181,6 +183,12 @@ void SReac::setKcst(double kcst) {
     ArgErrLogIf(kcst < 0.0, "Surface reaction constant can't be negative");
 
     pKcst = kcst;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void SReac::setCharge(int charge) {
+    pCharge = charge;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

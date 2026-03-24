@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -310,14 +310,11 @@ class TestModelFramework(unittest.TestCase):
         for path, cnt, vol in specData1:
             with self.subTest(path=path, cnt=cnt, vol=vol):
                 # TODO Remove condition once vesicle changes are merged
-                pathCnt = path.Count
-                pathCnc = path.Conc
-                if MPI._rank == 0 or not self.useDist:
-                    self.assertEqual(pathCnt, cnt)
-                    self.assertAlmostEqualWThresh(pathCnc, cnt / Avogad / (1e3 * vol), self.tolerance)
+                self.assertFalse(path.Clamped)
+                self.assertEqual(path.Count, cnt)
+                self.assertAlmostEqualWThresh(path.Conc, cnt / Avogad / (1e3 * vol), self.tolerance)
                 if not self.useDist:
                     self.assertAlmostEqualWThresh(path.Amount, cnt / Avogad, self.tolerance)
-                    self.assertFalse(path.Clamped)
 
         specData2 = [
             (sim.patch.Ex, self.initP1Ex),
@@ -328,9 +325,9 @@ class TestModelFramework(unittest.TestCase):
         for path, cnt in specData2:
             with self.subTest(path=path, cnt=cnt):
                 self.assertEqual(path.Count, cnt)
+                self.assertFalse(path.Clamped)
                 if not self.useDist:
                     self.assertAlmostEqualWThresh(path.Amount, cnt / Avogad, self.tolerance)
-                    self.assertFalse(path.Clamped)
 
         # Complexes
         complexData1 = [
@@ -341,11 +338,8 @@ class TestModelFramework(unittest.TestCase):
         ]
         for path, cnt, vol in complexData1:
             with self.subTest(path=path, cnt=cnt, vol=vol):
-                pathCnt = path.Count
-                pathCnc = path.Conc
-                if MPI._rank == 0 or not self.useDist:
-                    self.assertEqual(pathCnt, cnt)
-                    self.assertAlmostEqualWThresh(pathCnc, cnt / Avogad / (1e3 * vol), self.tolerance)
+                self.assertEqual(path.Count, cnt)
+                self.assertAlmostEqualWThresh(path.Conc, cnt / Avogad / (1e3 * vol), self.tolerance)
                 if not self.useDist:
                     self.assertAlmostEqualWThresh(path.Amount, cnt / Avogad, self.tolerance)
 
@@ -365,24 +359,25 @@ class TestModelFramework(unittest.TestCase):
             (sim.patch.ss1R6, 'bkw', self.r06b, self.initP1ExS1S2, 1),
             (sim.patch.ss1R7, None, self.r07f, self.initP1ExS1S2, 1),
         ]
-        if not self.useDist:
-            if extents is None:
-                extents = [0]*len(reacData)
-            for (path, specif, k, h, vs), extent in zip(reacData, extents):
-                with self.subTest(path=path, specif=specif, k=k, h=h, vs=vs):
-                    if specif is not None:
-                        path = path[specif]
-                    self.assertEqual(path.K, k)
+        if extents is None:
+            extents = [0]*len(reacData)
+        for (path, specif, k, h, vs), extent in zip(reacData, extents):
+            with self.subTest(path=path, specif=specif, k=k, h=h, vs=vs):
+                if specif is not None:
+                    path = path[specif]
+                self.assertEqual(path.K, k)
+                self.assertEqual(path.Extent, extent)
+                if not self.useDist:
                     self.assertTrue(path.Active)
-                    self.assertEqual(path.Extent, extent)
                     if not self.useMesh:
                         self.assertAlmostEqualWThresh(path.H, h, self.tolerance)
                         self.assertAlmostEqualWThresh(path.C, k / vs, self.tolerance)
                         self.assertAlmostEqualWThresh(path.A, h * k / vs, self.tolerance)
-            if self.sas:
-                self.assertEqual(set(sim.comp1.vs1CR1['fwd'].K), set([self.cr01f, 2 * self.cr01f]))
-                self.assertEqual(set(sim.comp1.vs1CR1['bkw'].K), set([self.cr01b, 2 * self.cr01b]))
+        if self.sas:
+            self.assertEqual(set(sim.comp1.vs1CR1['fwd'].K), set([self.cr01f, 2 * self.cr01f]))
+            self.assertEqual(set(sim.comp1.vs1CR1['bkw'].K), set([self.cr01b, 2 * self.cr01b]))
         if self.useMesh and self.useEField:
+            self.assertEqual(sim.patch.ss1RVDep01['fwd'].Extent, extents[-1])
             if not self.useDist:
                 self.assertTrue(sim.patch.ss1RVDep01['fwd'].Active)
             self.assertFalse(sim.diffb.S1.DiffusionActive)
@@ -406,17 +401,17 @@ class TestModelFramework(unittest.TestCase):
 
                 self.assertEqual(sim.comp1.Diffc1S1.Active, True)
 
-                self.assertEqual(sim.comp1.Diffc1S1.D, self.c1DS1)
-                self.assertEqual(sim.comp1.Diffc1S2.D, self.c1DS2)
-                self.assertEqual(sim.comp2.Diffc2S1.D, self.c2DS1)
-                self.assertEqual(sim.comp2.Diffc2S2.D, self.c2DS2)
+            self.assertEqual(sim.comp1.Diffc1S1.D, self.c1DS1)
+            self.assertEqual(sim.comp1.Diffc1S2.D, self.c1DS2)
+            self.assertEqual(sim.comp2.Diffc2S1.D, self.c2DS1)
+            self.assertEqual(sim.comp2.Diffc2S2.D, self.c2DS2)
 
-                CC, sus1, sus2, = self.newMdl.CC, self.newMdl.sus1, self.newMdl.sus2
-                self.assertEqual(set(sim.comp1.Diffc1CC.D), set([self.c1DCC(state) for state in self.newMdl.CC]))
-                self.assertEqual(set(sim.comp1.Diffc1CC[sus2, :].D), set([self.c1DCC(state) for state in CC[sus2,:]]))
-                self.assertEqual(sim.comp1.Diffc1CC[self.newMdl.sus1, self.newMdl.sus1].D, self.c1DCC(CC[sus1, sus1]))
-                self.assertEqual(sim.comp1.Diffc1CC[self.newMdl.sus1, self.newMdl.sus2].D, self.c1DCC(CC[sus1, sus2]))
-                self.assertEqual(sim.comp1.Diffc1CC[self.newMdl.sus2, self.newMdl.sus2].D, self.c1DCC(CC[sus2, sus2]))
+            CC, sus1, sus2, = self.newMdl.CC, self.newMdl.sus1, self.newMdl.sus2
+            self.assertEqual(set(sim.comp1.Diffc1CC.D), set([self.c1DCC(state) for state in self.newMdl.CC]))
+            self.assertEqual(set(sim.comp1.Diffc1CC[sus2, :].D), set([self.c1DCC(state) for state in CC[sus2,:]]))
+            self.assertEqual(sim.comp1.Diffc1CC[self.newMdl.sus1, self.newMdl.sus1].D, self.c1DCC(CC[sus1, sus1]))
+            self.assertEqual(sim.comp1.Diffc1CC[self.newMdl.sus1, self.newMdl.sus2].D, self.c1DCC(CC[sus1, sus2]))
+            self.assertEqual(sim.comp1.Diffc1CC[self.newMdl.sus2, self.newMdl.sus2].D, self.c1DCC(CC[sus2, sus2]))
 
             self.assertAlmostEqualWThresh(
                 sum(sim.TETS(self.newGeom.comp1.tets).S1.Count),
@@ -447,12 +442,11 @@ class TestModelFramework(unittest.TestCase):
             # TODO Remove the condition after changes from vesicle branch have been merged
             tetVal = sum(sim.TETS().S1.Count)
             compVal = sim.comp1.S1.Count + sim.comp2.S1.Count
-            if MPI._shouldWrite or not self.useDist:
-                self.assertAlmostEqualWThresh(
-                    tetVal,
-                    compVal,
-                    self.tolerance
-                )
+            self.assertAlmostEqualWThresh(
+                tetVal,
+                compVal,
+                self.tolerance
+            )
             if not self.useDist:
                 self.assertAlmostEqualWThresh(
                     sum(sim.TRIS(self.newGeom.patch.tris).Area),
@@ -466,8 +460,7 @@ class TestModelFramework(unittest.TestCase):
                     sim.VERT(self.newGeom.membrane.tris[0].verts[0]).V,
                     self.membPot
                 )
-                if not self.useDist:
-                    self.assertFalse(sim.VERT(self.newGeom.membrane.tris[0].verts[0]).VClamped)
+                self.assertFalse(sim.VERT(self.newGeom.membrane.tris[0].verts[0]).VClamped)
 
             sim.TRIS()
             sim.VERTS()
@@ -491,51 +484,52 @@ class TestModelFramework(unittest.TestCase):
 
             if self.useEField:
                 self.assertEqual(sim.TET(tet1).V, self.membPot)
-                if not self.useDist:
-                    self.assertEqual(sim.TET(tet1).VClamped, False)
+                self.assertEqual(sim.TET(tet1).VClamped, False)
                 self.assertAlmostEqual(sim.TRI(tri1).V, self.membPot)
-                if not self.useDist:
-                    self.assertEqual(sim.TRI(tri1).VClamped, False)
+                self.assertEqual(sim.TRI(tri1).VClamped, False)
 
+            # Species
+            cnttmp = sim.TET(tet1).S1.Count
+            self.assertAlmostEqualWThresh(sim.TET(tet1).S1.Conc, cnttmp / Avogad / (1e3 * tet1.Vol), self.tolerance)
+            self.assertFalse(sim.TET(tet1).S1.Clamped)
             if not self.useDist:
-                # Species
-                cnttmp = sim.TET(tet1).S1.Count
                 self.assertAlmostEqualWThresh(sim.TET(tet1).S1.Amount, cnttmp / Avogad, self.tolerance)
-                self.assertAlmostEqualWThresh(sim.TET(tet1).S1.Conc, cnttmp / Avogad / (1e3 * tet1.Vol), self.tolerance)
-                self.assertFalse(sim.TET(tet1).S1.Clamped)
 
-                cnttmp = sim.TRI(tri1).Ex.Count
+            cnttmp = sim.TRI(tri1).Ex.Count
+            self.assertFalse(sim.TRI(tri1).Ex.Clamped)
+            if not self.useDist:
                 self.assertAlmostEqualWThresh(sim.TRI(tri1).Ex.Amount, cnttmp / Avogad, self.tolerance)
-                self.assertFalse(sim.TRI(tri1).Ex.Clamped)
 
-                # Diffusion
-                self.assertEqual(sim.TET(tet1).Diffc1S1.D, self.c1DS1)
+            # Diffusion
+            self.assertEqual(sim.TET(tet1).Diffc1S1.D, self.c1DS1)
+            if not self.useDist:
                 self.assertEqual(sim.TET(tet1).Diffc1S1.Active, True)
                 sim.TET(tet1).Diffc1S1.A
 
                 self.assertEqual(sim.TRI(tri1).DiffpatchEx.D, self.patchDEx)
 
-                # Reactions
-                reacData = [
-                    (sim.TET(tet1).vs1R1, 'fwd', self.r01f, sim.TET(tet1).S1.Count * sim.TET(tet1).S2.Count, 1e3 * tet1.Vol * Avogad),
-                    (sim.TET(tet1).vs1R1, 'bkw', self.r01b, sim.TET(tet1).S1.Count * (sim.TET(tet1).S1.Count - 1), 1e3 * tet1.Vol * Avogad),
-                    (sim.TET(tet2).vs2R2, 'fwd', self.r02f, sim.TET(tet2).S1.Count * sim.TET(tet2).S2.Count, 1e3 * tet2.Vol * Avogad),
-                    (sim.TET(tet2).vs2R2, 'bkw', self.r02b, sim.TET(tet2).S2.Count * (sim.TET(tet2).S2.Count - 1), 1e3 * tet2.Vol * Avogad),
-                    (sim.TRI(tri1).ss1R3, 'fwd', self.r03f, sim.TET(tet1).S1.Count * sim.TRI(tri1).Ex.Count, 1e3 * tet1.Vol * Avogad),
-                    (sim.TRI(tri1).ss1R3, 'bkw', self.r03b, sim.TRI(tri1).ExS1.Count, 1),
-                    (sim.TRI(tri1).ss1R4, 'fwd', self.r04f, sim.TRI(tri1).ExS1.Count * sim.TET(tet2).S2.Count, 1e3 * tet2.Vol * Avogad),
-                    (sim.TRI(tri1).ss1R4, 'bkw', self.r04b, sim.TRI(tri1).ExS1S2.Count, 1),
-                    (sim.TRI(tri1).ss1R5, 'fwd', self.r05f, sim.TET(tet2).S2.Count * sim.TRI(tri1).Ex.Count, 1e3 * tet2.Vol * Avogad),
-                    (sim.TRI(tri1).ss1R5, 'bkw', self.r05b, sim.TRI(tri1).ExS2.Count, 1),
-                    (sim.TRI(tri1).ss1R6, 'fwd', self.r06f, sim.TRI(tri1).ExS2.Count * sim.TET(tet1).S1.Count, 1e3 * tet1.Vol * Avogad),
-                    (sim.TRI(tri1).ss1R6, 'bkw', self.r06b, sim.TRI(tri1).ExS1S2.Count, 1),
-                    (sim.TRI(tri1).ss1R7, None, self.r07f, sim.TRI(tri1).ExS1S2.Count, 1),
-                ]
-                for path, specif, k, h, vs in reacData:
-                    with self.subTest(path=path, specif=specif, k=k, h=h, vs=vs):
-                        if specif is not None:
-                            path = path[specif]
-                        self.assertEqual(path.K, k)
+            # Reactions
+            reacData = [
+                (sim.TET(tet1).vs1R1, 'fwd', self.r01f, sim.TET(tet1).S1.Count * sim.TET(tet1).S2.Count, 1e3 * tet1.Vol * Avogad),
+                (sim.TET(tet1).vs1R1, 'bkw', self.r01b, sim.TET(tet1).S1.Count * (sim.TET(tet1).S1.Count - 1), 1e3 * tet1.Vol * Avogad),
+                (sim.TET(tet2).vs2R2, 'fwd', self.r02f, sim.TET(tet2).S1.Count * sim.TET(tet2).S2.Count, 1e3 * tet2.Vol * Avogad),
+                (sim.TET(tet2).vs2R2, 'bkw', self.r02b, sim.TET(tet2).S2.Count * (sim.TET(tet2).S2.Count - 1), 1e3 * tet2.Vol * Avogad),
+                (sim.TRI(tri1).ss1R3, 'fwd', self.r03f, sim.TET(tet1).S1.Count * sim.TRI(tri1).Ex.Count, 1e3 * tet1.Vol * Avogad),
+                (sim.TRI(tri1).ss1R3, 'bkw', self.r03b, sim.TRI(tri1).ExS1.Count, 1),
+                (sim.TRI(tri1).ss1R4, 'fwd', self.r04f, sim.TRI(tri1).ExS1.Count * sim.TET(tet2).S2.Count, 1e3 * tet2.Vol * Avogad),
+                (sim.TRI(tri1).ss1R4, 'bkw', self.r04b, sim.TRI(tri1).ExS1S2.Count, 1),
+                (sim.TRI(tri1).ss1R5, 'fwd', self.r05f, sim.TET(tet2).S2.Count * sim.TRI(tri1).Ex.Count, 1e3 * tet2.Vol * Avogad),
+                (sim.TRI(tri1).ss1R5, 'bkw', self.r05b, sim.TRI(tri1).ExS2.Count, 1),
+                (sim.TRI(tri1).ss1R6, 'fwd', self.r06f, sim.TRI(tri1).ExS2.Count * sim.TET(tet1).S1.Count, 1e3 * tet1.Vol * Avogad),
+                (sim.TRI(tri1).ss1R6, 'bkw', self.r06b, sim.TRI(tri1).ExS1S2.Count, 1),
+                (sim.TRI(tri1).ss1R7, None, self.r07f, sim.TRI(tri1).ExS1S2.Count, 1),
+            ]
+            for path, specif, k, h, vs in reacData:
+                with self.subTest(path=path, specif=specif, k=k, h=h, vs=vs):
+                    if specif is not None:
+                        path = path[specif]
+                    self.assertEqual(path.K, k)
+                    if not self.useDist:
                         self.assertTrue(path.Active)
                         # Extent not implemented in STEPS for tets and tris
                         # self.assertEqual(path.Extent, 0)
@@ -543,16 +537,19 @@ class TestModelFramework(unittest.TestCase):
                         self.assertAlmostEqualWThresh(path.C, k / vs, self.tolerance)
                         self.assertAlmostEqualWThresh(path.A, h * k / vs, self.tolerance)
 
-                if self.useEField:
-                    # Currents
-                    ohmcurr = sim.TRI(tri1).Chan1_Ohm_I.I
-                    ghkcurr = sim.TRI(tri1).Chan1_GHK_I.I
-                    self.assertAlmostEqualWThresh(sim.TRI(tri1).I, ohmcurr + ghkcurr, self.tolerance)
+            if self.useEField:
+                # Currents
+                ohmcurr = sim.TRI(tri1).Chan1_Ohm_I.I
+                ghkcurr = sim.TRI(tri1).Chan1_GHK_I.I
+                sreaccurr = sim.TRI(tri1).sscharge01.I
+                self.assertAlmostEqualWThresh(sim.TRI(tri1).I, ohmcurr + ghkcurr + sreaccurr, self.tolerance)
 
+                if not self.useDist:
                     # VDepSReac
                     self.assertTrue(sim.patch.ss1RVDep01['fwd'].Active)
                     self.assertTrue(sim.TRI(tri1).ss1RVDep01['fwd'].Active)
 
+            if not self.useDist:
                 #ROI
                 self.assertEqual(sim.comp1ROI.Vol, sim.comp1.Vol)
                 self.assertEqual(sim.patchROI.Area, sim.patch.Area)
@@ -620,11 +617,23 @@ class TestModelFramework(unittest.TestCase):
                 sim.temp = self.solvTemp
 
         # Single value setting
+        sim.patch.ss1R3['fwd'].K = 2 * self.r03f
+        sim.patch.ss1R3['bkw'].K = 2 * self.r03b
+        self.assertEqual(sim.patch.ss1R3['fwd'].K, 2 * self.r03f)
+        self.assertEqual(sim.patch.ss1R3['bkw'].K, 2 * self.r03b)
+        sim.patch.ss1R3['fwd'].K = self.r03f
+        sim.patch.ss1R3['bkw'].K = self.r03b
+        self.assertEqual(sim.patch.ss1R3['fwd'].K, self.r03f)
+        self.assertEqual(sim.patch.ss1R3['bkw'].K, self.r03b)
+        sim.comp1.vs1R1['fwd'].K = 2 * self.r01f
+        sim.comp1.vs1R1['bkw'].K = 2 * self.r01b
+        self.assertEqual(sim.comp1.vs1R1['fwd'].K, 2 * self.r01f)
+        self.assertEqual(sim.comp1.vs1R1['bkw'].K, 2 * self.r01b)
+        sim.comp1.vs1R1['fwd'].K = self.r01f
+        sim.comp1.vs1R1['bkw'].K = self.r01b
+        self.assertEqual(sim.comp1.vs1R1['fwd'].K, self.r01f)
+        self.assertEqual(sim.comp1.vs1R1['bkw'].K, self.r01b)
         if not self.useDist:
-            sim.comp1.vs1R1['fwd'].K = self.r01f
-            sim.comp1.vs1R1['bkw'].K = self.r01b
-            sim.patch.ss1R3['fwd'].K = self.r03f
-            sim.patch.ss1R3['bkw'].K = self.r03b
             sim.comp1.vs1CR1['fwd'].K = self.cr01f
             sim.comp1.vs1CR1['bkw'].K = self.cr01b
             sim.comp1.vs1R1['fwd'].Active = False
@@ -635,41 +644,40 @@ class TestModelFramework(unittest.TestCase):
             self.assertEqual(sim.patch.ss1R5['bkw'].Active, True)
         sim.comp1.S1.Count = self.initC1S1
         sim.patch.Ex.Count = self.initP1Ex
+        sim.comp1.S2.Conc = self.initC1S2 / Avogad / (1e3 * self.v1)
         if not self.useDist:
-            sim.comp1.S2.Conc = self.initC1S2 / Avogad / (1e3 * sim.comp1.Vol)
             sim.comp2.S1.Amount = self.initC2S1 / Avogad
             sim.patch.ExS1.Amount = self.initP1ExS1 / Avogad
-            sim.comp1.S1.Clamped = True
-            sim.patch.Ex.Clamped = True
-            self.assertTrue(sim.comp1.S1.Clamped)
-            self.assertTrue(sim.patch.Ex.Clamped)
+        sim.comp1.S1.Clamped = True
+        sim.patch.Ex.Clamped = True
+        self.assertTrue(sim.comp1.S1.Clamped)
+        self.assertTrue(sim.patch.Ex.Clamped)
 
         if self.useMesh:
             sus1, sus2 = self.newMdl.sus1, self.newMdl.sus2
-            if not self.useDist:
-                sim.comp1.Diffc1S1.D = self.c1DS1
-                sim.comp1.Diffc1S2.D = self.c1DS2
-                sim.comp2.Diffc2S1.D = self.c2DS1
-                sim.comp2.Diffc2S2.D = self.c2DS2
-                sim.comp1.Diffc1CC[sus1, sus1].D = 123
-                sim.comp1.Diffc1CC[sus1, sus2].D = 456
-                sim.comp1.Diffc1CC[sus2, sus2].D = 789
-                self.assertEqual(sim.comp1.Diffc1CC[sus1, sus1].D, 123)
-                self.assertEqual(sim.comp1.Diffc1CC[sus1, sus2].D, 456)
-                self.assertEqual(sim.comp1.Diffc1CC[sus2, sus2].D, 789)
-                self.c1DCC = CompDepDcst(lambda s: s.Count(sus1) * 1.21e-12, self.newMdl.CC)
-                sim.comp1.Diffc1CC.D = self.c1DCC
+            sim.comp1.Diffc1S1.D = self.c1DS1
+            sim.comp1.Diffc1S2.D = self.c1DS2
+            sim.comp2.Diffc2S1.D = self.c2DS1
+            sim.comp2.Diffc2S2.D = self.c2DS2
+            sim.comp1.Diffc1CC[sus1, sus1].D = 123
+            sim.comp1.Diffc1CC[sus1, sus2].D = 456
+            sim.comp1.Diffc1CC[sus2, sus2].D = 789
+            self.assertEqual(sim.comp1.Diffc1CC[sus1, sus1].D, 123)
+            self.assertEqual(sim.comp1.Diffc1CC[sus1, sus2].D, 456)
+            self.assertEqual(sim.comp1.Diffc1CC[sus2, sus2].D, 789)
+            self.c1DCC = CompDepDcst(lambda s: s.Count(sus1) * 1.21e-12, self.newMdl.CC)
+            sim.comp1.Diffc1CC.D = self.c1DCC
 
+            if not self.useDist:
                 sim.comp1.Diffc1S1.Active = False
                 self.assertFalse(sim.comp1.Diffc1S1.Active)
                 sim.comp1.Diffc1S1.Active = True
 
             sim.diffb.S1.DiffusionActive = True
             self.assertTrue(sim.diffb.S1.DiffusionActive)
-            if not self.useDist:
-                sim.diffb.S1.Dcst = self.c1DS1 * 1.2335
-                # self.assertAlmostEqualWThresh(sim.diffb.S1.Dcst, self.c1DS1 * 1.2335, self.tolerance)
-                sim.diffb.S1.Dcst = self.c1DS1
+            sim.diffb.S1.Dcst = self.c1DS1 * 1.2335
+            # self.assertAlmostEqualWThresh(sim.diffb.S1.Dcst, self.c1DS1 * 1.2335, self.tolerance)
+            sim.diffb.S1.Dcst = self.c1DS1
             sim.diffb.S1.DiffusionActive = False
 
             if not self.useDist:
@@ -683,10 +691,7 @@ class TestModelFramework(unittest.TestCase):
             tri1 = self.newGeom.patch.tris[0]
             tet1 = [tet for tet in tri1.tetNeighbs if tet in self.newGeom.comp1.tets][0]
             tet2 = [tet for tet in tri1.tetNeighbs if tet in self.newGeom.comp2.tets][0]
-            if self.useDist:
-                vert1 = tri1.verts[0]
-            else:
-                vert1 = tri1.bars[0].verts[0]
+            vert1 = tri1.bars[0].verts[0]
 
             currVal = sim.TET(tet1).S1.Count
             sim.TET(tet1).S1.Count = 123
@@ -694,35 +699,36 @@ class TestModelFramework(unittest.TestCase):
             if not self.useDist:
                 sim.TET(tet1).S1.Amount = 456 / Avogad
                 self.assertAlmostEqualWThresh(sim.TET(tet1).S1.Amount, 456 / Avogad, self.tolerance)
-                sim.TET(tet1).S1.Conc = 789 / Avogad / tet1.Vol
-                self.assertAlmostEqualWThresh(sim.TET(tet1).S1.Conc, 789 / Avogad / tet1.Vol, self.tolerance)
-                sim.TET(tet1).S1.Clamped = True
-                self.assertTrue(sim.TET(tet1).S1.Clamped)
-                sim.TET(tet1).S1.Clamped = False
+            sim.TET(tet1).S1.Conc = 789 / Avogad / tet1.Vol
+            self.assertAlmostEqualWThresh(sim.TET(tet1).S1.Conc, 789 / Avogad / tet1.Vol, self.tolerance)
+            sim.TET(tet1).S1.Clamped = True
+            self.assertTrue(sim.TET(tet1).S1.Clamped)
+            sim.TET(tet1).S1.Clamped = False
             sim.TET(tet1).S1.Count = currVal
 
+            sim.TET(tet1).vs1R1['fwd'].K = self.r01f * 2
+            self.assertAlmostEqualWThresh(sim.TET(tet1).vs1R1['fwd'].K, self.r01f * 2, self.tolerance)
+            sim.TET(tet1).vs1R1['fwd'].K = self.r01f
             if not self.useDist:
-                sim.TET(tet1).vs1R1['fwd'].K = self.r01f * 2
-                self.assertAlmostEqualWThresh(sim.TET(tet1).vs1R1['fwd'].K, self.r01f * 2, self.tolerance)
                 sim.TET(tet1).vs1R1['fwd'].Active = False
                 self.assertFalse(sim.TET(tet1).vs1R1['fwd'].Active)
                 sim.TET(tet1).vs1R1['fwd'].Active = True
-                sim.TET(tet1).vs1R1['fwd'].K = self.r01f
 
-                sim.TET(tet1).Diffc1S1.D = self.c1DS1 * 2
-                self.assertAlmostEqualWThresh(sim.TET(tet1).Diffc1S1.D, self.c1DS1 * 2, self.tolerance)
-                sim.TET(tet1).Diffc1S1.D = self.c1DS1
+            sim.TET(tet1).Diffc1S1.D = self.c1DS1 * 2
+            self.assertAlmostEqualWThresh(sim.TET(tet1).Diffc1S1.D, self.c1DS1 * 2, self.tolerance)
+            sim.TET(tet1).Diffc1S1.D = self.c1DS1
+            if not self.useDist:
                 sim.TET(tet1).Diffc1S1.Active = False
                 self.assertFalse(sim.TET(tet1).Diffc1S1.Active)
                 sim.TET(tet1).Diffc1S1.Active = True
 
-                if self.useEField:
-                    sim.TET(tet1).V = self.membPot * 1.123
-                    self.assertAlmostEqualWThresh(sim.TET(tet1).V, self.membPot * 1.123, self.tolerance)
-                    sim.TET(tet1).V = self.membPot
-                    sim.TET(tet1).VClamped = True
-                    self.assertTrue(sim.TET(tet1).VClamped)
-                    sim.TET(tet1).VClamped = False
+            if self.useEField:
+                sim.TET(tet1).V = self.membPot * 1.123
+                self.assertAlmostEqualWThresh(sim.TET(tet1).V, self.membPot * 1.123, self.tolerance)
+                sim.TET(tet1).V = self.membPot
+                sim.TET(tet1).VClamped = True
+                self.assertTrue(sim.TET(tet1).VClamped)
+                sim.TET(tet1).VClamped = False
 
             currVal = sim.TRI(tri1).Ex.Count
             sim.TRI(tri1).Ex.Count = 124
@@ -730,18 +736,18 @@ class TestModelFramework(unittest.TestCase):
             if not self.useDist:
                 sim.TRI(tri1).Ex.Amount = 456 / Avogad
                 self.assertAlmostEqualWThresh(sim.TRI(tri1).Ex.Amount, 456 / Avogad, self.tolerance)
-                sim.TRI(tri1).Ex.Clamped = True
-                self.assertTrue(sim.TRI(tri1).Ex.Clamped)
-                sim.TRI(tri1).Ex.Clamped = False
+            sim.TRI(tri1).Ex.Clamped = True
+            self.assertTrue(sim.TRI(tri1).Ex.Clamped)
+            sim.TRI(tri1).Ex.Clamped = False
             sim.TRI(tri1).Ex.Count = currVal
 
+            sim.TRI(tri1).ss1R3['fwd'].K = self.r03f * 2
+            self.assertAlmostEqualWThresh(sim.TRI(tri1).ss1R3['fwd'].K, self.r03f * 2, self.tolerance)
+            sim.TRI(tri1).ss1R3['fwd'].K = self.r03f
             if not self.useDist:
-                sim.TRI(tri1).ss1R3['fwd'].K = self.r03f * 2
-                self.assertAlmostEqualWThresh(sim.TRI(tri1).ss1R3['fwd'].K, self.r03f * 2, self.tolerance)
                 sim.TRI(tri1).ss1R3['fwd'].Active = False
                 self.assertFalse(sim.TRI(tri1).ss1R3['fwd'].Active)
                 sim.TRI(tri1).ss1R3['fwd'].Active = True
-                sim.TRI(tri1).ss1R3['fwd'].K = self.r03f
 
                 sim.TRI(tri1).DiffpatchEx.D = self.patchDEx * 2
                 self.assertAlmostEqualWThresh(sim.TRI(tri1).DiffpatchEx.D, self.patchDEx * 2, self.tolerance)
@@ -750,30 +756,30 @@ class TestModelFramework(unittest.TestCase):
                 # self.assertFalse(sim.TRI(tri1).DiffpatchEx.Active)
                 # sim.TRI(tri1).DiffpatchEx.Active = True
 
-                if self.useEField:
-                    sim.TRI(tri1).V = self.membPot * 1.598
-                    self.assertAlmostEqualWThresh(sim.TRI(tri1).V, self.membPot * 1.598, self.tolerance)
-                    sim.TRI(tri1).V = self.membPot
-                    sim.TRI(tri1).VClamped = True
-                    self.assertTrue(sim.TRI(tri1).VClamped)
-                    sim.TRI(tri1).VClamped = False
+            if self.useEField:
+                sim.TRI(tri1).V = self.membPot * 1.598
+                self.assertAlmostEqualWThresh(sim.TRI(tri1).V, self.membPot * 1.598, self.tolerance)
+                sim.TRI(tri1).V = self.membPot
+                sim.TRI(tri1).VClamped = True
+                self.assertTrue(sim.TRI(tri1).VClamped)
+                sim.TRI(tri1).VClamped = False
 
-                    sim.TRI(tri1).IClamp = 1.234e-7
-                    self.assertEqual(sim.TRI(tri1).IClamp, 1.234e-7)
-                    sim.TRI(tri1).IClamp = 0
+                sim.TRI(tri1).IClamp = 1.234e-7
+                self.assertEqual(sim.TRI(tri1).IClamp, 1.234e-7)
+                sim.TRI(tri1).IClamp = 0
 
+                if not self.useDist:
                     sim.TRI(tri1).ss1RVDep01['fwd'].Active = False
                     self.assertFalse(sim.TRI(tri1).ss1RVDep01['fwd'].Active)
                     sim.TRI(tri1).ss1RVDep01['fwd'].Active = True
 
-                    sim.VERT(vert1).V = self.membPot * 1.2468
-                    self.assertAlmostEqualWThresh(sim.VERT(vert1).V, self.membPot * 1.2468, self.tolerance)
-                    sim.VERT(vert1).V = self.membPot
-                    sim.VERT(vert1).VClamped = True
-                    self.assertTrue(sim.VERT(vert1).VClamped)
-                    sim.VERT(vert1).VClamped = False
+                sim.VERT(vert1).V = self.membPot * 1.2468
+                self.assertAlmostEqualWThresh(sim.VERT(vert1).V, self.membPot * 1.2468, self.tolerance)
+                sim.VERT(vert1).V = self.membPot
+                sim.VERT(vert1).VClamped = True
+                self.assertTrue(sim.VERT(vert1).VClamped)
+                sim.VERT(vert1).VClamped = False
 
-            if self.useEField:
                 sim.VERT(vert1).IClamp = 1.7852e-7
                 IclampVal = sim.VERT(vert1).IClamp
                 self.assertAlmostEqualWThresh(IclampVal, 1.7852e-7, self.tolerance)
@@ -925,6 +931,7 @@ class TetTestModelFramework(TestModelFramework):
         TestModelFramework.setUp(self)
 
         # Model parameters
+        self.rcharge01f = 1
 
         self.initChan1Cl = 10
         self.Chan1_G = 20e-15
@@ -982,6 +989,12 @@ class TetTestModelFramework(TestModelFramework):
                     Chan1_Ohm_I = OhmicCurr.Create(Chan1[chanop1 | chanop2], self.Chan1_G, self.Chan1_rev)
                     Chan1_GHK_I = GHKCurr.Create(Chan1[chanop1], nmdl.S3, self.Chan1_P, computeflux=True)
 
+                Ex, S2 = nmdl.Ex, nmdl.S2
+                with nmdl.ssys:
+                    Ex.s + S2.i >r['sscharge01']> Ex.s + S2.o
+                    r['sscharge01'].K = self.rcharge01f
+                    r['sscharge01'].Charge = 1
+
             with nmdl.vsys1:
                 Diffc1S1, Diffc1S2, Diffc1S3, Diffc1CC = Diffusion.Create(
                     Params(nmdl.S1, self.c1DS1),
@@ -1021,6 +1034,9 @@ class TetTestModelFramework(TestModelFramework):
             Chan1_Ohm_I_2 = smodel.OhmicCurr('Chan1_Ohm_I_2', omdl.getSurfsys('ssys'), chanstate=chanop2, g=self.Chan1_G, erev=self.Chan1_rev)
             Chan1_GHK_I = smodel.GHKcurr('Chan1_GHK_I', omdl.getSurfsys('ssys'), chanop1, omdl.getSpec('S3'), computeflux = True)
             Chan1_GHK_I.setP(self.Chan1_P)
+
+            Ex, S2 = omdl.getSpec('Ex'), omdl.getSpec('S2')
+            sscharge01 = smodel.SReac('sscharge01', omdl.getSurfsys('ssys'), ilhs=[S2], slhs=[Ex], srhs=[Ex], orhs=[S2], kcst=self.rcharge01f)
 
         Diffc1S1 = smodel.Diff('Diffc1S1', omdl.getVolsys('vsys1'), omdl.getSpec('S1'))
         Diffc1S1.setDcst(self.c1DS1)
@@ -1153,10 +1169,9 @@ class TetTestModelFramework(TestModelFramework):
         sim.comp2.S3.Count = self.initC2S3
         if self.useEField:
             sim.membrane.Potential = self.membPot
-            if not self.useDist:
-                sim.membrane.Capac = self.membCap
-                sim.membrane.VolRes = self.volRes
-            else:
+            sim.membrane.Capac = self.membCap
+            sim.membrane.VolRes = self.volRes
+            if self.useDist:
                 sim.membrane2.Potential = self.membPot
             sim.Temp = self.solvTemp
             sim.patch.Chan1[sim.model.chancl].Count = self.initChan1Cl
@@ -1208,6 +1223,8 @@ class VesTestModelFramework(TetTestModelFramework):
         self.raft1Diam = 1e-8
         self.raft1Dcst = 1e-12
 
+        self.lspecDcst = 1e-13
+
         self.ves1bind1Kcst = 1e10
 
         self.ves2bind1Kcst = 1e20
@@ -1239,7 +1256,8 @@ class VesTestModelFramework(TetTestModelFramework):
         #TODO
         with nmdl:
             S4 = Species.Create()
-            L1, L2, L3 = LinkSpecies.Create()
+            L1, L2 = LinkSpecies.Create()
+            L3 = LinkSpecies.Create(self.lspecDcst)
 
             vssys = VesicleSurfaceSystem.Create()
             rssys = RaftSurfaceSystem.Create()
@@ -1308,7 +1326,7 @@ class VesTestModelFramework(TetTestModelFramework):
 
         L1 = smodel.LinkSpec('L1', omdl)
         L2 = smodel.LinkSpec('L2', omdl)
-        L3 = smodel.LinkSpec('L3', omdl)
+        L3 = smodel.LinkSpec('L3', omdl, self.lspecDcst)
 
         vssys = smodel.VesSurfsys('vssys', omdl)
         rssys = smodel.Raftsys('rssys', omdl)
@@ -1429,7 +1447,7 @@ class VesTestModelFramework(TetTestModelFramework):
         path1 = sim.addVesiclePath('path1')
         pointsIdx = [path1.addPoint(sim.TET(t).center) for t in range(5)]
         for start, end in zip(pointsIdx, pointsIdx[1:]):
-            path1.addBranch(start, {end: 1})
+            path1.addEdge(start, end)
         path1.addVesicle('ves1', 1)
 
         # Vesicle diffusion groups

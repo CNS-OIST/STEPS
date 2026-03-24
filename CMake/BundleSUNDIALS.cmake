@@ -37,6 +37,12 @@ foreach(libname cvode ida kinsol nvecserial)
       TARGET SUNDIALS-install
       POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/lib/steps/"
+      # On MacOS, the default install ID generated is an absolute path to the library, which creates
+      # problem when installing the source distribution
+      COMMAND install_name_tool -id "@rpath/libsundials_${libname}.6${CMAKE_SHARED_LIBRARY_SUFFIX}"
+              "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}.6${CMAKE_SHARED_LIBRARY_SUFFIX}"
+      COMMAND install_name_tool -id "@rpath/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+              "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}"
       COMMAND
         ${CMAKE_COMMAND} -E copy
         "${tpdir}/SUNDIALS-install/lib/libsundials_${libname}${CMAKE_SHARED_LIBRARY_SUFFIX}"

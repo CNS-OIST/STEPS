@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -47,6 +47,9 @@ VDepSReac::VDepSReac(solver::VDepSReacdef* vdsrdef, Tri* tri)
     , pScaleFactor(0.0) {
     AssertLog(pVDepSReacdef != nullptr);
     AssertLog(pTri != nullptr);
+
+    solver::vdepsreac_local_id lvdsridx = pTri->patchdef()->vdepsreacG2L(pVDepSReacdef->gidx());
+    pChargeLidx = pTri->patchdef()->vdepsreacL2Charge(lvdsridx);
 
     if (pVDepSReacdef->surf_surf() == false) {
         double vol;
@@ -363,7 +366,7 @@ std::vector<KProc*> const& VDepSReac::apply(const rng::RNGptr& /*rng*/, double d
     for (auto oc: solver::ohmiccurr_local_id::range(pdef->countOhmicCurrs())) {
         // Patchdef returns local index
         solver::spec_local_id cs_lidx = pdef->ohmiccurr_chanstate(oc);
-        if (pTri->clamped(cs_lidx)) {
+        if (pTri->clamped(cs_lidx) || pdef->clamped(cs_lidx)) {
             continue;
         }
         int upd = upd_s_vec[cs_lidx];
@@ -377,7 +380,7 @@ std::vector<KProc*> const& VDepSReac::apply(const rng::RNGptr& /*rng*/, double d
 
     // Update triangle pools.
     for (auto s: upd_s_vec.range()) {
-        if (pTri->clamped(s)) {
+        if (pTri->clamped(s) || pdef->clamped(s)) {
             continue;
         }
         int upd = upd_s_vec[s];
@@ -389,13 +392,19 @@ std::vector<KProc*> const& VDepSReac::apply(const rng::RNGptr& /*rng*/, double d
         pTri->setCount(s, static_cast<uint>(nc));
     }
 
+    const int charge = pVDepSReacdef->charge();
+    if (charge) {
+        // Maintain convention that a positive inward current is a negative current
+        pTri->incECharge_vdsr(getChargeLidx(), -charge);
+    }
+
     // Update inner tet pools.
     WmVol* itet = pTri->iTet();
     if (itet != nullptr) {
         const auto& upd_i_vec = pdef->vdepsreac_upd_I(lidx);
         auto const& cnt_i_vec = itet->pools();
         for (auto s: upd_i_vec.range()) {
-            if (itet->clamped(s)) {
+            if (itet->clamped(s) || itet->compdef()->clamped(s)) {
                 continue;
             }
             int upd = upd_i_vec[s];
@@ -414,7 +423,7 @@ std::vector<KProc*> const& VDepSReac::apply(const rng::RNGptr& /*rng*/, double d
         const auto& upd_o_vec = pdef->vdepsreac_upd_O(lidx);
         auto const& cnt_o_vec = otet->pools();
         for (auto s: upd_o_vec.range()) {
-            if (otet->clamped(s)) {
+            if (otet->clamped(s) || otet->compdef()->clamped(s)) {
                 continue;
             }
             int upd = upd_o_vec[s];

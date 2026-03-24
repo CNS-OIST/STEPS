@@ -1,16 +1,17 @@
 #include "distcomp.hpp"
 
+#include <Omega_h_array.hpp>
+#include <Omega_h_for.hpp>
 #include <sstream>
 
 #include "util/error.hpp"
 #include "util/mpitools.hpp"
+#include "util/vocabulary.hpp"
 
 namespace steps::dist {
 
 DistComp::DistComp(const mesh::compartment_name& compartment, DistMesh& mesh, double cond)
-    : DistComp(compartment, mesh, compartment, cond) {
-    mesh.addComp(model::compartment_id(compartment), model::compartment_label(100), this);
-}
+    : DistComp(compartment, mesh, compartment, cond) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -18,11 +19,7 @@ DistComp::DistComp(const mesh::compartment_name& compartment,
                    DistMesh& mesh,
                    mesh::compartment_physical_tag physical_tag,
                    double cond)
-    : DistComp(compartment, mesh, std::to_string(physical_tag), cond) {
-    mesh.addComp(model::compartment_id(compartment),
-                 model::compartment_label(physical_tag.get()),
-                 this);
-}
+    : DistComp(compartment, mesh, std::to_string(physical_tag), cond) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -34,12 +31,8 @@ DistComp::DistComp(const mesh::compartment_name& compartment,
     , meshRef(mesh)
     , ownedVol(0.0)
     , pConductivity(cond) {
-    for (auto tet_local_index: meshRef.getEntities(model::compartment_id(tag))) {
-        _addTet(tet_local_index);
-    }
-
-    _computeTotalVol();
-    _computeBBox();
+    init(mesh.getEntities(model::compartment_id(tag)));
+    meshRef.addComp(model::compartment_id(compartment), this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -52,15 +45,17 @@ DistComp::DistComp(const mesh::compartment_name& compartment,
     , meshRef(mesh)
     , ownedVol(0.0)
     , pConductivity(cond) {
-    for (const auto& tet_global_index: global_indices) {
-        const auto tet_local_index = mesh.getLocalIndex(tet_global_index, false);
-        if (tet_local_index.valid()) {
-            _addTet(tet_local_index);
+    std::vector<osh::LO> local_tets;
+    for (auto& tet_global_index: global_indices) {
+        const auto tet = mesh.getLocalIndex(tet_global_index, false);
+        if (tet.valid()) {
+            local_tets.emplace_back(tet.get());
         }
     }
-    _computeTotalVol();
-    _computeBBox();
-    mesh.addComp(model::compartment_id(compartment), global_indices, this);
+    osh::Write<osh::LO> local_tets_w(local_tets.size());
+    std::copy(local_tets.begin(), local_tets.end(), local_tets_w.data());
+    init(local_tets_w);
+    meshRef.addComp(model::compartment_id(compartment), this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -73,14 +68,88 @@ DistComp::DistComp(const mesh::compartment_name& compartment,
     , meshRef(mesh)
     , ownedVol(0.0)
     , pConductivity(cond) {
-    for (const auto& tet_local_index: local_indices) {
-        if (mesh.isOwned(tet_local_index)) {
-            _addTet(tet_local_index);
+    osh::Write<osh::LO> local_tets_w(local_indices.size());
+    osh::parallel_for(
+        local_indices.size(),
+        OMEGA_H_LAMBDA(osh::LO i) { local_tets_w[i] = local_indices[i].get(); });
+    init(local_tets_w);
+    meshRef.addComp(model::compartment_id(compartment), this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void DistComp::init(const mesh::tetrahedron_local_ids& localInds) {
+    // Synchronize local indices so that all ranks have non-owned indices
+    tetLocalIndices = syncLocalInds(localInds);
+
+    ownedVol = 0;
+    ownedBBoxMin.fill(std::numeric_limits<osh::Real>::max());
+    ownedBBoxMax.fill(std::numeric_limits<osh::Real>::lowest());
+
+    const auto& tets2verts = meshRef.ask_elem_verts();
+
+    std::vector<osh::LO> ownedInds;
+    ownedInds.reserve(tetLocalIndices.size());
+
+    osh::LO cont_id = 0;
+    for (const auto tet: tetLocalIndices) {
+        if (meshRef.getTetComp(tet) != nullptr) {
+            ArgErrLog("Tetrahedron with local index " + std::to_string(tet) +
+                      " already belongs to a compartment.");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+        if (meshRef.isOwned(tet)) {
+            meshRef.setTetComp(tet, this, container::tetrahedron_id(cont_id++));
+
+            ownedInds.emplace_back(tet.get());
+            ownedVol += meshRef.getTetInfo()[tet].vol;
+
+            const auto tet2verts = osh::gather_verts<4>(tets2verts, tet.get());
+            const auto tet2x = osh::gather_vectors<4, mesh_dimensions()>(meshRef.coords(),
+                                                                         tet2verts);
+            for (const auto& p: tet2x) {
+                for (int i = 0; i < mesh_dimensions(); ++i) {
+                    ownedBBoxMin[i] = std::min(ownedBBoxMin[i], p[i]);
+                    ownedBBoxMax[i] = std::max(ownedBBoxMax[i], p[i]);
+                }
+            }
+        } else {
+            meshRef.setTetComp(tet, this, {});
         }
     }
-    _computeTotalVol();
-    _computeBBox();
-    mesh.addComp(model::compartment_id(compartment), local_indices, this);
+
+    // Set owned tetrahedron indices
+    osh::Write<osh::LO> ownedInds_w(ownedInds.size());
+    std::copy(ownedInds.begin(), ownedInds.end(), ownedInds_w.data());
+    ownedTetLocalIndices = ownedInds_w;
+
+    // Compute total area
+    MPI_Allreduce(&ownedVol, &pVol, 1, MPI_DOUBLE, MPI_SUM, meshRef.comm_impl());
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+mesh::tetrahedron_local_ids DistComp::syncLocalInds(
+    const mesh::tetrahedron_local_ids& localInds) const {
+    osh::Write<osh::LO> comp_mask(meshRef.owned_elems_mask().size(), 0);
+    osh::parallel_for(
+        localInds.size(), OMEGA_H_LAMBDA(osh::LO i) { comp_mask[localInds[i].get()] = 1; });
+    auto sync_comp_mask = meshRef.sync_array(meshRef.dim(), osh::Read(comp_mask), 1);
+
+    std::vector<mesh::tetrahedron_local_id_t> sync_localInds;
+    sync_localInds.reserve(localInds.size());
+    const auto fillInds = [&sync_comp_mask, &sync_localInds](osh::LO i) {
+        if (sync_comp_mask[i] > 0) {
+            sync_localInds.emplace_back(i);
+        }
+    };
+    osh::parallel_for(sync_comp_mask.size(), fillInds);
+
+    osh::Write<osh::LO> finalInds(sync_localInds.size());
+    osh::parallel_for(
+        sync_localInds.size(),
+        OMEGA_H_LAMBDA(osh::LO i) { finalInds[i] = sync_localInds[i].get(); });
+    return finalInds;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,12 +165,20 @@ std::vector<mesh::tetrahedron_global_id_t> DistComp::getAllTetIndices() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-const std::vector<mesh::tetrahedron_local_id_t>& DistComp::getLocalTetIndices(bool owned) const {
+std::vector<mesh::tetrahedron_local_id_t> DistComp::getLocalTetIndices(bool owned) const {
+    std::vector<mesh::tetrahedron_local_id_t> ret;
     if (owned) {
-        return ownedTetLocalIndices;
+        ret.reserve(ownedTetLocalIndices.size());
+        for (auto v: ownedTetLocalIndices) {
+            ret.emplace_back(v);
+        }
     } else {
-        return tetLocalIndices;
+        ret.reserve(tetLocalIndices.size());
+        for (auto v: tetLocalIndices) {
+            ret.emplace_back(v);
+        }
     }
+    return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -178,46 +255,6 @@ std::vector<double> DistComp::getBoundMax(bool local) const {
                       MPI_MAX,
                       meshRef.comm_impl());
         return maxBound;
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void DistComp::_addTet(mesh::tetrahedron_local_id_t local_index) {
-    if (meshRef.getTetComp(local_index) != nullptr) {
-        ArgErrLog("Tetrahedron with local index " + std::to_string(local_index) +
-                  " already belongs to a compartment.");
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
-    meshRef.setTetComp(local_index, this);
-    tetLocalIndices.push_back(local_index);
-    if (meshRef.isOwned(local_index)) {
-        ownedVol += meshRef.getTetInfo()[static_cast<size_t>(local_index.get())].vol;
-        ownedTetLocalIndices.push_back(local_index);
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void DistComp::_computeTotalVol() {
-    MPI_Allreduce(&ownedVol, &pVol, 1, MPI_DOUBLE, MPI_SUM, meshRef.comm_impl());
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void DistComp::_computeBBox() {
-    ownedBBoxMin.fill(std::numeric_limits<osh::Real>::max());
-    ownedBBoxMax.fill(std::numeric_limits<osh::Real>::lowest());
-    const auto& tets2verts = meshRef.ask_elem_verts();
-    for (const auto elem: ownedTetLocalIndices) {
-        const auto tet2verts = osh::gather_verts<4>(tets2verts, elem.get());
-        const auto tet2x = osh::gather_vectors<4, mesh_dimensions()>(meshRef.coords(), tet2verts);
-        for (const auto& p: tet2x) {
-            for (int i = 0; i < mesh_dimensions(); ++i) {
-                ownedBBoxMin[i] = std::min(ownedBBoxMin[i], p[i]);
-                ownedBBoxMax[i] = std::max(ownedBBoxMax[i], p[i]);
-            }
-        }
     }
 }
 

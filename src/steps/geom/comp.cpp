@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -133,7 +133,19 @@ util::flat_set<model::Spec*> Comp::getAllSpecs(const model::Model& model) const 
                 const auto& cplxsreac_specs_orhs = cplxsreac->getORHS();
                 specs.insert(cplxsreac_specs_orhs.begin(), cplxsreac_specs_orhs.end());
             }
+            for (auto const& cplxsreac: surfsys.getAllVDepComplexSReacs()) {
+                const auto& cplxsreac_specs_olhs = cplxsreac->getOLHS();
+                specs.insert(cplxsreac_specs_olhs.begin(), cplxsreac_specs_olhs.end());
+                const auto& cplxsreac_specs_orhs = cplxsreac->getORHS();
+                specs.insert(cplxsreac_specs_orhs.begin(), cplxsreac_specs_orhs.end());
+            }
             for (auto const& ghk: surfsys.getAllGHKcurrs()) {
+                // This is OUTER so only add if not virtual outer conc
+                if (ghk->_voconc() < 0.0) {
+                    specs.insert(&ghk->getIon());
+                }
+            }
+            for (auto const& ghk: surfsys.getAllComplexGHKcurrs()) {
                 // This is OUTER so only add if not virtual outer conc
                 if (ghk->_voconc() < 0.0) {
                     specs.insert(&ghk->getIon());
@@ -165,7 +177,18 @@ util::flat_set<model::Spec*> Comp::getAllSpecs(const model::Model& model) const 
                 const auto& cplxsreac_specs_irhs = cplxsreac->getIRHS();
                 specs.insert(cplxsreac_specs_irhs.begin(), cplxsreac_specs_irhs.end());
             }
+            for (auto const& cplxsreac: surfsys.getAllVDepComplexSReacs()) {
+                const auto& cplxsreac_specs_ilhs = cplxsreac->getILHS();
+                specs.insert(cplxsreac_specs_ilhs.begin(), cplxsreac_specs_ilhs.end());
+                const auto& cplxsreac_specs_irhs = cplxsreac->getIRHS();
+                specs.insert(cplxsreac_specs_irhs.begin(), cplxsreac_specs_irhs.end());
+            }
             for (auto const& ghk: surfsys.getAllGHKcurrs()) {
+                if (ghk->_realflux()) {
+                    specs.insert(&ghk->getIon());
+                }
+            }
+            for (auto const& ghk: surfsys.getAllComplexGHKcurrs()) {
                 if (ghk->_realflux()) {
                     specs.insert(&ghk->getIon());
                 }
@@ -206,6 +229,18 @@ util::flat_set<model::Reac*> Comp::getAllReacs(const model::Model& model) const 
     for (const auto& volsys_id: pVolsys) {
         model::Volsys& volsys = model.getVolsys(volsys_id);
         const auto& reacs = volsys.getAllReacs();
+        pReacs.insert(reacs.begin(), reacs.end());
+    }
+    return pReacs;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+util::flat_set<model::ComplexReac*> Comp::getAllComplexReacs(const model::Model& model) const {
+    util::flat_set<model::ComplexReac*> pReacs;
+    for (const auto& volsys_id: pVolsys) {
+        model::Volsys& volsys = model.getVolsys(volsys_id);
+        const auto& reacs = volsys.getAllComplexReacs();
         pReacs.insert(reacs.begin(), reacs.end());
     }
     return pReacs;

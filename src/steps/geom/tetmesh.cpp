@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -2342,6 +2342,73 @@ Tetmesh::intersectIndependentSegments(const double* points, int n_points, int sa
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+std::vector<int> Tetmesh::getWeightedPartition(int seed, uint nparts, std::vector<int> weights) {
+    idx_t current_elem = 0;
+    idx_t n_nodes = pVertsN;
+    idx_t n_elems = pTets.size();
+    idx_t ncommon = 3;
+    idx_t np = nparts;
+    idx_t objval;
+    std::vector<idx_t> eptr(n_elems + 1);
+    std::vector<idx_t> eind(n_elems * 4);
+    std::vector<idx_t> epart(n_elems);
+    std::vector<idx_t> npart(n_nodes);
+    std::vector<idx_t> _weights(n_elems);  // METIS requires idx_t weights
+    idx_t options[METIS_NOPTIONS];
+    METIS_SetDefaultOptions(options);
+    options[METIS_OPTION_SEED] = seed;
+    options[METIS_OPTION_IPTYPE] = METIS_IPTYPE_GROW;
+    options[METIS_OPTION_NITER] = 1000;
+    options[METIS_OPTION_MINCONN] = 1;
+    options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_VOL;
+    options[METIS_OPTION_DBGLVL] = METIS_DBG_TIME | METIS_DBG_CONTIGINFO;
+
+    for (auto tet: pTets) {
+        std::vector<uint> verts = strong_type_to_value_type(tet.begin(), tet.end());
+        idx_t curr_pos = current_elem * 4;
+        eptr[current_elem] = curr_pos;
+        eind[curr_pos] = verts[0];
+        eind[curr_pos + 1] = verts[1];
+        eind[curr_pos + 2] = verts[2];
+        eind[curr_pos + 3] = verts[3];
+        current_elem += 1;
+    }
+    for (int i = 0; i < weights.size(); i++) {
+        _weights[i] = static_cast<idx_t>(weights[i]);
+    }
+
+    eptr[current_elem] = current_elem * 4;
+
+    assert(weights.size() == n_elems &&
+           "Number of weights provided does not match number of tetrahedra in mesh");
+    auto ret = METIS_PartMeshDual(&n_elems,
+                                  &n_nodes,
+                                  &eptr.front(),
+                                  &eind.front(),
+                                  &_weights.front(),
+                                  nullptr,
+                                  &ncommon,
+                                  &np,
+                                  nullptr,
+                                  options,
+                                  &objval,
+                                  &epart.front(),
+                                  &npart.front());
+
+    if (ret != METIS_OK) {
+        std::ostringstream os;
+        os << "Error during METIS partitioning, error code: " << ret;
+        ArgErrLog(os.str());
+    }
+
+    std::vector<int> tet_hosts(n_elems);
+    for (auto t = 0; t < n_elems; t++) {
+        tet_hosts[t] = static_cast<uint>(epart[t]);
+    }
+
+    return tet_hosts;
+}
 
 void Tetmesh::_autoPartition(int seed,
                              int start_rank,

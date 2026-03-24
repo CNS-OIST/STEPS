@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -82,12 +82,17 @@ class TetParamExport(base_model.TetTestModelFramework):
         return nsim
 
     def _testExport(self, testName, **kwargs):
-        _, filePath = tempfile.mkstemp(prefix=testName)
-        self.createdFiles.append(filePath)
+        recreate_reference = False # Only activate when trying to update the reference files
+        if recreate_reference:
+            filePath = os.path.join(VALID_DIR, testName)
+        else:
+            _, filePath = tempfile.mkstemp(prefix=testName)
+            self.createdFiles.append(filePath)
 
         # Do not check the Function column as it shows full paths to python files
         exportedPaths = ExportParameters(self.sim, filePath, hideColumns=['Function'], **kwargs)
-        self.createdFiles += exportedPaths
+        if not recreate_reference:
+            self.createdFiles += exportedPaths
 
         validPaths = [
             fname[len(testName):] for fname in os.listdir(os.path.join(VALID_DIR)) if fname.startswith(testName)

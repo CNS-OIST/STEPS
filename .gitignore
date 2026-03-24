@@ -21,10 +21,12 @@ pysteps/steps.egg-info/
 
 .logs/*
 .project
+.cache
 examples/tutorial/.logs
 test/validation/*/validation_efield/.logs/
 test/validation/*/validation_mpi/.logs/
 doc/documentation/.logs/
+/dist
 
 test/unit/py/API_1/tri_dir_dcst.cp
 test/unit/py/API_1/tet_dir_dcst.cp

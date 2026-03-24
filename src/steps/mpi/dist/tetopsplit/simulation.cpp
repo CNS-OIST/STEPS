@@ -1,16 +1,25 @@
 #include "simulation.hpp"
+#include "model/ohmiccurr.hpp"
+#include "mpi/dist/tetopsplit/definition/statedef.hpp"
+#include "mpi/dist/tetopsplit/fwd.hpp"
+#include "util/common.hpp"
+#include "util/vocabulary.hpp"
 
+#include <Omega_h_defines.hpp>
 #include <limits>
 #include <memory>
 #include <numeric>
 
 #include <Omega_h_for.hpp>
 #include <Omega_h_shape.hpp>
+#include <stdexcept>
+#include <string>
 
 #if USE_PETSC
 #include "mpi/dist/tetopsplit/operator/efield_operator.hpp"
 #endif  // USE_PETSC
 
+#include "geom/dist/distcomp.hpp"
 #include "geom/dist/distmemb.hpp"
 #include "geom/dist/distpatch.hpp"
 #include "mpi/dist/tetopsplit/definition/diffdef.hpp"
@@ -25,93 +34,1045 @@
 
 namespace steps::dist {
 
+//-----------------------------------------------
 
-Simulation::Simulation(DistMesh& t_mesh, rng::RNG& t_rng, std::ostream& t_outstream)
+Simulation::Simulation(DistMesh& t_mesh, rng::RNG& t_rng)
     : comm_rank(util::mpi_comm_rank(t_mesh.comm_impl()))
     , comm_size(util::mpi_comm_size(t_mesh.comm_impl()))
     , mesh(t_mesh)
-    , rng(t_rng)
-    , outstream(t_outstream) {}
-
-Simulation::~Simulation() noexcept = default;
-
-void Simulation::setCompSpecCount(const compartment_counts_t& counts,
-                                  const math::DistributionMethod distribution) {
-    for (const auto& comp_counts: counts) {
-        setCompSpecCount(comp_counts.first, comp_counts.second, distribution);
-    }
-}
-
-void Simulation::log_all(const std::string& message) const {
-    this->outstream << '[' << this->comm_rank << "] " << message << '\n';
-}
-
-void Simulation::log_once(const std::string& message, bool force_stdout) const {
-    if (this->comm_rank == 0) {
-        if (force_stdout) {
-            std::cout << message << '\n';
-        } else {
-            this->outstream << message << '\n';
-        }
-    }
-}
-
-void Simulation::setCompSpecConc(const compartment_concs_t& concentrations,
-                                 const math::DistributionMethod distribution) {
-    for (const auto& comp_concs: concentrations) {
-        setCompSpecConc(comp_concs.first, comp_concs.second, distribution);
-    }
-}
-
-void Simulation::log_diffusion_exchanges() const {
-    const auto& local_exchanges = get_diffusion_rank_exchanges();
-    std::vector<unsigned int> global_exchanges(local_exchanges.size());
-    MPI_Gather(local_exchanges.data() + comm_rank * comm_size,  // NOLINT
-               comm_size,
-               MPI_UNSIGNED,
-               global_exchanges.data(),
-               comm_size,
-               MPI_UNSIGNED,
-               0,
-               mesh.comm_impl());
-    std::ostringstream oss;
-    oss << "Diffusion exchanges rates:\n";
-    for (int i = 0; i < comm_size; ++i) {
-        for (int j = 0; j < comm_size; ++j) {
-            oss << global_exchanges[static_cast<size_t>(i * comm_size + j)] << ';';
-        }
-        oss << '\n';
-    }
-    log_once(oss.str());
-}
-
-void Simulation::log_progress(const double i, const double tot, const std::string& name) const {
-    std::stringstream s;
-    s << name << " progress: " << std::round(1000 * i / tot) / 10 << "%";
-    log_once(s.str(), true);
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-OmegaHSimulation<SSA, SearchMethod>::OmegaHSimulation(DistMesh& t_mesh,
-                                                      rng::RNG& t_rng,
-                                                      std::ostream& t_outstream,
-                                                      bool t_indepKProcs)
-    : super_type(t_mesh, t_rng, t_outstream)
-    , mesh(t_mesh)
-    , elems2verts(mesh.ask_elem_verts())
-    , coords(mesh.coords())
-    , indepKProcs(t_indepKProcs) {}
+    , rng(t_rng) {}
 
 //-----------------------------------------------
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getPatchSpecCount(
+Simulation::~Simulation() noexcept = default;
+
+//-----------------------------------------------
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Convenience methods
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////
+// Location: Tetrahedron //
+///////////////////////////
+
+//-----------------------------------------------
+
+double Simulation::getTetSpecCount(osh::GO tet, const model::species_name& s, bool local) const {
+    double res;
+    getBatchTetSpecCountsNP(&tet, 1, s, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+void Simulation::setTetSpecCount(osh::GO tet,
+                                 const model::species_name& s,
+                                 double count,
+                                 bool local) {
+    setBatchTetSpecCountsNP(&tet, 1, s, &count, 1, local);
+}
+
+//-----------------------------------------------
+
+double Simulation::getTetSpecConc(osh::GO tet, const model::species_name& s, bool local) const {
+    double res;
+    getBatchTetSpecConcsNP(&tet, 1, s, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+void Simulation::setTetSpecConc(osh::GO tet,
+                                const model::species_name& s,
+                                double conc,
+                                bool local) {
+    setBatchTetSpecConcsNP(&tet, 1, s, &conc, 1, local);
+}
+
+//-----------------------------------------------
+
+#if USE_PETSC
+// E-field value
+
+//-----------------------------------------------
+
+double Simulation::getTetV(osh::GO tet, bool local) const {
+    double res;
+    getBatchTetVsNP(&tet, 1, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+void Simulation::setTetV(osh::GO tet, double v, bool local) {
+    setBatchTetVsNP(&tet, 1, &v, 1, local);
+}
+
+//-----------------------------------------------
+
+#endif  // USE_PETSC
+
+//-----------------------------------------------
+
+////////////////////////
+// Location: Triangle //
+////////////////////////
+
+//-----------------------------------------------
+
+double Simulation::getTriSpecCount(osh::GO tri, const model::species_name& s, bool local) const {
+    double res;
+    getBatchTriSpecCountsNP(&tri, 1, s, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+void Simulation::setTriSpecCount(osh::GO tri,
+                                 const model::species_name& s,
+                                 double count,
+                                 bool local) {
+    setBatchTriSpecCountsNP(&tri, 1, s, &count, 1, local);
+}
+
+//-----------------------------------------------
+
+#if USE_PETSC
+// E-field value
+
+//-----------------------------------------------
+
+double Simulation::getTriV(osh::GO tri, bool local) const {
+    double res;
+    getBatchTriVsNP(&tri, 1, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+void Simulation::setTriV(osh::GO tri, double v, bool local) {
+    setBatchTriVsNP(&tri, 1, &v, 1, local);
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriOhmicErev(osh::GO tri,
+                                   const model::ohmic_current_id& curr,
+                                   bool local) const {
+    double res;
+    getBatchTriOhmicErevsNP(&tri, 1, curr, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriComplexOhmicErev(osh::GO tri,
+                                          const model::complex_ohmic_current_id& curr,
+                                          bool local) const {
+    double res;
+    getBatchTriComplexOhmicErevsNP(&tri, 1, curr, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriSReacI(osh::GO tri,
+                                const model::surface_reaction_id& reac,
+                                bool local) const {
+    double res;
+    getBatchTriSReacIsNP(&tri, 1, reac, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriComplexSReacI(osh::GO tri,
+                                       const model::complex_surface_reaction_id& reac,
+                                       bool local) const {
+    double res;
+    getBatchTriComplexSReacIsNP(&tri, 1, reac, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriVDepSReacI(osh::GO tri,
+                                    const model::vdep_surface_reaction_id& reac,
+                                    bool local) const {
+    double res;
+    getBatchTriVDepSReacIsNP(&tri, 1, reac, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriVDepComplexSReacI(osh::GO tri,
+                                           const model::vdep_complex_surface_reaction_id& reac,
+                                           bool local) const {
+    double res;
+    getBatchTriVDepComplexSReacIsNP(&tri, 1, reac, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriOhmicI(osh::GO tri,
+                                const model::ohmic_current_id& curr,
+                                bool local) const {
+    double res;
+    getBatchTriOhmicIsNP(&tri, 1, curr, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriComplexOhmicI(osh::GO tri,
+                                       const model::complex_ohmic_current_id& curr,
+                                       bool local) const {
+    double res;
+    getBatchTriComplexOhmicIsNP(&tri, 1, curr, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriGHKI(osh::GO tri, const model::ghk_current_id& curr, bool local) const {
+    double res;
+    getBatchTriGHKIsNP(&tri, 1, curr, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriComplexGHKI(osh::GO tri,
+                                     const model::complex_ghk_current_id& curr,
+                                     bool local) const {
+    double res;
+    getBatchTriComplexGHKIsNP(&tri, 1, curr, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+double Simulation::getTriI(osh::GO tri, bool local) const {
+    double res;
+    getBatchTriIsNP(&tri, 1, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+#endif  // USE_PETSC
+
+//////////////////////
+// Location: Vertex //
+//////////////////////
+
+#if USE_PETSC
+// E-field value
+
+//-----------------------------------------------
+
+double Simulation::getVertV(osh::GO vert, bool local) const {
+    double res;
+    getBatchVertVsNP(&vert, 1, &res, 1, local);
+    return res;
+}
+
+//-----------------------------------------------
+
+void Simulation::setVertV(osh::GO vert, double v, bool local) {
+    setBatchVertVsNP(&vert, 1, &v, 1, local);
+}
+
+//-----------------------------------------------
+
+#endif  // USE_PETSC
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+OmegaHSimulation<SSA, SearchMethod, DiffMethod>::OmegaHSimulation(steps::model::Model& model,
+                                                                  DistMesh& t_mesh,
+                                                                  const rng::RNGptr& r,
+                                                                  bool t_indepKProcs,
+                                                                  bool isEfield)
+    : super_type(t_mesh, *r)
+    , mesh(t_mesh)
+    , indepKProcs(t_indepKProcs) {
+    auto stateDefPtr = std::make_unique<Statedef>(model, mesh);
+    if (!isEfield) {
+        stateDefPtr->disableEField();
+    }
+
+    init(std::move(stateDefPtr));
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+OmegaHSimulation<SSA, SearchMethod, DiffMethod>::~OmegaHSimulation() = default;
+
+//-----------------------------------------------
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Required methods
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////
+// General methods //
+/////////////////////
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::reset() {
+    this->num_iterations = 0;
+    this->state_time = 0;
+    statedef->reset();
+    mesh.resetDiffBoundaries();
+    input->reset(*statedef, mesh);
+    data->reset(this->state_time);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::run(osh::Real end_time) {
+    Instrumentor::phase p("OmegaHSimulation::run()");
+
+    if (allReduce(outdated_diffusions, MPI_LOR)) {
+        data->initialize_diffusions();
+        outdated_diffusions = false;
+    }
+
+    assert(end_time >= 0.0);
+
+#if USE_PETSC
+    const osh::Real ef_dt_std = data->efield ? data->efield->getDt()
+                                             : std::numeric_limits<double>::infinity();
+#else
+    const osh::Real ef_dt_std = std::numeric_limits<double>::infinity();
+#endif
+
+
+    // number of standard steps -1. It can be negative
+    const int n_steps_std = std::floor((end_time - state_time) / ef_dt_std) - 1;
+    // std steps loop -1. n_steps_std can be negative so int is the correct type
+    for (int i_ef = 0; i_ef < n_steps_std; ++i_ef) {
+        evolve(ef_dt_std);
+    }
+
+    // sync time steps
+    // we compare always with end_time because comparing dts can fail due to numerical error
+    const auto next_std_state_time = state_time + ef_dt_std;
+    if (!steps::util::almost_equal(next_std_state_time, end_time) &&
+        next_std_state_time < end_time) {
+        evolve(ef_dt_std);
+        assert(end_time > state_time);
+        assert(!steps::util::almost_equal(end_time, state_time));
+        evolve(end_time - state_time);
+    } else if (!steps::util::almost_equal(end_time, state_time)) {
+        evolve(end_time - state_time);
+    }
+
+    assert(steps::util::almost_equal(end_time, state_time));
+}
+
+//-----------------------------------------------
+
+// Data getting / setting
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getDiffusionTolerance() const {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        return data->diffOp.getTolerance();
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling getDiffusionTolerance.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setDiffusionTolerance(osh::Real tolerance) {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        data->diffOp.setTolerance(tolerance);
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling setDiffusionTolerance.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real
+OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getDiffusionNormalApproximationThreshold() const {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        return data->diffOp.getNormalApproximationThreshold();
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling "
+            "getDiffusionNormalApproximationThreshold.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setDiffusionNormalApproximationThreshold(
+    osh::Real threshold) {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        data->diffOp.setNormalApproximationThreshold(threshold);
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling "
+            "setDiffusionNormalApproximationThreshold.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getDiffusionCrankNicolsonThreshold()
+    const {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        return data->diffOp.getCrankNicolsonThreshold();
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling "
+            "getDiffusionCrankNicolsonThreshold.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setDiffusionCrankNicolsonThreshold(
+    osh::Real threshold) {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        data->diffOp.setCrankNicolsonThreshold(threshold);
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling "
+            "setDiffusionCrankNicolsonThreshold.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+uint OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getDiffusionLeapThreshold() const {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        return data->diffOp.getLeapThreshold();
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling getDiffusionLeapThreshold.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setDiffusionLeapThreshold(uint leap_thresh) {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        data->diffOp.setLeapThreshold(leap_thresh);
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling setDiffusionLeapThreshold.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+uint OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getDiffusionMaxDtSkips() const {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        return data->diffOp.getMaxDtSkips();
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling getDiffusionMaxDtSkips.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setDiffusionMaxDtSkips(uint max_skips) {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        data->diffOp.setMaxDtSkips(max_skips);
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling setDiffusionMaxDtSkips.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getDiffusionMinDtFactor() const {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        return data->diffOp.getMinDtFactor();
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling getDiffusionMinDtFactor.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setDiffusionMinDtFactor(osh::Real factor) {
+    if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        data->diffOp.setMinDtFactor(factor);
+        outdated_diffusions = true;
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling setDiffusionMinDtFactor.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+uint OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getReactionSSAThreshold() const {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        return data->ssaOp.getSSAThreshold();
+    } else {
+        throw std::logic_error(
+            "The chosen reaction operator does not allow calling getReactionSSAThreshold.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setReactionSSAThreshold(uint thresh) {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        data->ssaOp.setSSAThreshold(thresh);
+    } else {
+        throw std::logic_error(
+            "The chosen reaction operator does not allow calling setReactionSSAThreshold.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+uint OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getReactionSSASteps() const {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        return data->ssaOp.getSSASteps();
+    } else {
+        throw std::logic_error(
+            "The chosen reaction operator does not allow calling getReactionSSASteps.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setReactionSSASteps(uint steps) {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        data->ssaOp.setSSASteps(steps);
+    } else {
+        throw std::logic_error(
+            "The chosen reaction operator does not allow calling setReactionSSASteps.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+uint OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getReactionLComputePeriod() const {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        return data->ssaOp.getLComputePeriod();
+    } else {
+        throw std::logic_error(
+            "The chosen reaction operator does not allow calling getReactionLComputePeriod.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setReactionLComputePeriod(uint period) {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        data->ssaOp.setLComputePeriod(period);
+    } else {
+        throw std::logic_error(
+            "The chosen reaction operator does not allow calling setReactionLComputePeriod.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getReactionTolerance() const {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        return data->ssaOp.getTolerance();
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling getReactionTolerance.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setReactionTolerance(osh::Real tolerance) {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        data->ssaOp.setTolerance(tolerance);
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling setReactionTolerance.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getReactionTheta() const {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        return data->ssaOp.getTheta();
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling getReactionTheta.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setReactionTheta(osh::Real theta) {
+    if constexpr (SSA == SSAMethod::RLeaping) {
+        data->ssaOp.setTheta(theta);
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling setReactionTheta.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+std::string OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getSolverName() const {
+    return "disttetopsplit";
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setDiffApplyThreshold(osh::Real threshold) {
+    if constexpr (DiffMethod == DiffusionMethod::ConstantDiffDt) {
+        data->diffOp.setBinomialThreshold(static_cast<osh::GO>(threshold));
+    } else {
+        throw std::logic_error(
+            "The chosen diffusion method does not allow calling setDiffApplyThreshold.");
+    }
+}
+
+//-----------------------------------------------
+
+#if USE_PETSC
+// E-field specific
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getEfieldDT() const {
+    if (data->efield) {
+        return data->efield->getDt();
+    }
+    return 0;
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setEfieldDT(const osh::Real dt) const {
+    if (data->efield) {
+        data->efield->setDt(dt);
+    } else {
+        throw std::logic_error("E-Field is not in use.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setPetscOptions(const std::string& s) {
+    auto err = PetscOptionsInsertString(nullptr, s.c_str());
+    CHKERRABORT(mesh.comm_impl(), err);
+
+    // the check to see if we have the efield active is done in simulation
+    if (data->efield) {
+        data->efield->setPetscOptions();
+    } else {
+        throw std::logic_error("E-Field is not in use.");
+    }
+}
+
+//-----------------------------------------------
+
+#endif  // USE_PETSC
+
+// Debugging / monitoring
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::dumpDepGraphToFile(
+    const std::string& path) const {
+    std::ofstream ostr(path);
+    data->kproc_state.write_dependency_graph(ostr);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+std::string OmegaHSimulation<SSA, SearchMethod, DiffMethod>::createStateReport() const {
+    // TODO(TCL) FIXME
+    return "";
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::I64 OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getDiffExtent(bool local) const {
+    osh::I64 extent = data->diffOp.getExtent();
+    if (local) {
+        return extent;
+    }
+    return allReduce(extent);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::I64 OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getReacExtent(bool local) const {
+    const osh::I64 extent = data->ssaOp.getExtent();
+    if (local) {
+        return extent;
+    }
+    return allReduce(extent);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+std::map<std::string, double> OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getReactionDebugInfo(
+    bool local) const {
+    const auto info = data->ssaOp.getDebugInfo();
+    if (local) {
+        return info;
+    }
+    std::map<std::string, double> total_info;
+    for (auto& [name, val]: info) {
+        total_info[name] = allReduce(val);
+    }
+    return total_info;
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+std::map<std::string, double>
+OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getDiffusionDebugInfo(bool local) const {
+    const auto info = data->diffOp.getDebugInfo();
+    if (local) {
+        return info;
+    }
+    std::map<std::string, double> total_info;
+    for (auto& [name, val]: info) {
+        total_info[name] = allReduce(val);
+    }
+    return total_info;
+}
+
+//-----------------------------------------------
+
+///////////////////////////
+// Location: Compartment //
+///////////////////////////
+
+// Species
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getCompSpecCount(
+    const model::compartment_id& compartment,
+    const model::species_name& species) const {
+    return allReduce(getOwnedCompSpecCount(compartment, species));
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setCompSpecCount(
+    const model::compartment_id& compartment,
+    const model::species_name& spec,
+    osh::Real n,
+    const math::DistributionMethod distribution) {
+    const auto& [elems, volumes, rank_volume] = mesh.measure(compartment);
+    std::vector<osh::Real> rank_volumes;
+    if (this->comm_rank == 0) {
+        rank_volumes.resize(static_cast<size_t>(this->comm_size));
+    }
+    int err = MPI_Gather(
+        &rank_volume, 1, MPI_DOUBLE, rank_volumes.data(), 1, MPI_DOUBLE, 0, this->comm());
+    if (err != MPI_SUCCESS) {
+        MPI_Abort(this->comm(), err);
+    }
+
+    if (n >= static_cast<double>(INT64_MAX)) {
+        std::ostringstream oss;
+        oss << "Unsupported number of molecules: " << std::setprecision(20) << n
+            << " but maximum value is " << std::numeric_limits<osh::GO>::max()
+            << " (max 64 bits integral value)";
+        ArgErrLog(oss.str());
+    }
+    auto dist = math::make_dist(static_cast<osh::GO>(n), rank_volumes);
+    // only rank 0 generates non-zero values
+    const std::vector<osh::GO>& num_molecules_on_ranks = dist.distribute(this->rng, distribution);
+
+
+    // send `num_molecules_on_ranks[i]` to rank `i` and store it in
+    // `num_molecules_on_rank`.
+    osh::GO num_molecules_on_rank;
+    err = MPI_Scatter(num_molecules_on_ranks.data(),
+                      1,
+                      MPI_INT64_T,
+                      &num_molecules_on_rank,
+                      1,
+                      MPI_INT64_T,
+                      0,
+                      this->comm());
+    if (err != MPI_SUCCESS) {
+        MPI_Abort(this->comm(), err);
+    }
+
+    setOwnedCompSpecCount(compartment, spec, num_molecules_on_rank, distribution);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getCompSpecConc(
+    const model::compartment_id& compartment,
+    const model::species_name& species) const {
+    const auto spec_count = getCompSpecCount(compartment, species);
+    return spec_count / (1.0e3 * mesh.total_measure(compartment) * math::AVOGADRO);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setCompSpecConc(
+    const model::compartment_id& compartment,
+    const model::species_name& spec,
+    osh::Real conc,
+    const math::DistributionMethod distribution) {
+    const auto factor = mesh.total_measure(compartment) * 1.0e3 * math::AVOGADRO;
+    setCompSpecCount(compartment, spec, conc * factor, distribution);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+bool OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getCompSpecClamped(
+    const model::compartment_id& compartment,
+    const model::species_name& spec) const {
+    auto& compdef = statedef->getCompdef(compartment);
+    const auto spec_id = statedef->getCompSpecContainerIdx(compartment, spec);
+    return compdef.getSpecClamped(spec_id);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setCompSpecClamped(
+    const model::compartment_id& compartment,
+    const model::species_name& spec,
+    bool clamped) {
+    auto& compdef = statedef->getCompdef(compartment);
+    const auto spec_id = statedef->getCompSpecContainerIdx(compartment, spec);
+    compdef.setSpecClamped(spec_id, clamped);
+}
+
+//-----------------------------------------------
+
+// Reactions
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getCompReacK(
+    const model::compartment_id& compartment,
+    const model::reaction_id& reac) const {
+    auto& compdef = statedef->getCompdef(compartment);
+    auto& reacdef = compdef.template getReacdef<Reacdef>(reac);
+    return reacdef.getKcst();
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setCompReacK(
+    const model::compartment_id& compartment,
+    const model::reaction_id& reac,
+    osh::Real kcst) {
+    auto& compdef = statedef->getCompdef(compartment);
+    auto& reacdef = compdef.template getReacdef<Reacdef>(reac);
+    data->kproc_state.reactions().clearKcst(compdef.getIdx());
+    reacdef.setKcst(kcst);
+    data->kproc_state.reactions().updateKcst();
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::I64 OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getCompReacExtent(
+    const model::compartment_id& compartment,
+    const model::reaction_id& reac) const {
+    auto& compdef = statedef->getCompdef(compartment);
+    auto& reacdef = compdef.template getReacdef<Reacdef>(reac);
+    return allReduce(reacdef.getExtent());
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::I64 OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getCompComplexReacExtent(
+    const model::compartment_id& compartment,
+    const model::complex_reaction_id& reac) const {
+    auto& compdef = statedef->getCompdef(compartment);
+    auto& reacdef = compdef.template getReacdef<ComplexReacdef>(reac);
+    return allReduce(reacdef.getExtent());
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getCompDiffD(
+    const model::compartment_id& compartment,
+    const model::diffusion_id& diff) const {
+    auto& diffusion = statedef->getCompdef(compartment).getDiffdef(diff);
+    return diffusion.getDcst();
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setCompDiffD(
+    const model::compartment_id& compartment,
+    const model::diffusion_id& diff,
+    osh::Real dcst) {
+    auto& diffusion = statedef->getCompdef(compartment).getDiffdef(diff);
+    diffusion.setDcst(dcst);
+    // Clear individually set values (with setTetDiffD)
+    auto diffId = diffusion.getDiffContainerIdx();
+    for (auto tet: mesh.getOwnedEntities(compartment)) {
+        data->diffusions.clear_tet_dcst(tet, diffId, -1);
+        for (auto& d: mesh.tet_neighbors_int_data()[tet.get()]) {
+            data->diffusions.clear_tet_dcst(tet, diffId, d[1]);
+        }
+    }
+    data->initialize_diffusions();
+}
+
+//-----------------------------------------------
+
+// Complexes
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getCompComplexCount(
+    const model::compartment_id& compartment,
+    const model::complex_name& complex,
+    const std::vector<std::vector<steps::model::SubunitStateFilter>>& f) const {
+    return allReduce(getOwnedCompComplexCount(compartment, complex, _convertComplexFilters(f)));
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setCompComplexCount(
+    const model::compartment_id& compartment,
+    const model::complex_name& complex,
+    const std::vector<std::vector<steps::model::SubunitStateFilter>>& i,
+    osh::Real num_molecules,
+    math::DistributionMethod distribution) {
+    const auto& [elems, volumes, rank_volume] = mesh.measure(compartment);
+    std::vector<osh::Real> rank_volumes;
+    if (this->comm_rank == 0) {
+        rank_volumes.resize(static_cast<size_t>(this->comm_size));
+    }
+    int err = MPI_Gather(
+        &rank_volume, 1, MPI_DOUBLE, rank_volumes.data(), 1, MPI_DOUBLE, 0, this->comm());
+    if (err != MPI_SUCCESS) {
+        MPI_Abort(this->comm(), err);
+    }
+
+    auto dist = math::make_dist(static_cast<osh::GO>(num_molecules), rank_volumes);
+    // only rank 0 generates non-zero values
+    const std::vector<osh::GO>& num_molecules_on_ranks = dist.distribute(this->rng, distribution);
+
+    // send `num_molecules_on_ranks[i]` to rank `i` and store it in
+    // `num_molecules_on_rank`.
+    osh::GO num_molecules_on_rank;
+    err = MPI_Scatter(num_molecules_on_ranks.data(),
+                      1,
+                      MPI_INT64_T,
+                      &num_molecules_on_rank,
+                      1,
+                      MPI_INT64_T,
+                      0,
+                      this->comm());
+    if (err != MPI_SUCCESS) {
+        MPI_Abort(this->comm(), err);
+    }
+
+    setOwnedCompComplexCount(
+        compartment, complex, _convertComplexState(i), num_molecules_on_rank, distribution);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getCompComplexSUSCount(
+    const model::compartment_id& compartment,
+    const model::complex_name& complex,
+    const std::vector<std::vector<steps::model::SubunitStateFilter>>& f,
+    model::complex_substate_id m) const {
+    return allReduce(
+        getOwnedCompComplexSUSCount(compartment, complex, _convertComplexFilters(f), m));
+}
+
+//-----------------------------------------------
+
+/////////////////////
+// Location: Patch //
+/////////////////////
+
+// Species
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getPatchSpecCount(
     const model::patch_id& patch,
     const model::species_name& species) const {
     const auto& boundaries = mesh.getOwnedEntities(patch);
     osh::Write<osh::LO> mols_counts(boundaries.size());
-    const container::species_id spec_id{
-        statedef->getPatchdef(patch).getSpecPatchIdx(statedef->getSpecModelIdx(species))};
+    const container::species_id spec_id{statedef->getPatchdef(patch).getSpecContainerIdx(species)};
     const auto& molecules = data->pools.moleculesOnPatchBoundaries();
 
     std::transform(boundaries.begin(), boundaries.end(), mols_counts.begin(), [&](auto bound) {
@@ -123,8 +1084,8 @@ osh::Real OmegaHSimulation<SSA, SearchMethod>::getPatchSpecCount(
 
 //-----------------------------------------------
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setPatchSpecCount(
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setPatchSpecCount(
     const model::patch_id& patch,
     const model::species_name& species,
     osh::Real num_molecules,
@@ -167,8 +1128,7 @@ void OmegaHSimulation<SSA, SearchMethod>::setPatchSpecCount(
     auto dist = math::make_dist(num_molecules_on_rank, areas);
     mols_on_elements = dist.distribute(this->rng, distribution);
 
-    container::species_id cont_spec_id = statedef->getPatchdef(patch).getSpecPatchIdx(
-        statedef->getSpecModelIdx(species));
+    container::species_id cont_spec_id = statedef->getPatchdef(patch).getSpecContainerIdx(species);
     for (auto k = 0; k < mols_on_elements.size(); ++k) {
         const mesh::triangle_id_t boundary(elems[k]);
         const auto molecules = mols_on_elements[k];
@@ -178,78 +1138,1623 @@ void OmegaHSimulation<SSA, SearchMethod>::setPatchSpecCount(
 
 //-----------------------------------------------
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setPatchSpecCount(
-    const patch_counts_t& counts,
-    const math::DistributionMethod distribution) {
-    for (const auto& count: counts) {
-        this->setPatchSpecCount(count.patch, count.species, count.num_mols, distribution);
-    }
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+bool OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getPatchSpecClamped(
+    const model::patch_id& patch,
+    const model::species_name& spec) const {
+    auto& patchdef = statedef->getPatchdef(patch);
+    const auto spec_id = patchdef.getSpecContainerIdx(spec);
+    return patchdef.getSpecClamped(spec_id);
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setCompSpecCount(
-    const model::compartment_id& compartment,
-    const model::species_name& species,
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setPatchSpecClamped(
+    const model::patch_id& patch,
+    const model::species_name& spec,
+    bool clamped) {
+    auto& patchdef = statedef->getPatchdef(patch);
+    const auto spec_id = patchdef.getSpecContainerIdx(spec);
+    patchdef.setSpecClamped(spec_id, clamped);
+}
+
+//-----------------------------------------------
+
+// Complexes
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getPatchComplexCount(
+    const model::patch_id& patch,
+    const model::complex_name& complex,
+    const std::vector<std::vector<steps::model::SubunitStateFilter>>& f) const {
+    return allReduce(getOwnedPatchComplexCount(patch, complex, _convertComplexFilters(f)));
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setPatchComplexCount(
+    const model::patch_id& patch,
+    const model::complex_name& complex,
+    const std::vector<std::vector<steps::model::SubunitStateFilter>>& i,
     osh::Real num_molecules,
-    const math::DistributionMethod distribution) {
-    setCompSpecCount(compartment, {{species, num_molecules}}, distribution);
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setCompSpecCount(
-    const model::compartment_id& compartment,
-    const std::vector<CompartmentCount>& counts,
-    const math::DistributionMethod distribution) {
-    const auto& [elems, volumes, rank_volume] = mesh.measure(compartment);
-    std::vector<osh::Real> rank_volumes;
+    math::DistributionMethod distribution) {
+    const auto& [elems, areas, rank_area] = mesh.measure(patch);
+    std::vector<osh::Real> rank_areas;
     if (this->comm_rank == 0) {
-        rank_volumes.resize(static_cast<size_t>(this->comm_size));
+        rank_areas.resize(static_cast<size_t>(this->comm_size));
     }
-    int err = MPI_Gather(
-        &rank_volume, 1, MPI_DOUBLE, rank_volumes.data(), 1, MPI_DOUBLE, 0, this->comm());
+    int err =
+        MPI_Gather(&rank_area, 1, MPI_DOUBLE, rank_areas.data(), 1, MPI_DOUBLE, 0, this->comm());
     if (err != MPI_SUCCESS) {
         MPI_Abort(this->comm(), err);
     }
 
-    for (auto mol_idx = 0u; mol_idx < counts.size(); ++mol_idx) {
-        if (counts[mol_idx].num_mols >= static_cast<double>(INT64_MAX)) {
-            std::ostringstream oss;
-            oss << "Unsupported number of molecules: " << std::setprecision(20)
-                << counts[mol_idx].num_mols << " but maximum value is "
-                << std::numeric_limits<osh::GO>::max() << " (max 64 bits integral value)";
-            ArgErrLog(oss.str());
+    auto dist = math::make_dist(static_cast<osh::GO>(num_molecules), rank_areas);
+    // only rank 0 generates non-zero values
+    const std::vector<osh::GO>& num_molecules_on_ranks = dist.distribute(this->rng, distribution);
+
+    // send `num_molecules_on_ranks[i]` to rank `i` and store it in
+    // `num_molecules_on_rank`.
+    osh::GO num_molecules_on_rank;
+    err = MPI_Scatter(num_molecules_on_ranks.data(),
+                      1,
+                      MPI_INT64_T,
+                      &num_molecules_on_rank,
+                      1,
+                      MPI_INT64_T,
+                      0,
+                      this->comm());
+    if (err != MPI_SUCCESS) {
+        MPI_Abort(this->comm(), err);
+    }
+
+    setOwnedPatchComplexCount(
+        patch, complex, _convertComplexState(i), num_molecules_on_rank, distribution);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getPatchComplexSUSCount(
+    const model::patch_id& patch,
+    const model::complex_name& complex,
+    const std::vector<std::vector<steps::model::SubunitStateFilter>>& f,
+    model::complex_substate_id m) const {
+    return allReduce(getOwnedPatchComplexSUSCount(patch, complex, _convertComplexFilters(f), m));
+}
+
+//-----------------------------------------------
+
+// Reactions
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getPatchSReacK(
+    const model::patch_id& patchId,
+    const model::surface_reaction_id& reactionId) const {
+    auto& patchdef = statedef->getPatchdef(patchId);
+    auto reacId = patchdef.getReacIdx(reactionId);
+    auto& reacdef = *patchdef.template reacdefs<SReacdef>().at(reacId.get());
+    return reacdef.getInfo().kCst;
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setPatchSReacK(
+    const model::patch_id& patchId,
+    const model::surface_reaction_id& reactionId,
+    osh::Real kCst) {
+    auto& patchdef = statedef->getPatchdef(patchId);
+    auto reacId = patchdef.getReacIdx(reactionId);
+    auto& reacdef = *patchdef.template reacdefs<SReacdef>().at(reacId.get());
+    // Clear values set per triangle (with setTriSReacK)
+    data->kproc_state.surfaceReactions().clear_Kcst(patchdef.getIdx());
+
+    reacdef.getInfo().kCst = kCst;
+    data->kproc_state.surfaceReactions().updateCcst();
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::I64 OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getPatchSReacExtent(
+    const model::patch_id& patch,
+    const model::surface_reaction_id& reac) const {
+    auto& patchdef = statedef->getPatchdef(patch);
+    auto& reacdef = patchdef.template getReacdef<SReacdef>(reac);
+    return allReduce(reacdef.getExtent());
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::I64 OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getPatchComplexSReacExtent(
+    const model::patch_id& patch,
+    const model::complex_surface_reaction_id& reac) const {
+    auto& patchdef = statedef->getPatchdef(patch);
+    auto& reacdef = patchdef.template getReacdef<ComplexSReacdef>(reac);
+    return allReduce(reacdef.getExtent());
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::I64 OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getPatchVDepSReacExtent(
+    const model::patch_id& patch,
+    const model::vdep_surface_reaction_id& reac) const {
+    auto& patchdef = statedef->getPatchdef(patch);
+    auto& reacdef = patchdef.template getReacdef<VDepSReacdef>(reac);
+    return allReduce(reacdef.getExtent());
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::I64 OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getPatchVDepComplexSReacExtent(
+    const model::patch_id& patch,
+    const model::vdep_complex_surface_reaction_id& reac) const {
+    auto& patchdef = statedef->getPatchdef(patch);
+    auto& reacdef = patchdef.template getReacdef<VDepComplexSReacdef>(reac);
+    return allReduce(reacdef.getExtent());
+}
+
+//-----------------------------------------------
+
+////////////////////////
+// Location: Membrane //
+////////////////////////
+
+#if USE_PETSC
+// E-field values
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+MembraneResistivity OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getMembRes(
+    const model::membrane_id& membrane) const {
+    return {statedef->getResistivity(membrane), statedef->getReversalPotential(membrane)};
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setMembRes(const model::membrane_id& membrane,
+                                                                 osh::Real resistivity,
+                                                                 osh::Real reversal_potential) {
+    statedef->setResistivity(membrane, resistivity);
+    statedef->setReversalPotential(membrane, reversal_potential);
+    for (const auto& patchId: statedef->getMembrane(membrane).getPatchesIds()) {
+        for (const auto tri: mesh.getOwnedEntities(patchId)) {
+            input->conductivity_on_triangles_w[tri.get()] = 1.0 / resistivity;
+            input->reversal_potential_on_triangles_w[tri.get()] = reversal_potential;
         }
-        auto dist = math::make_dist(static_cast<osh::GO>(counts[mol_idx].num_mols), rank_volumes);
-        // only rank 0 generates non-zero values
-        const std::vector<osh::GO>& num_molecules_on_ranks = dist.distribute(this->rng,
-                                                                             distribution);
-
-
-        // send `num_molecules_on_ranks[i]` to rank `i` and store it in
-        // `num_molecules_on_rank`.
-        osh::GO num_molecules_on_rank;
-        err = MPI_Scatter(num_molecules_on_ranks.data(),
-                          1,
-                          MPI_INT64_T,
-                          &num_molecules_on_rank,
-                          1,
-                          MPI_INT64_T,
-                          0,
-                          this->comm());
-        if (err != MPI_SUCCESS) {
-            MPI_Abort(this->comm(), err);
-        }
-
-        setOwnedCompSpecCount(compartment,
-                              counts[mol_idx].species,
-                              num_molecules_on_rank,
-                              distribution);
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setOwnedCompSpecCount(
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setMembVolRes(const model::membrane_id& memb,
+                                                                    osh::Real ro) {
+    auto& membrane = statedef->getMembrane(memb);
+    membrane.setConductivity(1.0 / ro);
+    for (const auto& patch: membrane.getPatchesIds()) {
+        auto compid = statedef->getPatchdef(patch).getInnerCompId();
+        auto& comp = statedef->getCompdef(compid);
+        comp.setConductivity(1.0 / ro);
+    }
+    if (data->efield) {
+        data->efield->resetStiffnessMatrix();
+    } else {
+        throw std::logic_error("E-Field is not in use, cannot set VolRes.");
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setMembCapac(const model::membrane_id& memb,
+                                                                   osh::Real capacitance) {
+    auto& membrane = statedef->getMembrane(memb);
+    membrane.setCapacitance(capacitance);
+    for (const auto& patch: membrane.getPatchesIds()) {
+        for (const auto tri: mesh.getOwnedEntities(patch)) {
+            input->capacitance_on_triangles_w[tri.get()] = capacitance;
+        }
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setMembPotential(
+    const model::membrane_id& memb,
+    osh::Real value) {
+    auto membit = mesh.membranes().find(memb);
+    if (membit == mesh.membranes().end()) {
+        throw std::invalid_argument("Invalid membrane " + memb);
+    }
+    const auto& allPatches = mesh.getAllPatches();
+    for (const auto& patchid: membit->second->patches()) {
+        auto pmeshid = mesh.getPatchID(patchid);
+        const auto* patch = allPatches[pmeshid];
+        const auto* icomp = dynamic_cast<const DistComp*>(&patch->getIComp());
+        if (icomp == nullptr) {
+            continue;
+        }
+        for (const auto tet: icomp->getLocalTetIndices(false)) {
+            const auto verts = osh::gather_verts<4>(mesh.ask_elem_verts(), tet.get());
+            for (const auto& vert: verts) {
+                input->potential_on_vertices_w[vert] = value;
+            }
+        }
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setMembIClamp(
+    const model::membrane_id& membrane,
+    osh::Real current) {
+    statedef->setStimulus(membrane, current);
+}
+
+//-----------------------------------------------
+
+#endif  // USE_PETSC
+
+//////////////////////////////////
+// Location: Diffusion boundary //
+//////////////////////////////////
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+bool OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getDiffBoundarySpecDiffusionActive(
+    const mesh::diffusion_boundary_name& diffusion_boundary_name,
+    const model::species_name& spec_id) const {
+    model::species_id mdl_spec_id = statedef->getSpecModelIdx(spec_id);
+    DistMesh::DiffusionBoundary& db = mesh.getDiffusionBoundary(diffusion_boundary_name);
+    Compdef& comp1 = statedef->getCompdef(db.mdl_comp1);
+    Compdef& comp2 = statedef->getCompdef(db.mdl_comp2);
+    container::species_id sp1 = comp1.getSpecContainerIdx(mdl_spec_id);
+    container::species_id sp2 = comp2.getSpecContainerIdx(mdl_spec_id);
+    return db.comp1_spec2dcst[sp1.get()] != 0.0 && db.comp2_spec2dcst[sp2.get()] != 0.0;
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setDiffBoundarySpecDiffusionActive(
+    const mesh::diffusion_boundary_name& diffusion_boundary_name,
+    const model::species_name& spec_id,
+    bool set_active) {
+    model::species_id mdl_spec_id = statedef->getSpecModelIdx(spec_id);
+    DistMesh::DiffusionBoundary& db = mesh.getDiffusionBoundary(diffusion_boundary_name);
+    Compdef& comp1 = statedef->getCompdef(db.mdl_comp1);
+    Compdef& comp2 = statedef->getCompdef(db.mdl_comp2);
+    container::species_id sp1 = comp1.getSpecContainerIdx(mdl_spec_id);
+    container::species_id sp2 = comp2.getSpecContainerIdx(mdl_spec_id);
+    db.comp1_spec2dcst[sp1.get()] = set_active ? -1.0 : 0.0;
+    db.comp2_spec2dcst[sp2.get()] = set_active ? -1.0 : 0.0;
+    data->initialize_diffusions();
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setDiffBoundarySpecDcst(
+    const mesh::diffusion_boundary_name& diffb,
+    const model::species_name& spec,
+    osh::Real dcst) {
+    model::species_id mdl_spec_id = statedef->getSpecModelIdx(spec);
+    DistMesh::DiffusionBoundary& db = mesh.getDiffusionBoundary(diffb);
+    Compdef& comp1 = statedef->getCompdef(db.mdl_comp1);
+    Compdef& comp2 = statedef->getCompdef(db.mdl_comp2);
+    container::species_id sp1 = comp1.getSpecContainerIdx(mdl_spec_id);
+    container::species_id sp2 = comp2.getSpecContainerIdx(mdl_spec_id);
+    db.comp1_spec2dcst[sp1.get()] = dcst;
+    db.comp2_spec2dcst[sp2.get()] = dcst;
+    data->initialize_diffusions();
+}
+
+//-----------------------------------------------
+
+///////////////////////////
+// Location: Tetrahedron //
+///////////////////////////
+
+// Species
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTetSpecCountsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::species_name& s,
+    double* counts,
+    size_t output_size,
+    bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    getBatchElemValsNP(indices, input_size, s, counts, false, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setBatchTetSpecCountsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::species_name& s,
+    double* counts,
+    size_t output_size,
+    bool local) {
+    assert(input_size == output_size);
+    (void) output_size;
+    setBatchElemValsNP(indices, input_size, s, counts, false, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTetSpecConcsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::species_name& s,
+    double* counts,
+    size_t output_size,
+    bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    getBatchElemValsNP(indices, input_size, s, counts, true, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setBatchTetSpecConcsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::species_name& s,
+    double* concs,
+    size_t output_size,
+    bool local) {
+    assert(input_size == output_size);
+    (void) output_size;
+    setBatchElemValsNP(indices, input_size, s, concs, true, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+bool OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTetSpecClamped(
+    osh::GO tet,
+    const model::species_name& s,
+    bool local) const {
+    bool clamped = false;
+    auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(tet, local, true);
+    if (localInd.valid()) {
+        const auto compartment_id = mesh.getCompartment(localInd);
+        const auto spec_id = statedef->getCompSpecContainerIdx(compartment_id, s);
+        clamped = data->pools.get_clamped(localInd, spec_id);
+    }
+    return allReduce(clamped, MPI_LOR);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTetSpecClamped(
+    osh::GO tet,
+    const model::species_name& s,
+    bool clamped,
+    bool local) {
+    auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(tet, local, true);
+    if (localInd.valid()) {
+        const auto compartment_id = mesh.getCompartment(localInd);
+        const auto spec_id = statedef->getCompSpecContainerIdx(compartment_id, s);
+        data->pools.set_clamped(localInd, spec_id, clamped);
+    }
+}
+
+//-----------------------------------------------
+
+// Reactions
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTetReacK(
+    osh::GO tet,
+    const model::reaction_id reac,
+    bool local) const {
+    return getTetReacK(data->kproc_state.reactions(), tet, reac, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTetReacK(osh::GO tet,
+                                                                  const model::reaction_id reac,
+                                                                  osh::Real kcst,
+                                                                  bool local) {
+    setTetReacK(data->kproc_state.reactions(), tet, reac, kcst, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTetComplexReacK(
+    osh::GO tet,
+    const model::complex_reaction_id reac,
+    bool local) const {
+    return getTetReacK(data->kproc_state.complexReactions(), tet, reac, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTetComplexReacK(
+    osh::GO tet,
+    const model::complex_reaction_id reac,
+    osh::Real kcst,
+    bool local) {
+    setTetReacK(data->kproc_state.complexReactions(), tet, reac, kcst, local);
+}
+
+//-----------------------------------------------
+
+// Diffusions
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTetDiffD(
+    osh::GO tet,
+    const model::diffusion_id diff,
+    osh::GO direc_tet,
+    bool local) const {
+    auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(tet, local, true);
+    osh::Real dcst = 0.0;
+    if (localInd.valid()) {
+        const auto compartment_id = mesh.getCompartment(localInd);
+        const auto& compartment = statedef->getCompdef(compartment_id);
+        const auto& diffusion = compartment.getDiffdef(diff);
+        auto direc_localInd = getLocalInd<mesh::tetrahedron_local_id_t>(direc_tet, local, true);
+        if (direc_localInd.valid()) {
+            int face_idx = -1;
+            for (auto& d: mesh.tet_neighbors_int_data()[localInd.get()]) {
+                if (d[0] == direc_localInd.get()) {
+                    face_idx = d[1];
+                    break;
+                }
+            }
+            if (face_idx == -1) {
+                throw std::invalid_argument("Direction tetrahedron " + std::to_string(direc_tet) +
+                                            " is not a neighbor of " + std::to_string(tet));
+            }
+            dcst =
+                data->diffusions.get_tet_dcst(localInd, diffusion.getDiffContainerIdx(), face_idx);
+        } else {
+            dcst = data->diffusions.get_tet_dcst(localInd, diffusion.getDiffContainerIdx(), -1);
+        }
+    }
+    return allReduce(dcst);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTetDiffD(osh::GO tet,
+                                                                  const model::diffusion_id diff,
+                                                                  double dcst,
+                                                                  osh::GO direc_tet,
+                                                                  bool local) {
+    auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(tet, local, true);
+    if (localInd.valid()) {
+        const auto compartment_id = mesh.getCompartment(localInd);
+        const auto& compartment = statedef->getCompdef(compartment_id);
+        const auto& diffusion = compartment.getDiffdef(diff);
+        auto direc_localInd = getLocalInd<mesh::tetrahedron_local_id_t>(direc_tet, local, true);
+        if (direc_localInd.valid()) {
+            bool found = false;
+            for (auto& d: mesh.tet_neighbors_int_data()[localInd.get()]) {
+                if (d[0] == direc_localInd.get()) {
+                    data->diffusions.set_tet_dcst(localInd,
+                                                  diffusion.getDiffContainerIdx(),
+                                                  d[1],
+                                                  dcst);
+                    found = true;
+                    break;
+                }
+            }
+            if (not found) {
+                throw std::invalid_argument("Direction tetrahedron " + std::to_string(direc_tet) +
+                                            " is not a neighbor of " + std::to_string(tet));
+            }
+        } else {
+            data->diffusions.set_tet_dcst(localInd, diffusion.getDiffContainerIdx(), -1, dcst);
+        }
+    }
+    outdated_diffusions = true;
+}
+
+//-----------------------------------------------
+
+#if USE_PETSC
+// E-field value
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTetVsNP(const osh::GO* indices,
+                                                                      size_t input_size,
+                                                                      osh::Real* voltages,
+                                                                      size_t output_size,
+                                                                      bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    std::fill(voltages, voltages + input_size, 0);
+    for (size_t i = 0; i < input_size; ++i) {
+        auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(indices[i], local, true);
+        if (localInd.valid()) {
+            const auto tet2verts = osh::gather_verts<4>(mesh.ask_elem_verts(), localInd.get());
+            for (auto vert: tet2verts) {
+                voltages[i] += input->potential_on_vertices_w[vert] / 4.0;
+            }
+        }
+    }
+
+    if (not local) {
+        auto err =
+            MPI_Allreduce(MPI_IN_PLACE, voltages, input_size, MPI_DOUBLE, MPI_SUM, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setBatchTetVsNP(const osh::GO* indices,
+                                                                      size_t input_size,
+                                                                      osh::Real* voltages,
+                                                                      size_t output_size,
+                                                                      bool local) {
+    assert(input_size == output_size);
+    (void) output_size;
+    for (size_t i = 0; i < input_size; ++i) {
+        auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(indices[i], local, true);
+        if (localInd.valid()) {
+            const auto tet2verts = osh::gather_verts<4>(mesh.ask_elem_verts(), localInd.get());
+            for (auto vert: tet2verts) {
+                input->potential_on_vertices_w[vert] = voltages[i];
+            }
+        }
+    }
+    const auto& syncedv = mesh.sync_array(osh::VERT, osh::Reals(input->potential_on_vertices_w), 1);
+    std::copy(syncedv.begin(), syncedv.end(), input->potential_on_vertices_w.begin());
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+bool OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTetVClamped(osh::GO vertex,
+                                                                     bool local) const {
+    auto tet = getLocalInd<mesh::tetrahedron_local_id_t>(vertex, local, true);
+    bool clamped = false;
+    if (tet.valid()) {
+        if (data->efield) {
+            const auto& tets2verts = mesh.ask_elem_verts();
+            const auto verts = osh::gather_verts<4>(tets2verts, tet.get());
+            clamped = true;
+            for (auto v: verts) {
+                clamped &= data->efield->getVertVClamped(mesh::vertex_local_id_t(v));
+            }
+        } else {
+            throw std::logic_error("Efield is not enabled, cannot clamp vertex potential.");
+        }
+    }
+    return allReduce(clamped, MPI_LOR);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTetVClamped(osh::GO vertex,
+                                                                     bool clamped,
+                                                                     bool local) {
+    auto tet = getLocalInd<mesh::tetrahedron_local_id_t>(vertex, local, true);
+    if (tet.valid()) {
+        if (data->efield) {
+            const auto& tets2verts = mesh.ask_elem_verts();
+            const auto verts = osh::gather_verts<4>(tets2verts, tet.get());
+            for (auto v: verts) {
+                data->efield->setVertVClamped(mesh::vertex_local_id_t(v), clamped);
+            }
+        } else {
+            throw std::logic_error("Efield is not enabled, cannot clamp vertex potential.");
+        }
+    }
+}
+
+//-----------------------------------------------
+
+#endif  // USE_PETSC
+
+////////////////////////
+// Location: Triangle //
+////////////////////////
+
+// Species
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriSpecCountsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::species_name& s,
+    double* counts,
+    size_t output_size,
+    bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    getBatchBoundSpecCountNP(indices, input_size, s, counts, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setBatchTriSpecCountsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::species_name& s,
+    double* counts,
+    size_t output_size,
+    bool local) {
+    assert(input_size == output_size);
+    (void) output_size;
+    setBatchBoundSpecCountNP(indices, input_size, s, counts, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+bool OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTriSpecClamped(
+    osh::GO tri,
+    const model::species_name& s,
+    bool local) const {
+    bool clamped = false;
+    auto localInd = getLocalInd<mesh::triangle_local_id_t>(tri, local, true);
+    if (localInd.valid()) {
+        const auto patch_id = model::patch_id(mesh.getTriPatch(localInd)->getID());
+        auto spec_id = statedef->getPatchdef(patch_id).getSpecContainerIdx(s);
+        clamped = data->pools.get_clamped(localInd, spec_id);
+    }
+    return allReduce(clamped, MPI_LOR);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriSpecClamped(
+    osh::GO tri,
+    const model::species_name& s,
+    bool clamped,
+    bool local) {
+    auto localInd = getLocalInd<mesh::triangle_local_id_t>(tri, local, true);
+    if (localInd.valid()) {
+        const auto patch_id = model::patch_id(mesh.getTriPatch(localInd)->getID());
+        auto spec_id = statedef->getPatchdef(patch_id).getSpecContainerIdx(s);
+        data->pools.set_clamped(localInd, spec_id, clamped);
+    }
+}
+
+//-----------------------------------------------
+
+// Reactions
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTriSReacK(
+    osh::GO triangle,
+    const model::surface_reaction_id& reactionId,
+    bool local) const {
+    return getTriSReacK(data->kproc_state.surfaceReactions(), triangle, reactionId, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriSReacK(
+    osh::GO triangle,
+    const model::surface_reaction_id& reactionId,
+    osh::Real kCst,
+    bool local) {
+    setTriSReacK(data->kproc_state.surfaceReactions(), triangle, reactionId, kCst, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTriComplexSReacK(
+    osh::GO triangle,
+    const model::complex_surface_reaction_id& reactionId,
+    bool local) const {
+    return getTriSReacK(data->kproc_state.complexSurfaceReactions(), triangle, reactionId, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriComplexSReacK(
+    osh::GO triangle,
+    const model::complex_surface_reaction_id& reactionId,
+    osh::Real kCst,
+    bool local) {
+    setTriSReacK(data->kproc_state.complexSurfaceReactions(), triangle, reactionId, kCst, local);
+}
+
+//-----------------------------------------------
+
+#if USE_PETSC
+// E-field value
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriVsNP(const osh::GO* indices,
+                                                                      size_t input_size,
+                                                                      osh::Real* voltages,
+                                                                      size_t output_size,
+                                                                      bool local) const {
+    (void) output_size;
+    assert(input_size == output_size);
+    std::fill(voltages, voltages + input_size, 0);
+    for (size_t i = 0; i < input_size; ++i) {
+        auto localInd = getLocalInd<mesh::triangle_local_id_t>(indices[i], local, true);
+        if (localInd.valid()) {
+            const auto tri2verts = osh::gather_verts<3>(mesh.ask_verts_of(osh::FACE),
+                                                        localInd.get());
+            for (auto vert: tri2verts) {
+                voltages[i] += input->potential_on_vertices_w[vert] / 3.0;
+            }
+        }
+    }
+
+    if (not local) {
+        auto err =
+            MPI_Allreduce(MPI_IN_PLACE, voltages, input_size, MPI_DOUBLE, MPI_SUM, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setBatchTriVsNP(const osh::GO* indices,
+                                                                      size_t input_size,
+                                                                      osh::Real* voltages,
+                                                                      size_t output_size,
+                                                                      bool local) {
+    assert(input_size == output_size);
+    (void) output_size;
+    for (size_t i = 0; i < input_size; ++i) {
+        auto localInd = getLocalInd<mesh::triangle_local_id_t>(indices[i], local, true);
+        if (localInd.valid()) {
+            const auto tri2verts = osh::gather_verts<3>(mesh.ask_verts_of(osh::FACE),
+                                                        localInd.get());
+            for (auto vert: tri2verts) {
+                input->potential_on_vertices_w[vert] = voltages[i];
+            }
+        }
+    }
+    const auto& syncedv = mesh.sync_array(osh::VERT, osh::Reals(input->potential_on_vertices_w), 1);
+    std::copy(syncedv.begin(), syncedv.end(), input->potential_on_vertices_w.begin());
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriSReacIsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::surface_reaction_id reac,
+    osh::Real* currents,
+    size_t output_size,
+    bool local) const {
+    (void) output_size;
+    assert(input_size == output_size);
+    getBatchTriSReacIsNP(
+        data->kproc_state.surfaceReactions(), indices, input_size, reac, currents, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriComplexSReacIsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::complex_surface_reaction_id reac,
+    osh::Real* currents,
+    size_t output_size,
+    bool local) const {
+    (void) output_size;
+    assert(input_size == output_size);
+    getBatchTriSReacIsNP(
+        data->kproc_state.complexSurfaceReactions(), indices, input_size, reac, currents, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriVDepSReacIsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::vdep_surface_reaction_id reac,
+    osh::Real* currents,
+    size_t output_size,
+    bool local) const {
+    (void) output_size;
+    assert(input_size == output_size);
+    getBatchTriSReacIsNP(
+        data->kproc_state.vDepSurfaceReactions(), indices, input_size, reac, currents, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriVDepComplexSReacIsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::vdep_complex_surface_reaction_id reac,
+    osh::Real* currents,
+    size_t output_size,
+    bool local) const {
+    (void) output_size;
+    assert(input_size == output_size);
+    getBatchTriSReacIsNP(data->kproc_state.vDepComplexSurfaceReactions(),
+                         indices,
+                         input_size,
+                         reac,
+                         currents,
+                         local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriOhmicIsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::ohmic_current_id curr,
+    osh::Real* currents,
+    size_t output_size,
+    bool local) const {
+    (void) output_size;
+    assert(input_size == output_size);
+    getBatchTriOhmicIsNP<OhmicCurrdef>(indices, input_size, curr, currents, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriComplexOhmicIsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::complex_ohmic_current_id curr,
+    osh::Real* currents,
+    size_t output_size,
+    bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    getBatchTriOhmicIsNP<ComplexOhmicCurrdef>(indices, input_size, curr, currents, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriGHKIsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::ghk_current_id curr,
+    osh::Real* currents,
+    size_t output_size,
+    bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    getBatchTriGHKIsNP(
+        data->kproc_state.ghkSurfaceReactions(), indices, input_size, curr, currents, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriComplexGHKIsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::complex_ghk_current_id curr,
+    osh::Real* currents,
+    size_t output_size,
+    bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    getBatchTriGHKIsNP(
+        data->kproc_state.complexGhkSurfaceReactions(), indices, input_size, curr, currents, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriIsNP(const osh::GO* indices,
+                                                                      size_t input_size,
+                                                                      osh::Real* currents,
+                                                                      size_t /*output_size*/,
+                                                                      bool local) const {
+    std::fill(currents, currents + input_size, 0);
+    auto addSReacCurrents = [&](const auto& surfReacs) {
+        for (size_t i = 0; i < input_size; ++i) {
+            auto localInd = getLocalInd<mesh::triangle_local_id_t>(indices[i], local, true);
+            if (localInd.valid()) {
+                auto& info = mesh.getTri(localInd);
+                auto patch = info.patchPtr;
+                if (patch != nullptr and info.cont_id.valid()) {
+                    auto& patchdef = statedef->getPatchdef(model::patch_id(patch->getID()));
+                    currents[i] += surfReacs.getCurrent(patchdef.getIdx(), info.cont_id);
+                }
+            }
+        }
+    };
+    auto addOhmicCurrents = [&](const auto& getCurrs) {
+        for (size_t i = 0; i < input_size; ++i) {
+            auto localInd = getLocalInd<mesh::triangle_local_id_t>(indices[i], local, true);
+            if (localInd.valid()) {
+                auto* patch = mesh.getTriPatch(localInd);
+                if (patch != nullptr) {
+                    container::patch_id patch_id(patch->getMeshID().get());
+                    const auto& patchdef = statedef->getPatchdef(patch_id);
+                    for (const auto& currPtr: getCurrs(patchdef)) {
+                        const auto& face_bf2verts =
+                            osh::gather_verts<3>(mesh.ask_verts_of(osh::FACE), localInd.get());
+                        for (const auto& vert_id: face_bf2verts) {
+                            currents[i] += currPtr->getTriCurrentOnVertex(
+                                input->potential_on_vertices_w[vert_id],
+                                localInd,
+                                input->pools,
+                                mesh,
+                                state_time);
+                        }
+                    }
+                }
+            }
+        }
+    };
+    addSReacCurrents(data->kproc_state.surfaceReactions());
+    addSReacCurrents(data->kproc_state.vDepSurfaceReactions());
+    addSReacCurrents(data->kproc_state.complexSurfaceReactions());
+    addSReacCurrents(data->kproc_state.vDepComplexSurfaceReactions());
+    addSReacCurrents(data->kproc_state.ghkSurfaceReactions());
+    addSReacCurrents(data->kproc_state.complexGhkSurfaceReactions());
+    addOhmicCurrents(
+        [](const Patchdef& pd) -> const auto& { return pd.template currents<OhmicCurrdef>(); });
+    addOhmicCurrents([](const Patchdef& pd) -> const auto& {
+        return pd.template currents<ComplexOhmicCurrdef>();
+    });
+
+    if (not local) {
+        auto err =
+            MPI_Allreduce(MPI_IN_PLACE, currents, input_size, MPI_DOUBLE, MPI_SUM, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriOhmicErevsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::ohmic_current_id& ohmic_current,
+    double* rv,
+    size_t output_size,
+    bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    getBatchTriOhmicErevsNP<OhmicCurrdef>({indices, input_size},
+                                          ohmic_current,
+                                          {rv, output_size},
+                                          local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriComplexOhmicErevsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::complex_ohmic_current_id& ohmic_current,
+    double* rv,
+    size_t output_size,
+    bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    getBatchTriOhmicErevsNP<ComplexOhmicCurrdef>({indices, input_size},
+                                                 ohmic_current,
+                                                 {rv, output_size},
+                                                 local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriOhmicErev(
+    osh::GO triangle,
+    const model::ohmic_current_id& ohmic_current,
+    double reversal_potential,
+    bool local) {
+    setTriOhmicErev<OhmicCurrdef>(triangle, ohmic_current, reversal_potential, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriComplexOhmicErev(
+    osh::GO triangle,
+    const model::complex_ohmic_current_id& ohmic_current,
+    double reversal_potential,
+    bool local) {
+    setTriOhmicErev<ComplexOhmicCurrdef>(triangle, ohmic_current, reversal_potential, local);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+bool OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTriVClamped(osh::GO vertex,
+                                                                     bool local) const {
+    auto tri = getLocalInd<mesh::triangle_local_id_t>(vertex, local, true);
+    bool clamped = false;
+    if (tri.valid()) {
+        if (data->efield) {
+            clamped = true;
+            const auto& tris2verts = mesh.ask_verts_of(Omega_h::FACE);
+            const auto verts = osh::gather_verts<3>(tris2verts, tri.get());
+            for (auto v: verts) {
+                clamped &= data->efield->getVertVClamped(mesh::vertex_local_id_t(v));
+            }
+        } else {
+            throw std::logic_error("Efield is not enabled, cannot clamp vertex potential.");
+        }
+    }
+    return allReduce(clamped, MPI_LOR);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriVClamped(osh::GO vertex,
+                                                                     bool clamped,
+                                                                     bool local) {
+    auto tri = getLocalInd<mesh::triangle_local_id_t>(vertex, local, true);
+    if (tri.valid()) {
+        if (data->efield) {
+            const auto& tris2verts = mesh.ask_verts_of(Omega_h::FACE);
+            const auto verts = osh::gather_verts<3>(tris2verts, tri.get());
+            for (auto v: verts) {
+                data->efield->setVertVClamped(mesh::vertex_local_id_t(v), clamped);
+            }
+        } else {
+            throw std::logic_error("Efield is not enabled, cannot clamp vertex potential.");
+        }
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTriIClamp(osh::GO tri,
+                                                                        bool local) const {
+    osh::Real local_val(0.0);
+    auto localInd = getLocalInd<mesh::triangle_local_id_t>(tri, local, true);
+    if (localInd.valid()) {
+        local_val = input->current_on_triangles_w[localInd.get()];
+    }
+    if (local) {
+        return local_val;
+    } else {
+        return allReduce(local_val);
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriIClamp(osh::GO tri,
+                                                                   osh::Real current,
+                                                                   bool local) {
+    auto localInd = getLocalInd<mesh::triangle_local_id_t>(tri, local, false);
+    if (localInd.valid()) {
+        auto& info = mesh.getTri(localInd);
+        auto patch = info.patchPtr;
+        if (patch == nullptr) {
+            throw std::invalid_argument("Triangle " + std::to_string(localInd) +
+                                        " is not part of a patch, cannot set IClamp on it.");
+        }
+        input->current_on_triangles_w[localInd.get()] = current;
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+MembraneResistivity OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTriRes(osh::GO tri,
+                                                                               bool local) const {
+    osh::Real local_res(0.0);
+    osh::Real local_erev(0.0);
+
+    auto localInd = getLocalInd<mesh::triangle_local_id_t>(tri, local, true);
+    if (localInd.valid()) {
+        local_res = 1.0 / input->conductivity_on_triangles_w[localInd.get()];
+        local_erev = input->reversal_potential_on_triangles_w[localInd.get()];
+    }
+    if (local) {
+        return {local_res, local_erev};
+    } else {
+        osh::Real res(0.0);
+        osh::Real erev(0.0);
+        auto err = MPI_Allreduce(&local_res, &res, 1, MPI_DOUBLE, MPI_SUM, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+        err = MPI_Allreduce(&local_erev, &erev, 1, MPI_DOUBLE, MPI_SUM, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+        return {res, erev};
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriRes(const osh::GO tri,
+                                                                osh::Real res,
+                                                                osh::Real erev,
+                                                                bool local) {
+    auto localInd = getLocalInd<mesh::triangle_local_id_t>(tri, local, false);
+    if (localInd.valid()) {
+        input->conductivity_on_triangles_w[localInd.get()] = 1.0 / res;
+        input->reversal_potential_on_triangles_w[localInd.get()] = erev;
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTriCapac(osh::GO tri,
+                                                                       bool local) const {
+    osh::Real local_val(0.0);
+
+    auto localInd = getLocalInd<mesh::triangle_local_id_t>(tri, local, true);
+    if (localInd.valid()) {
+        local_val = input->capacitance_on_triangles_w[localInd.get()];
+    }
+    if (local) {
+        return local_val;
+    } else {
+        osh::Real res(0.0);
+        auto err = MPI_Allreduce(&local_val, &res, 1, MPI_DOUBLE, MPI_SUM, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+        return res;
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriCapac(const osh::GO tri,
+                                                                  osh::Real c,
+                                                                  bool local) {
+    auto localInd = getLocalInd<mesh::triangle_local_id_t>(tri, local, false);
+    if (localInd.valid()) {
+        input->capacitance_on_triangles_w[localInd.get()] = c;
+    }
+}
+
+//-----------------------------------------------
+
+#endif  // USE_PETSC
+
+
+//////////////////////
+// Location: Vertex //
+//////////////////////
+
+#if USE_PETSC
+// E-field value
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchVertVsNP(const osh::GO* indices,
+                                                                       size_t input_size,
+                                                                       osh::Real* voltages,
+                                                                       size_t output_size,
+                                                                       bool local) const {
+    assert(input_size == output_size);
+    (void) output_size;
+    if (not local) {
+        std::fill(voltages, voltages + input_size, 0);
+    }
+    for (size_t i = 0; i < input_size; ++i) {
+        auto localInd = getLocalInd<mesh::vertex_local_id_t>(indices[i], local, true);
+        if (localInd.valid()) {
+            voltages[i] = input->potential_on_vertices_w[localInd.get()];
+        }
+    }
+
+    if (not local) {
+        auto err =
+            MPI_Allreduce(MPI_IN_PLACE, voltages, input_size, MPI_DOUBLE, MPI_SUM, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setBatchVertVsNP(const osh::GO* indices,
+                                                                       size_t input_size,
+                                                                       osh::Real* voltages,
+                                                                       size_t output_size,
+                                                                       bool local) {
+    assert(input_size == output_size);
+    (void) output_size;
+    for (size_t i = 0; i < input_size; ++i) {
+        auto localInd = getLocalInd<mesh::vertex_local_id_t>(indices[i], local, true);
+        if (localInd.valid()) {
+            input->potential_on_vertices_w[localInd.get()] = voltages[i];
+        }
+    }
+    const auto& syncedv = mesh.sync_array(osh::VERT, osh::Reals(input->potential_on_vertices_w), 1);
+    std::copy(syncedv.begin(), syncedv.end(), input->potential_on_vertices_w.begin());
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+bool OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getVertVClamped(osh::GO vertex,
+                                                                      bool local) const {
+    auto vert = getLocalInd<mesh::vertex_local_id_t>(vertex, local);
+    bool clamped = false;
+    if (vert.valid()) {
+        if (data->efield) {
+            clamped = data->efield->getVertVClamped(vert);
+        } else {
+            throw std::logic_error("Efield is not enabled, cannot clamp vertex potential.");
+        }
+    }
+    return allReduce(clamped, MPI_LOR);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setVertVClamped(osh::GO vertex,
+                                                                      bool clamped,
+                                                                      bool local) {
+    auto vert = getLocalInd<mesh::vertex_local_id_t>(vertex, local);
+    if (vert.valid()) {
+        if (data->efield) {
+            data->efield->setVertVClamped(vert, clamped);
+        } else {
+            throw std::logic_error("Efield is not enabled, cannot clamp vertex potential.");
+        }
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getVertIClamp(const osh::GO vertex,
+                                                                         bool local) const {
+    osh::Real local_val(0.0);
+
+    auto localInd = getLocalInd<mesh::vertex_local_id_t>(vertex, local, true);
+    if (localInd.valid()) {
+        local_val = input->current_on_vertices_w[localInd.get()];
+    }
+    if (local) {
+        return local_val;
+    } else {
+        osh::Real res(0.0);
+        auto err = MPI_Allreduce(&local_val, &res, 1, MPI_DOUBLE, MPI_SUM, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+        return res;
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setVertIClamp(const osh::GO vertex,
+                                                                    const osh::Real current,
+                                                                    bool local) {
+    auto localInd = getLocalInd<mesh::vertex_local_id_t>(vertex, local, false);
+    if (localInd.valid()) {
+        input->current_on_vertices_w[localInd.get()] = current;
+    }
+}
+
+//-----------------------------------------------
+
+#endif  // USE_PETSC
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Internal methods
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////
+// General methods //
+/////////////////////
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::compute_num_species_per_elements(
+    DistMesh& t_mesh,
+    const Statedef& statedef,
+    osh::LOs& num_species_per_owned_elems,
+    osh::LOs& num_species_per_elems,
+    std::optional<osh::LOs>& num_species_per_bounds) {
+    const auto& owned_elems_mask = t_mesh.owned_elems_mask();
+
+    {
+        osh::Write<osh::LO> num_species_per_owned_elems_w(owned_elems_mask.size(), 0);
+        osh::Write<osh::LO> num_species_per_elems_w(owned_elems_mask.size(), 0);
+        for (const auto& compartment: statedef.compdefs()) {
+            const auto num_species = compartment->getNSpecs();
+            for (auto elem: t_mesh.getEntities(compartment->getID())) {
+                if (owned_elems_mask[elem.get()] != 0) {
+                    num_species_per_owned_elems_w[elem.get()] = num_species;
+                }
+                num_species_per_elems_w[elem.get()] = num_species;
+            }
+        }
+        num_species_per_owned_elems = num_species_per_owned_elems_w;
+        num_species_per_elems = num_species_per_elems_w;
+    }
+
+    if (!statedef.patchdefs().container().empty()) {
+        // initialize a vector to record the number of species owned by a patch
+        // element and owned by the process
+        osh::Write<osh::LO> num_species_per_bounds_w(t_mesh.owned_bounds_mask().size(), 0);
+        for (const auto& patch: statedef.patchdefs()) {
+            for (const auto boundary: t_mesh.getOwnedEntities(patch->getID())) {
+                num_species_per_bounds_w[boundary.get()] = patch->getNSpecs();
+            }
+        }
+        num_species_per_bounds = num_species_per_bounds_w;
+    } else {
+        num_species_per_bounds = std::nullopt;
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::init(std::unique_ptr<Statedef>&& t_statedef) {
+    this->statedef.swap(t_statedef);
+    assert(statedef != nullptr);
+    this->mesh.init();
+
+    // Initialize diffusion boundaries
+    for (auto& db: mesh.diffusionBoundaries()) {
+        Compdef& comp1 = statedef->getCompdef(db.mdl_comp1);
+        Compdef& comp2 = statedef->getCompdef(db.mdl_comp2);
+        db.comp1_spec2dcst.resize(comp1.getNSpecs(), 0.0);
+        db.comp2_spec2dcst.resize(comp2.getNSpecs(), 0.0);
+        db.conv_12.resize(comp1.getNSpecs());
+        for (auto sp1: container::species_id::range(comp1.getNSpecs())) {
+            db.conv_12[sp1.get()] = comp2.getSpecContainerIdx(comp1.getSpecModelIdx(sp1));
+        }
+        db.conv_21.resize(comp2.getNSpecs());
+        for (auto sp2: container::species_id::range(comp2.getNSpecs())) {
+            db.conv_21[sp2.get()] = comp1.getSpecContainerIdx(comp2.getSpecModelIdx(sp2));
+        }
+    }
+
+    osh::LOs num_species_per_owned_elems;
+    osh::LOs num_species_per_elems;
+    std::optional<osh::LOs> num_species_per_bounds;
+    compute_num_species_per_elements(mesh,
+                                     *statedef,
+                                     num_species_per_owned_elems,
+                                     num_species_per_elems,
+                                     num_species_per_bounds);
+    this->input = std::make_unique<SimulationInput>(num_species_per_owned_elems,
+                                                    num_species_per_bounds,
+                                                    num_species_per_elems,
+                                                    statedef->substates_per_complexes(),
+                                                    0 /*Unused in context*/,
+                                                    this->rng,
+                                                    mesh.owned_verts_mask().size(),
+                                                    mesh,
+                                                    *statedef);
+
+    // Initialize triangle capacitance on membranes
+    for (auto& memb: statedef->membranes()) {
+        auto capac = memb->capacitance();
+        for (const auto& patch: memb->getPatchesIds()) {
+            for (const auto tri: mesh.getOwnedEntities(patch)) {
+                input->capacitance_on_triangles_w[tri.get()] = capac;
+            }
+        }
+    }
+
+    data = std::make_unique<SimulationData<SSA, SearchMethod, DiffMethod>>(
+        mesh, *this->statedef, *input, this->rng, indepKProcs);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::evolve_rd(const osh::Real rd_dt) {
+    util::TimeTracker t;
+    t.start();
+
+    data->pools.reset_occupancy_rd(state_time);
+    data->ssaOp.run(rd_dt, state_time);
+    t.stop();
+    this->reactions_timer += t.diff();
+
+    if (data->diffOp.has_active_diffusions()) {
+        t.start();
+        data->diffOp(rd_dt, state_time);
+        t.stop();
+        this->diffusions_timer += t.diff();
+    }
+    state_time += rd_dt;
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::run_rd(const osh::Real end_time) {
+    data->ssaOp.resetAndUpdateAll(state_time, end_time);
+
+    osh::Real rd_dt;
+    if constexpr (DiffMethod == DiffusionMethod::ConstantDiffDt) {
+        rd_dt = data->diffOp.getDt();
+        // number of standard steps (this can be negative)
+        const int n_steps_std = std::floor((end_time - state_time) / rd_dt) - 1;
+        // std steps loop -1. n_steps_std can be negative so int is the correct type
+        for (int i_rd = 0; i_rd < n_steps_std; ++i_rd) {
+            evolve_rd(std::min(rd_dt, end_time - state_time));
+        }
+
+    } else if constexpr (DiffMethod == DiffusionMethod::TauLeapingDiffDt) {
+        rd_dt = allReduce(data->diffOp.getDt(), MPI_MIN);
+        bool recompute = rd_dt > data->diffOp.getDefaultDt();
+        unsigned int skip = 0;
+        while (state_time + rd_dt < end_time) {
+            evolve_rd(rd_dt);
+            if (recompute) {
+                rd_dt = allReduce(data->diffOp.getDt(), MPI_MIN);
+                recompute = rd_dt > data->diffOp.getDefaultDt();
+            } else {
+                // If the rd_dt is not bigger than the default value, we run several steps of normal
+                // diffusion
+                if (++skip > data->diffOp.getMaxDtSkips()) {
+                    skip = 0;
+                    recompute = true;
+                }
+            }
+        }
+
+    } else {
+        static_assert(steps::util::always_false_v<decltype(DiffMethod)>,
+                      "Unknown diffusion method");
+    }
+
+    // sync time steps
+    // we compare always with end_time because comparing dts can fail due to numerical error
+    const auto next_std_state_time = state_time + rd_dt;
+    if (!steps::util::almost_equal(next_std_state_time, end_time) &&
+        next_std_state_time < end_time) {
+        evolve_rd(rd_dt);
+        assert(end_time > state_time);
+        assert(!steps::util::almost_equal(end_time, state_time));
+        evolve_rd(end_time - state_time);
+    } else if (!steps::util::almost_equal(end_time, state_time)) {
+        evolve_rd(end_time - state_time);
+    }
+
+    assert(steps::util::almost_equal(end_time, state_time));
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::evolve(const osh::Real ef_dt) {
+    data->pools.reset_occupancy_ef(state_time);
+
+    ++this->num_iterations;
+    data->kproc_state.resetCurrents();
+    osh::Reals potential_on_vertices(input->potential_on_vertices_w);
+    data->kproc_state.updateVDepSReacs(potential_on_vertices);
+
+    run_rd(state_time + ef_dt);
+
+    // We divide the charge_flows in currents_ by ef_dt so we really get the currents
+    data->kproc_state.finalizeCurrents(ef_dt);
+#if USE_PETSC
+    if (data->efield) {
+        util::TimeTracker t;
+        t.start();
+        data->efield->evolve(input->potential_on_vertices_w,
+                             input->current_on_vertices_w,
+                             input->current_on_triangles_w,
+                             input->capacitance_on_triangles_w,
+                             input->conductivity_on_triangles_w,
+                             input->reversal_potential_on_triangles_w,
+                             input->pools,
+                             data->kproc_state,
+                             state_time,
+                             ef_dt);
+        t.stop();
+        this->efield_timer += t.diff();
+    }
+#endif  // USE_PETSC
+}
+
+//-----------------------------------------------
+
+///////////////////////////
+// Location: Compartment //
+///////////////////////////
+
+// Species
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getOwnedCompSpecCount(
+    const model::compartment_id& compartment,
+    const model::species_name& spec_id) const {
+    const auto species = statedef->getCompSpecContainerIdx(compartment, spec_id);
+    const auto lambda = [=](osh::GO accu, mesh::tetrahedron_id_t elem) -> osh::GO {
+        return accu + static_cast<osh::GO>(data->pools(elem, species));
+    };
+    const auto& elements = mesh.getOwnedEntities(compartment);
+    return static_cast<osh::Real>(std::accumulate(elements.begin(), elements.end(), 0, lambda));
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setOwnedCompSpecCount(
     const model::compartment_id& compartment,
     const model::species_name& species,
     osh::Real num_molecules,
@@ -277,31 +2782,181 @@ void OmegaHSimulation<SSA, SearchMethod>::setOwnedCompSpecCount(
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setCompSpecConc(
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getOwnedCompSpecConc(
     const model::compartment_id& compartment,
-    const model::species_name& species,
-    osh::Real concentration,
-    const math::DistributionMethod distribution) {
-    setCompSpecConc(compartment, {{species, concentration}}, distribution);
+    const model::species_name& species) const {
+    const auto spec_count = getOwnedCompSpecCount(compartment, species);
+    return spec_count / (1.0e3 * mesh.getMeasure().rank_measure() * math::AVOGADRO);
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setCompSpecConc(
+//-----------------------------------------------
+
+// Complexes
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getOwnedCompComplexCount(
     const model::compartment_id& compartment,
-    const std::vector<CompartmentConc>& concs,
+    const model::complex_name& complex,
+    const std::vector<util::strongid_vector<model::complex_substate_id,
+                                            steps::model::SubunitStateFilter>>& f) const {
+    const model::complex_id cplxIdx = statedef->getComplexModelIdx(complex);
+    const auto& filt = data->pools.moleculesOnElements().updatedComplexFilter(cplxIdx, f);
+
+    const auto lambda = [=](osh::GO accu, mesh::tetrahedron_id_t elem) -> osh::GO {
+        return accu + static_cast<osh::GO>(data->pools(elem, cplxIdx, filt));
+    };
+    const auto& elements = mesh.getOwnedEntities(compartment);
+    return static_cast<osh::Real>(std::accumulate(elements.begin(), elements.end(), 0, lambda));
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setOwnedCompComplexCount(
+    const model::compartment_id& compartment,
+    const model::complex_name& complex,
+    const util::strongid_vector<model::complex_substate_id, uint>& i,
+    osh::Real num_molecules,
     const math::DistributionMethod distribution) {
-    const auto factor = mesh.total_measure(compartment) * 1.0e3 * math::AVOGADRO;
-    std::vector<CompartmentCount> counts;
-    counts.reserve(concs.size());
-    for (const auto& conc: concs) {
-        counts.emplace_back(conc.species, conc.concentration * factor);
+    const auto& [elems, volumes, rank_volume] = mesh.measure(compartment);
+    const model::complex_id cplxIdx = statedef->getComplexModelIdx(complex);
+
+    osh::Write<osh::GO> mols_on_elements;
+
+    auto dist = math::make_dist(static_cast<osh::I64>(num_molecules), volumes);
+    mols_on_elements = dist.distribute(this->rng, distribution);
+
+    for (auto k = 0; k < mols_on_elements.size(); ++k) {
+        if (mols_on_elements[k] >= static_cast<osh::GO>(INT32_MAX)) {
+            std::ostringstream oss;
+            oss << "Unsupported number of molecules per tetrahedron: " << std::setprecision(20)
+                << mols_on_elements[k] << " but maximum value is "
+                << std::numeric_limits<osh::LO>::max() << " (max 32 bits integral value)";
+            ArgErrLog(oss.str());
+        }
+        data->pools.assign(mesh::tetrahedron_id_t(elems[k]),
+                           cplxIdx,
+                           i,
+                           static_cast<osh::LO>(mols_on_elements[k]));
     }
-    setCompSpecCount(compartment, counts, distribution);
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setOwnedElementSpecCount(
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getOwnedCompComplexSUSCount(
+    const model::compartment_id& compartment,
+    const model::complex_name& complex,
+    const std::vector<
+        util::strongid_vector<model::complex_substate_id, steps::model::SubunitStateFilter>>& f,
+    model::complex_substate_id m) const {
+    const model::complex_id cplxIdx = statedef->getComplexModelIdx(complex);
+    const auto& filt = data->pools.moleculesOnElements().updatedComplexFilter(cplxIdx, f);
+
+    const auto lambda = [=](osh::GO accu, mesh::tetrahedron_id_t elem) -> osh::GO {
+        return accu + static_cast<osh::GO>(data->pools(elem, cplxIdx, filt, m));
+    };
+    const auto& elements = mesh.getOwnedEntities(compartment);
+    return static_cast<osh::Real>(std::accumulate(elements.begin(), elements.end(), 0, lambda));
+}
+
+//-----------------------------------------------
+
+/////////////////////
+// Location: Patch //
+/////////////////////
+
+// Species
+
+//-----------------------------------------------
+
+//-----------------------------------------------
+
+// Complexes
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getOwnedPatchComplexCount(
+    const model::patch_id& patch,
+    const model::complex_name& complex,
+    const std::vector<util::strongid_vector<model::complex_substate_id,
+                                            steps::model::SubunitStateFilter>>& f) const {
+    const model::complex_id cplxIdx = statedef->getComplexModelIdx(complex);
+    const auto& filt = data->pools.moleculesOnPatchBoundaries().updatedComplexFilter(cplxIdx, f);
+
+    const auto lambda = [=](osh::GO accu, mesh::triangle_id_t elem) -> osh::GO {
+        return accu + static_cast<osh::GO>(data->pools(elem, cplxIdx, filt));
+    };
+    const auto& elements = mesh.getOwnedEntities(patch);
+    return static_cast<osh::Real>(std::accumulate(elements.begin(), elements.end(), 0, lambda));
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setOwnedPatchComplexCount(
+    const model::patch_id& patch,
+    const model::complex_name& complex,
+    const util::strongid_vector<model::complex_substate_id, uint>& i,
+    osh::Real num_molecules,
+    const math::DistributionMethod distribution) {
+    const auto& [elems, areas, rank_area] = mesh.measure(patch);
+    const model::complex_id cplxIdx = statedef->getComplexModelIdx(complex);
+
+    osh::Write<osh::GO> mols_on_elements;
+
+    auto dist = math::make_dist(static_cast<osh::I64>(num_molecules), areas);
+    mols_on_elements = dist.distribute(this->rng, distribution);
+
+    for (auto k = 0; k < mols_on_elements.size(); ++k) {
+        if (mols_on_elements[k] >= static_cast<osh::GO>(INT32_MAX)) {
+            std::ostringstream oss;
+            oss << "Unsupported number of molecules per triangle: " << std::setprecision(20)
+                << mols_on_elements[k] << " but maximum value is "
+                << std::numeric_limits<osh::LO>::max() << " (max 32 bits integral value)";
+            ArgErrLog(oss.str());
+        }
+        data->pools.assign(mesh::triangle_id_t(elems[k]),
+                           cplxIdx,
+                           i,
+                           static_cast<osh::LO>(mols_on_elements[k]));
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getOwnedPatchComplexSUSCount(
+    const model::patch_id& patch,
+    const model::complex_name& complex,
+    const std::vector<
+        util::strongid_vector<model::complex_substate_id, steps::model::SubunitStateFilter>>& f,
+    model::complex_substate_id m) const {
+    const model::complex_id cplxIdx = statedef->getComplexModelIdx(complex);
+    const auto& filt = data->pools.moleculesOnPatchBoundaries().updatedComplexFilter(cplxIdx, f);
+
+    const auto lambda = [=](osh::GO accu, mesh::triangle_id_t elem) -> osh::GO {
+        return accu + static_cast<osh::GO>(data->pools(elem, cplxIdx, filt, m));
+    };
+    const auto& elements = mesh.getOwnedEntities(patch);
+    return static_cast<osh::Real>(std::accumulate(elements.begin(), elements.end(), 0, lambda));
+}
+
+//-----------------------------------------------
+
+///////////////////////////
+// Location: Tetrahedron //
+///////////////////////////
+
+// Species
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setOwnedElementSpecCount(
     const model::compartment_id& compartment,
     mesh::tetrahedron_id_t element,
     const model::species_name& species,
@@ -318,222 +2973,24 @@ void OmegaHSimulation<SSA, SearchMethod>::setOwnedElementSpecCount(
     data->pools.assign(element, species_id, static_cast<osh::LO>(num_molecules));
 }
 
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getOwnedCompSpecConc(
-    const model::compartment_id& compartment,
-    const model::species_name& species) const {
-    const auto spec_count = getOwnedCompSpecCount(compartment, species);
-    return spec_count / (1.0e3 * mesh.getMeasure().rank_measure() * math::AVOGADRO);
-}
-
 //-----------------------------------------------
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-const std::vector<mesh::triangle_id_t>& OmegaHSimulation<SSA, SearchMethod>::getGHKBoundaries()
-    const {
-    return data->kproc_state.ghkCurrentsBoundaries();
-}
-
-//-----------------------------------------------
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Reals OmegaHSimulation<SSA, SearchMethod>::getGHKCurrents() const {
-    return data->kproc_state.ghkSurfaceReactions().currents();
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getTotalGHKCurrent() const {
-    return mesh.get_MPI_sum(getGHKCurrents());
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setPatchSReacK(
-    const model::patch_id& patchId,
-    const model::surface_reaction_id& reactionId,
-    osh::Real kCst) {
-    auto reacId = statedef->getSReacIdx(reactionId);
-    data->kproc_state.surfaceReactions().updateKCst(patchId, reacId, kCst, mesh);
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Reals OmegaHSimulation<SSA, SearchMethod>::getPotentialOnVertices(
-    const model::patch_id& patch) {
-    const auto& ents = mesh.getOwnedEntities(patch);
-    osh::Write<osh::Real> vals(3 * ents.size());
-    const auto& all_verts = mesh.ask_verts_of(osh::FACE);
-    const auto fill_vals = OMEGA_H_LAMBDA(osh::LO entity_idx) {
-        const auto& verts = osh::gather_verts<DistMesh::dim()>(all_verts, ents[entity_idx].get());
-        for (osh::LO l = 0; l < DistMesh::dim(); ++l) {
-            vals[DistMesh::dim() * entity_idx + l] = input->potential_on_vertices_w[verts[l]];
-        }
-    };
-    osh::parallel_for(ents.size(), fill_vals, "OmegaHSimulation::getPotentialOnVertices");
-
-    return osh::Reals(vals);
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Reals OmegaHSimulation<SSA, SearchMethod>::getPotentialOnTriangles(
-    const model::patch_id& patch) {
-    const auto& ents = mesh.getOwnedEntities(patch);
-    osh::Write<osh::Real> vals = osh::Write<osh::Real>(ents.size(), 0.0);
-
-    const auto fill_vals = OMEGA_H_LAMBDA(osh::LO entity_idx) {
-        const mesh::triangle_id_t triangle_id{ents[entity_idx]};
-        const auto& face_bf2verts = osh::gather_verts<3>(mesh.ask_verts_of(osh::FACE),
-                                                         triangle_id.get());
-        for (const auto& vert_id: face_bf2verts) {
-            vals[entity_idx] += input->potential_on_vertices_w[vert_id] / 3.0;
-        }
-    };
-    osh::parallel_for(ents.size(), fill_vals, "OmegaHSimulation::getPotentialOnTriangles");
-    return osh::Reals(vals);
-}
-
-//-----------------------------------------------
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getCompSpecConc(
-    const model::compartment_id& compartment,
-    const model::species_name& species) const {
-    const auto spec_count = getCompSpecCount(compartment, species);
-    return spec_count / (1.0e3 * mesh.total_measure(compartment) * math::AVOGADRO);
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getOwnedCompSpecCount(
-    const model::compartment_id& compartment,
-    const model::species_name& spec_id) const {
-    const auto species = statedef->getCompSpecContainerIdx(compartment, spec_id);
-    const auto lambda = [=](osh::GO accu, mesh::tetrahedron_id_t elem) -> osh::GO {
-        return accu + static_cast<osh::GO>(data->pools(elem, species));
-    };
-    const auto& elements = mesh.getOwnedEntities(compartment);
-    return static_cast<osh::Real>(std::accumulate(elements.begin(), elements.end(), 0, lambda));
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-std::pair<std::reference_wrapper<const mesh::tetrahedron_ids>, std::vector<osh::LO>>
-OmegaHSimulation<SSA, SearchMethod>::getOwnedElemSpecCount(
-    const model::species_name& species) const {
-    std::vector<osh::LO> counts;
-    counts.reserve(mesh.owned_elems().size());
-    for (const auto elem: mesh.owned_elems()) {
-        const auto spec_model_idx = statedef->getSpecModelIdx(species);
-        if (spec_model_idx.unknown()) {
-            counts.push_back(0);
-            continue;
-        }
-        const auto compartment_id = this->mesh.getCompartment(elem);
-        const auto comp_model_idx = statedef->getCompModelIdx(compartment_id);
-        const auto spec_id =
-            statedef->compdefs()[static_cast<size_t>(comp_model_idx.get())]->getSpecContainerIdx(
-                spec_model_idx);
-        counts.push_back(data->pools(elem, spec_id));
-    }
-
-    return {mesh.owned_elems(), counts};
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-std::pair<std::vector<mesh::tetrahedron_global_id_t>, std::vector<osh::LO>>
-OmegaHSimulation<SSA, SearchMethod>::getElemSpecCount(const model::species_name& species) const {
-    const auto local_ID_and_counts = getOwnedElemSpecCount(species);
-    const mesh::tetrahedron_ids& local_IDs = local_ID_and_counts.first;
-    const std::vector<osh::LO>& local_counts = local_ID_and_counts.second;
-
-    const int local_counts_size = local_ID_and_counts.second.size();
-
-    std::vector<mesh::tetrahedron_global_id_t> owned_global_ids;
-    owned_global_ids.reserve(local_counts_size);
-
-    std::transform(local_IDs.begin(),
-                   local_IDs.end(),
-                   std::back_inserter(owned_global_ids),
-                   [this](const mesh::tetrahedron_id_t& local_id) {
-                       return mesh.getGlobalIndex(local_id);
-                   });
-
-    std::vector<int> count_sizes;
-    if (this->comm_rank == 0) {
-        count_sizes.resize(static_cast<size_t>(this->comm_size));
-    }
-
-    int err =
-        MPI_Gather(&local_counts_size, 1, MPI_INT, count_sizes.data(), 1, MPI_INT, 0, this->comm());
-
-    if (err != MPI_SUCCESS) {
-        MPI_Abort(this->comm(), err);
-    }
-
-    std::vector<int> offsets(count_sizes.size() + 1);
-    std::partial_sum(count_sizes.begin(), count_sizes.end(), offsets.begin() + 1);
-
-    std::vector<osh::LO> counts;
-    if (this->comm_rank == 0) {
-        counts.resize(offsets.back());
-    }
-
-    err = MPI_Gatherv(local_counts.data(),
-                      local_counts.size(),
-                      MPI_INT32_T,
-                      counts.data(),
-                      count_sizes.data(),
-                      offsets.data(),
-                      MPI_INT32_T,
-                      0,
-                      this->comm());
-
-    if (err != MPI_SUCCESS) {
-        MPI_Abort(this->comm(), err);
-    }
-
-    std::vector<mesh::tetrahedron_global_id_t> global_ids;
-    if (this->comm_rank == 0) {
-        global_ids.resize(offsets.back());
-    }
-
-    err = MPI_Gatherv(owned_global_ids.data(),
-                      owned_global_ids.size(),
-                      MPI_INT64_T,
-                      global_ids.data(),
-                      count_sizes.data(),
-                      offsets.data(),
-                      MPI_INT64_T,
-                      0,
-                      this->comm());
-
-    if (err != MPI_SUCCESS) {
-        MPI_Abort(this->comm(), err);
-    }
-
-    return {global_ids, counts};
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::getBatchElemValsNP(const osh::GO* indices,
-                                                             size_t input_size,
-                                                             const model::species_name& species,
-                                                             osh::Real* vals,
-                                                             bool useConc,
-                                                             bool local) const {
-    const auto spec_model_idx = statedef->getSpecModelIdx(species);
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchElemValsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::species_name& species,
+    osh::Real* vals,
+    bool useConc,
+    bool local) const {
     if (not local) {
         std::fill(vals, vals + input_size, 0);
     }
     for (size_t i = 0; i < input_size; ++i) {
-        osh::LO ind{static_cast<osh::LO>(indices[i])};
-        if (not local) {
-            ind = mesh.getLocalIndex(mesh::tetrahedron_global_id_t(indices[i]), true).get();
-        }
-        mesh::tetrahedron_id_t localInd(ind);
+        auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(indices[i], local, true);
         if (localInd.valid()) {
-            // TODO Maybe getting the spec_id could be faster
             const auto compartment_id = mesh.getCompartment(localInd);
-            const auto comp_model_idx = statedef->getCompModelIdx(compartment_id);
-            const auto spec_id = statedef->compdefs()[static_cast<size_t>(comp_model_idx.get())]
-                                     ->getSpecContainerIdx(spec_model_idx);
+            const auto spec_id = statedef->getCompSpecContainerIdx(compartment_id, species);
             vals[i] = data->pools(localInd, spec_id);
             if (useConc) {
                 vals[i] /= mesh.getTet(localInd).vol * 1.0e3 * math::AVOGADRO;
@@ -548,28 +3005,21 @@ void OmegaHSimulation<SSA, SearchMethod>::getBatchElemValsNP(const osh::GO* indi
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setBatchElemValsNP(const osh::GO* indices,
-                                                             size_t input_size,
-                                                             const model::species_name& species,
-                                                             osh::Real* vals,
-                                                             bool useConc,
-                                                             bool local) const {
-    const auto spec_model_idx = statedef->getSpecModelIdx(species);
+//-----------------------------------------------
 
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setBatchElemValsNP(
+    const osh::GO* indices,
+    size_t input_size,
+    const model::species_name& species,
+    osh::Real* vals,
+    bool useConc,
+    bool local) const {
     for (size_t i = 0; i < input_size; ++i) {
-        osh::LO ind{static_cast<osh::LO>(indices[i])};
-        if (not local) {
-            ind = mesh.getLocalIndex(mesh::tetrahedron_global_id_t(indices[i]), true).get();
-        }
-        mesh::tetrahedron_id_t localInd(ind);
+        auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(indices[i], local, true);
         if (localInd.valid()) {
-            // TODO Maybe getting the spec_id could be faster
             const auto compartment_id = mesh.getCompartment(localInd);
-            const auto comp_model_idx = statedef->getCompModelIdx(compartment_id);
-            const auto spec_id = statedef->compdefs()[static_cast<size_t>(comp_model_idx.get())]
-                                     ->getSpecContainerIdx(spec_model_idx);
-
+            const auto spec_id = statedef->getCompSpecContainerIdx(compartment_id, species);
             osh::LO nb;
             if (useConc) {
                 auto v = vals[i] * mesh.getTet(localInd).vol * 1e3 * math::AVOGADRO;
@@ -590,8 +3040,69 @@ void OmegaHSimulation<SSA, SearchMethod>::setBatchElemValsNP(const osh::GO* indi
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::getBatchBoundSpecCountNP(
+//-----------------------------------------------
+
+// Reactions
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+template <typename Reacs, typename MReacID>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTetReacK(const Reacs& reacs,
+                                                                       osh::GO tet,
+                                                                       const MReacID reac,
+                                                                       bool local) const {
+    auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(tet, local, true);
+    osh::Real kcst = 0.0;
+    if (localInd.valid()) {
+        auto& info = mesh.getTet(localInd);
+        auto comp = info.compPtr;
+        if (comp != nullptr) {
+            auto& compdef = statedef->getCompdef(model::compartment_id(comp->getID()));
+            kcst = reacs.getKcst(compdef.getIdx(), info.cont_id, compdef.getReacIdx(reac));
+        } else {
+            throw std::invalid_argument("Tetrahedron " + std::to_string(localInd.get()) +
+                                        " is not associated to a compartment.");
+        }
+    }
+    return allReduce(kcst);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+template <typename Reacs, typename MReacID>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTetReacK(Reacs& reacs,
+                                                                  osh::GO tet,
+                                                                  const MReacID reac,
+                                                                  osh::Real kcst,
+                                                                  bool local) {
+    auto localInd = getLocalInd<mesh::tetrahedron_local_id_t>(tet, local, true);
+    if (localInd.valid()) {
+        auto& info = mesh.getTet(localInd);
+        auto comp = info.compPtr;
+        if (comp != nullptr) {
+            auto& compdef = statedef->getCompdef(model::compartment_id(comp->getID()));
+            reacs.setKcst(compdef.getIdx(), info.cont_id, compdef.getReacIdx(reac), kcst);
+        } else {
+            throw std::invalid_argument("Tetrahedron " + std::to_string(localInd.get()) +
+                                        " is not associated to a compartment.");
+        }
+    }
+}
+
+//-----------------------------------------------
+
+////////////////////////
+// Location: Triangle //
+////////////////////////
+
+// Species
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchBoundSpecCountNP(
     const osh::GO* indices,
     size_t input_size,
     const model::species_name& species,
@@ -604,15 +3115,11 @@ void OmegaHSimulation<SSA, SearchMethod>::getBatchBoundSpecCountNP(
         std::fill(counts, counts + input_size, 0);
     }
     for (size_t i = 0; i < input_size; ++i) {
-        osh::LO ind{static_cast<osh::LO>(indices[i])};
-        if (not local) {
-            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]), true).get();
-        }
-        mesh::triangle_id_t localInd(ind);
+        auto localInd = getLocalInd<mesh::triangle_local_id_t>(indices[i], local, true);
         if (localInd.valid()) {
             const auto patch_id = model::patch_id(
                 mesh.getTriPatch(mesh::triangle_id_t(localInd))->getID());
-            auto spec_id = statedef->getPatchdef(patch_id).getSpecPatchIdx(spec_model_idx);
+            auto spec_id = statedef->getPatchdef(patch_id).getSpecContainerIdx(spec_model_idx);
             counts[i] = molecules(localInd, spec_id);
         }
     }
@@ -626,8 +3133,10 @@ void OmegaHSimulation<SSA, SearchMethod>::getBatchBoundSpecCountNP(
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setBatchBoundSpecCountNP(
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setBatchBoundSpecCountNP(
     const osh::GO* indices,
     size_t input_size,
     const model::species_name& species,
@@ -636,138 +3145,134 @@ void OmegaHSimulation<SSA, SearchMethod>::setBatchBoundSpecCountNP(
     const auto spec_model_idx = statedef->getSpecModelIdx(species);
 
     for (size_t i = 0; i < input_size; ++i) {
-        osh::LO ind{static_cast<osh::LO>(indices[i])};
-        if (not local) {
-            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]), true).get();
-        }
-        mesh::triangle_id_t localInd(ind);
+        auto localInd = getLocalInd<mesh::triangle_local_id_t>(indices[i], local, true);
         if (localInd.valid()) {
             const auto patch_id = model::patch_id(
                 mesh.getTriPatch(mesh::triangle_id_t(localInd))->getID());
-            auto spec_id = statedef->getPatchdef(patch_id).getSpecPatchIdx(spec_model_idx);
+            auto spec_id = statedef->getPatchdef(patch_id).getSpecContainerIdx(spec_model_idx);
             data->pools.assign(localInd, spec_id, counts[i]);
         }
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::getBatchVertVsNP(const osh::GO* indices,
-                                                           size_t input_size,
-                                                           osh::Real* voltages,
-                                                           bool local) const {
-    if (not local) {
-        std::fill(voltages, voltages + input_size, 0);
-    }
-    for (size_t i = 0; i < input_size; ++i) {
-        osh::LO ind{static_cast<osh::LO>(indices[i])};
-        if (not local) {
-            ind = mesh.getLocalIndex(mesh::vertex_global_id_t(indices[i]), true).get();
-        }
-        mesh::vertex_id_t localInd(ind);
-        if (localInd.valid()) {
-            voltages[i] = input->potential_on_vertices_w[localInd.get()];
-        }
-    }
+//-----------------------------------------------
 
-    if (not local) {
-        auto err =
-            MPI_Allreduce(MPI_IN_PLACE, voltages, input_size, MPI_DOUBLE, MPI_SUM, this->comm());
-        if (err != MPI_SUCCESS) {
-            MPI_Abort(this->comm(), err);
+// Reactions
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+template <typename Reacs, typename MReacID>
+osh::Real OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getTriSReacK(const Reacs& reacs,
+                                                                        osh::GO triangle,
+                                                                        const MReacID& reactionId,
+                                                                        bool local) const {
+    osh::Real kcst = 0.0;
+    auto tri = getLocalInd<mesh::triangle_local_id_t>(triangle, local, true);
+    if (tri.valid()) {
+        auto& info = mesh.getTri(tri);
+        auto patch = info.patchPtr;
+        if (patch != nullptr) {
+            auto& patchdef = statedef->getPatchdef(model::patch_id(patch->getID()));
+            kcst = reacs.get_Kcst(patchdef.getIdx(), info.cont_id, patchdef.getReacIdx(reactionId));
+        } else {
+            throw std::invalid_argument("Triangle " + std::to_string(triangle) +
+                                        " is not associated to a patch.");
+        }
+    }
+    return allReduce(kcst);
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+template <typename Reacs, typename MReacID>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriSReacK(Reacs& reacs,
+                                                                   osh::GO triangle,
+                                                                   const MReacID& reactionId,
+                                                                   osh::Real kCst,
+                                                                   bool local) {
+    auto tri = getLocalInd<mesh::triangle_local_id_t>(triangle, local, true);
+    if (tri.valid()) {
+        auto& info = mesh.getTri(tri);
+        auto patch = info.patchPtr;
+        if (patch != nullptr) {
+            auto& patchdef = statedef->getPatchdef(model::patch_id(patch->getID()));
+            reacs.set_Kcst(patchdef.getIdx(), info.cont_id, patchdef.getReacIdx(reactionId), kCst);
+        } else {
+            throw std::invalid_argument("Triangle " + std::to_string(triangle) +
+                                        " is not associated to a patch.");
         }
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::getBatchTriVsNP(const osh::GO* indices,
-                                                          size_t input_size,
-                                                          osh::Real* voltages,
-                                                          bool local) const {
-    std::fill(voltages, voltages + input_size, 0);
-    for (size_t i = 0; i < input_size; ++i) {
-        osh::LO ind{static_cast<osh::LO>(indices[i])};
-        if (not local) {
-            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]), true).get();
-        }
-        mesh::triangle_id_t localInd(ind);
-        if (localInd.valid()) {
-            const auto tri2verts = osh::gather_verts<3>(mesh.ask_verts_of(osh::FACE),
-                                                        localInd.get());
-            for (auto vert: tri2verts) {
-                voltages[i] += input->potential_on_vertices_w[vert] / 3.0;
-            }
-        }
-    }
+//-----------------------------------------------
 
-    if (not local) {
-        auto err =
-            MPI_Allreduce(MPI_IN_PLACE, voltages, input_size, MPI_DOUBLE, MPI_SUM, this->comm());
-        if (err != MPI_SUCCESS) {
-            MPI_Abort(this->comm(), err);
-        }
-    }
-}
+#if USE_PETSC
+// E-field value
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::getBatchTetVsNP(const osh::GO* indices,
-                                                          size_t input_size,
-                                                          osh::Real* voltages,
-                                                          bool local) const {
-    std::fill(voltages, voltages + input_size, 0);
-    for (size_t i = 0; i < input_size; ++i) {
-        osh::LO ind{static_cast<osh::LO>(indices[i])};
-        if (not local) {
-            ind = mesh.getLocalIndex(mesh::tetrahedron_global_id_t(indices[i]), true).get();
-        }
-        mesh::tetrahedron_id_t localInd(ind);
-        if (localInd.valid()) {
-            const auto tet2verts = osh::gather_verts<4>(mesh.ask_elem_verts(), localInd.get());
-            for (auto vert: tet2verts) {
-                voltages[i] += input->potential_on_vertices_w[vert] / 4.0;
-            }
-        }
-    }
+//-----------------------------------------------
 
-    if (not local) {
-        auto err =
-            MPI_Allreduce(MPI_IN_PLACE, voltages, input_size, MPI_DOUBLE, MPI_SUM, this->comm());
-        if (err != MPI_SUCCESS) {
-            MPI_Abort(this->comm(), err);
-        }
-    }
-}
-
-#ifdef USE_PETSC
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::getBatchTriOhmicIsNP(const osh::GO* indices,
-                                                               size_t input_size,
-                                                               const model::ohmic_current_id curr,
-                                                               osh::Real* currents,
-                                                               bool local) const {
-    const auto& currs = statedef->ohmicCurrents();
-    const auto curr_it = currs.find(curr);
-    if (curr_it == currs.end()) {
-        throw std::logic_error("No ohmic current : " + curr);
-    }
-    const auto& h = *curr_it->second;
-
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+template <typename SReacT, typename MReacID>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriSReacIsNP(const SReacT& reacs,
+                                                                           const osh::GO* indices,
+                                                                           size_t input_size,
+                                                                           const MReacID reac,
+                                                                           osh::Real* currents,
+                                                                           bool local) const {
     std::fill(currents, currents + input_size, 0);
     for (size_t i = 0; i < input_size; ++i) {
-        osh::LO ind{static_cast<osh::LO>(indices[i])};
-        if (not local) {
-            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]), true).get();
-        }
-        mesh::triangle_id_t localInd(ind);
+        auto localInd = getLocalInd<mesh::triangle_local_id_t>(indices[i], local, true);
         if (localInd.valid()) {
-            const auto& face_bf2verts = osh::gather_verts<3>(mesh.ask_verts_of(osh::FACE),
-                                                             localInd.get());
-            for (const auto& vert_id: face_bf2verts) {
-                currents[i] += h.getTriCurrentOnVertex(input->potential_on_vertices_w[vert_id],
+            auto& info = mesh.getTri(localInd);
+            auto patch = info.patchPtr;
+            if (patch != nullptr and info.cont_id.valid()) {
+                auto& patchdef = statedef->getPatchdef(model::patch_id(patch->getID()));
+                currents[i] +=
+                    reacs.getCurrent(patchdef.getIdx(), info.cont_id, patchdef.getReacIdx(reac));
+            }
+        }
+    }
+
+    if (not local) {
+        auto err =
+            MPI_Allreduce(MPI_IN_PLACE, currents, input_size, MPI_DOUBLE, MPI_SUM, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+    }
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+template <typename CurrdefT, typename MCurrID>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriOhmicIsNP(const osh::GO* indices,
+                                                                           size_t input_size,
+                                                                           const MCurrID curr,
+                                                                           osh::Real* currents,
+                                                                           bool local) const {
+    std::fill(currents, currents + input_size, 0);
+    for (size_t i = 0; i < input_size; ++i) {
+        auto localInd = getLocalInd<mesh::triangle_local_id_t>(indices[i], local, true);
+        if (localInd.valid()) {
+            auto* patch = mesh.getTriPatch(localInd);
+            if (patch != nullptr) {
+                container::patch_id patch_id(patch->getMeshID().get());
+                const auto& patchdef = statedef->getPatchdef(patch_id);
+                const auto& currId = patchdef.getCurrIdx(curr);
+                const auto& currPtr = patchdef.template currents<CurrdefT>().at(currId.get());
+                const auto& face_bf2verts = osh::gather_verts<3>(mesh.ask_verts_of(osh::FACE),
+                                                                 localInd.get());
+                for (const auto& vert_id: face_bf2verts) {
+                    currents[i] +=
+                        currPtr->getTriCurrentOnVertex(input->potential_on_vertices_w[vert_id],
                                                        localInd,
                                                        input->pools,
                                                        mesh,
                                                        state_time);
+                }
             }
         }
     }
@@ -781,42 +3286,27 @@ void OmegaHSimulation<SSA, SearchMethod>::getBatchTriOhmicIsNP(const osh::GO* in
     }
 }
 
-#else
+//-----------------------------------------------
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::getBatchTriOhmicIsNP(
-    const osh::GO* /*indices*/,
-    size_t /*input_size*/,
-    const model::ohmic_current_id /*curr*/,
-    osh::Real* /*currents*/,
-    bool /*local*/) const {
-    throw std::logic_error("PETSc is required to compute ohmic current");
-}
-
-#endif  // !USE_PETSC
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::getBatchTriGHKIsNP(const osh::GO* indices,
-                                                             size_t input_size,
-                                                             const model::ghk_current_id curr,
-                                                             osh::Real* currents,
-                                                             bool local) const {
-    const auto& surfReacs = data->kproc_state.ghkSurfaceReactions();
-
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+template <typename SReacT, typename MReacID>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriGHKIsNP(const SReacT& surfReacs,
+                                                                         const osh::GO* indices,
+                                                                         size_t input_size,
+                                                                         const MReacID curr,
+                                                                         osh::Real* currents,
+                                                                         bool local) const {
     std::fill(currents, currents + input_size, 0);
     for (size_t i = 0; i < input_size; ++i) {
-        osh::LO ind{static_cast<osh::LO>(indices[i])};
-        if (not local) {
-            ind = mesh.getLocalIndex(mesh::triangle_global_id_t(indices[i]), true).get();
-        }
-        mesh::triangle_id_t localInd(ind);
+        auto localInd = getLocalInd<mesh::triangle_local_id_t>(indices[i], local, true);
         if (localInd.valid()) {
-            const osh::Write<osh::GO>& tri2Curr = surfReacs.getTri2Curr(curr);
-            for (uint k = 0; k < surfReacs.rpt(); ++k) {
-                const auto& ridx = tri2Curr[localInd.get() * surfReacs.rpt() + k];
-                if (ridx != -1) {
-                    currents[i] += surfReacs.currents()[ridx];
-                }
+            auto& info = mesh.getTri(localInd);
+            auto patch = info.patchPtr;
+            if (patch != nullptr and info.cont_id.valid()) {
+                auto& patchdef = statedef->getPatchdef(model::patch_id(patch->getID()));
+                currents[i] += surfReacs.getCurrent(patchdef.getIdx(),
+                                                    info.cont_id,
+                                                    patchdef.getReacIdx(curr));
             }
         }
     }
@@ -830,259 +3320,26 @@ void OmegaHSimulation<SSA, SearchMethod>::getBatchTriGHKIsNP(const osh::GO* indi
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getCompSpecCount(
-    const model::compartment_id& compartment,
-    const model::species_name& species) const {
-    auto local_num_molecules = getOwnedCompSpecCount(compartment, species);
-    osh::Real global_num_molecules{};
-    auto err = MPI_Allreduce(
-        &local_num_molecules, &global_num_molecules, 1, MPI_DOUBLE, MPI_SUM, this->comm());
-    if (err != MPI_SUCCESS) {
-        MPI_Abort(this->comm(), err);
-    }
-    return global_num_molecules;
-}
+//-----------------------------------------------
 
-#if USE_PETSC
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-std::pair<mesh::triangle_ids, osh::Reals> OmegaHSimulation<SSA, SearchMethod>::getOhmicCurrents(
-    const model::membrane_id& mem_id,
-    const model::channel_id& chan_id) const {
-    // mesh::triangle_ids tri_ids does not create a fully functional object
-    mesh::triangle_ids tri_ids(0);
-    osh::Write<osh::Real> ohm_currs(0);
-
-    auto membrane_ptr = statedef->membranes().find(mem_id);
-    if (membrane_ptr != statedef->membranes().end()) {
-        const auto* membrane = membrane_ptr->second.get();
-
-        auto channel_ptr = membrane->channels().find(chan_id);
-        if (channel_ptr != membrane->channels().end()) {
-            const auto& chan = channel_ptr->second;
-            const auto& patch_id = membrane->getPatch();
-            const auto& patch_tris = mesh.getOwnedEntities(patch_id);
-
-            tri_ids = patch_tris;
-            ohm_currs = osh::Write<osh::Real>(patch_tris.size(), 0.0);
-
-            const auto collect_currents = OMEGA_H_LAMBDA(osh::LO patch_tris_idx) {
-                const mesh::triangle_id_t triangle_id{patch_tris[patch_tris_idx]};
-                const auto& face_bf2verts = osh::gather_verts<3>(mesh.ask_verts_of(osh::FACE),
-                                                                 triangle_id.get());
-
-                for (const auto& h: chan.ohmic_currents) {
-                    for (const auto& vert_id: face_bf2verts) {
-                        ohm_currs[patch_tris_idx] +=
-                            h.get().getTriCurrentOnVertex(input->potential_on_vertices_w[vert_id],
-                                                          triangle_id,
-                                                          input->pools,
-                                                          mesh,
-                                                          state_time);
-                    }
-                }
-            };
-            osh::parallel_for(patch_tris.size(), collect_currents);
-        } else {
-            throw std::logic_error("No channel: " + chan_id);
-        }
-    } else {
-        throw std::logic_error("No membrane: " + mem_id);
-    }
-
-    return {tri_ids, ohm_currs};
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getTotalOhmicCurrent(
-    const model::membrane_id& mem_id,
-    const model::channel_id& chan_id) const {
-    return mesh.get_MPI_sum(getOhmicCurrents(mem_id, chan_id).second);
-}
-#endif  // USE_PETSC
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setMembPotential(const model::membrane_id& memb,
-                                                           osh::Real value) {
-    auto membit = mesh.membranes().find(memb);
-    if (membit == mesh.membranes().end()) {
-        throw std::invalid_argument("Invalid membrane " + memb);
-    }
-    const auto& allPatches = mesh.getAllPatches();
-    for (const auto& patchid: membit->second->patches()) {
-        auto pmeshid = mesh.getPatchID(patchid);
-        const auto* patch = allPatches[pmeshid.get()];
-        const auto* icomp = dynamic_cast<const DistComp*>(&patch->getIComp());
-        if (icomp == nullptr) {
-            continue;
-        }
-        for (const auto tet: icomp->getLocalTetIndices(false)) {
-            const auto verts = osh::gather_verts<4>(mesh.ask_elem_verts(), tet.get());
-            for (const auto& vert: verts) {
-                input->potential_on_vertices_w[vert] = value;
-            }
-        }
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setMembRes(const model::membrane_id& membrane,
-                                                     osh::Real resistivity,
-                                                     osh::Real reversal_potential) {
-    statedef->setResistivity(membrane, resistivity);
-    statedef->setReversalPotential(membrane, reversal_potential);
-    auto it = statedef->membranes().find(membrane);
-    // Initialize triangle resistivity on membranes
-    if (it != statedef->membranes().end()) {
-        for (const auto tri: mesh.getOwnedEntities(it->second->getPatch())) {
-            input->conductivity_on_triangles_w[tri.get()] = 1.0 / resistivity;
-            input->reversal_potential_on_triangles_w[tri.get()] = reversal_potential;
-        }
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-MembraneResistivity OmegaHSimulation<SSA, SearchMethod>::getMembRes(
-    const model::membrane_id& membrane) {
-    return {statedef->getResistivity(membrane), statedef->getReversalPotential(membrane)};
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-MembraneResistivity OmegaHSimulation<SSA, SearchMethod>::getTriRes(osh::GO tri, bool local) const {
-    osh::Real local_res(0.0);
-    osh::Real local_erev(0.0);
-
-    auto ind{static_cast<osh::LO>(tri)};
-    if (not local) {
-        ind = mesh.getLocalIndex(mesh::triangle_global_id_t(tri), true).get();
-    }
-    mesh::triangle_local_id_t localInd(ind);
-    if (localInd.valid()) {
-        local_res = 1.0 / input->conductivity_on_triangles_w[localInd.get()];
-        local_erev = input->reversal_potential_on_triangles_w[localInd.get()];
-    }
-    if (local) {
-        return {local_res, local_erev};
-    } else {
-        osh::Real res(0.0);
-        osh::Real erev(0.0);
-        auto err = MPI_Allreduce(&local_res, &res, 1, MPI_DOUBLE, MPI_SUM, this->comm());
-        if (err != MPI_SUCCESS) {
-            MPI_Abort(this->comm(), err);
-        }
-        err = MPI_Allreduce(&local_erev, &erev, 1, MPI_DOUBLE, MPI_SUM, this->comm());
-        if (err != MPI_SUCCESS) {
-            MPI_Abort(this->comm(), err);
-        }
-        return {res, erev};
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setTriRes(const osh::GO tri,
-                                                    osh::Real res,
-                                                    osh::Real erev,
-                                                    bool local) {
-    osh::LO ind{static_cast<osh::LO>(tri)};
-    if (not local) {
-        ind = mesh.getLocalIndex(mesh::triangle_global_id_t(tri), false).get();
-    }
-    mesh::vertex_id_t localInd(ind);
-    if (localInd.valid()) {
-        input->conductivity_on_triangles_w[localInd.get()] = 1.0 / res;
-        input->reversal_potential_on_triangles_w[localInd.get()] = erev;
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getTriCapac(osh::GO tri, bool local) const {
-    osh::Real local_val(0.0);
-
-    osh::LO ind{static_cast<osh::LO>(tri)};
-    if (not local) {
-        ind = mesh.getLocalIndex(mesh::triangle_global_id_t(tri), true).get();
-    }
-    mesh::triangle_local_id_t localInd(ind);
-    if (localInd.valid()) {
-        local_val = input->capacitance_on_triangles_w[localInd.get()];
-    }
-    if (local) {
-        return local_val;
-    } else {
-        osh::Real res(0.0);
-        auto err = MPI_Allreduce(&local_val, &res, 1, MPI_DOUBLE, MPI_SUM, this->comm());
-        if (err != MPI_SUCCESS) {
-            MPI_Abort(this->comm(), err);
-        }
-        return res;
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setTriCapac(const osh::GO tri, osh::Real c, bool local) {
-    osh::LO ind{static_cast<osh::LO>(tri)};
-    if (not local) {
-        ind = mesh.getLocalIndex(mesh::triangle_global_id_t(tri), false).get();
-    }
-    mesh::vertex_id_t localInd(ind);
-    if (localInd.valid()) {
-        input->capacitance_on_triangles_w[localInd.get()] = c;
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getVertIClamp(const osh::GO vertex,
-                                                             bool local) const {
-    osh::Real local_val(0.0);
-
-    osh::LO ind{static_cast<osh::LO>(vertex)};
-    if (not local) {
-        ind = mesh.getLocalIndex(mesh::vertex_global_id_t(vertex), true).get();
-    }
-    mesh::vertex_id_t localInd(ind);
-    if (localInd.valid()) {
-        local_val = input->current_on_vertices_w[localInd.get()];
-    }
-    if (local) {
-        return local_val;
-    } else {
-        osh::Real res(0.0);
-        auto err = MPI_Allreduce(&local_val, &res, 1, MPI_DOUBLE, MPI_SUM, this->comm());
-        if (err != MPI_SUCCESS) {
-            MPI_Abort(this->comm(), err);
-        }
-        return res;
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setVertIClamp(const osh::GO vertex,
-                                                        const osh::Real current,
-                                                        bool local) {
-    osh::LO ind{static_cast<osh::LO>(vertex)};
-    if (not local) {
-        ind = mesh.getLocalIndex(mesh::vertex_global_id_t(vertex), false).get();
-    }
-    mesh::vertex_id_t localInd(ind);
-    if (localInd.valid()) {
-        input->current_on_vertices_w[localInd.get()] = current;
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::getBatchTriOhmicErevsNP(
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+template <typename CurrdefT, typename MCurrID>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::getBatchTriOhmicErevsNP(
     const gsl::span<const osh::GO>& triangles,
-    const model::ohmic_current_id& ohmic_current,
+    const MCurrID& ohmic_current,
     const gsl::span<double>& erev,
     bool local) const {
-    const auto& oc = statedef->ohmicCurrents().at(ohmic_current);
     for (size_t i = 0; i < triangles.size(); ++i) {
-        mesh::triangle_local_id_t triangle(static_cast<osh::LO>(triangles[i]));
-        if (!local) {
-            triangle = mesh.getLocalIndex(mesh::triangle_global_id_t(triangles[i]), true);
-        }
+        auto triangle = getLocalInd<mesh::triangle_local_id_t>(triangles[i], local, true);
         if (triangle.valid()) {
-            erev[i] = oc->getReversalPotential(triangle);
+            auto* patch = mesh.getTriPatch(triangle);
+            if (patch != nullptr) {
+                container::patch_id patch_id(patch->getMeshID().get());
+                const auto& patchdef = statedef->getPatchdef(patch_id);
+                const auto& currId = patchdef.getCurrIdx(ohmic_current);
+                const auto& currPtr = patchdef.template currents<CurrdefT>().at(currId.get());
+                erev[i] = currPtr->getReversalPotential(triangle);
+            }
         }
     }
 
@@ -1097,447 +3354,187 @@ void OmegaHSimulation<SSA, SearchMethod>::getBatchTriOhmicErevsNP(
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-double OmegaHSimulation<SSA, SearchMethod>::getTriOhmicErev(
-    osh::GO triangle,
-    const model::ohmic_current_id& ohmic_current,
-    bool local) const {
-    mesh::triangle_id_t local_index(static_cast<osh::LO>(triangle));
-    if (not local) {
-        local_index = mesh.getLocalIndex(mesh::triangle_global_id_t(triangle), true);
-    }
-    double rp{};
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+template <typename CurrdefT, typename MCurrID>
+void OmegaHSimulation<SSA, SearchMethod, DiffMethod>::setTriOhmicErev(osh::GO triangle,
+                                                                      const MCurrID& ohmic_current,
+                                                                      double reversal_potential,
+                                                                      bool local) {
+    auto local_index = getLocalInd<mesh::triangle_local_id_t>(triangle, local, true);
     if (local_index.valid()) {
-        const auto& oc = statedef->ohmicCurrents().at(ohmic_current);
-        rp = oc->getReversalPotential(local_index);
-    }
-
-    if (local) {
-        return rp;
-    } else {
-        double result{};
-        auto err = MPI_Allreduce(&rp, &result, 1, MPI_DOUBLE, MPI_SUM, this->comm());
-        if (err != MPI_SUCCESS) {
-            MPI_Abort(this->comm(), err);
-        }
-        return result;
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setTriOhmicErev(
-    osh::GO triangle,
-    const model::ohmic_current_id& ohmic_current,
-    double reversal_potential,
-    bool local) {
-    mesh::triangle_id_t local_index(static_cast<osh::LO>(triangle));
-    if (not local) {
-        local_index = mesh.getLocalIndex(mesh::triangle_global_id_t(triangle), true);
-    }
-    if (local_index.valid()) {
-        auto& oc = statedef->ohmicCurrents().at(ohmic_current);
-        oc->setReversalPotential(local_index, reversal_potential);
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setDiffOpBinomialThreshold(osh::Real threshold) {
-    data->diffOp.setBinomialThreshold(static_cast<osh::GO>(threshold));
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::Real OmegaHSimulation<SSA, SearchMethod>::getIterationTimeStep() const noexcept {
-    return data->time_delta;
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::exportMolStateToVTK(const std::string& /* filename */) {
-    // TODO(TCL) FIXME
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::I64 OmegaHSimulation<SSA, SearchMethod>::getDiffOpExtent(bool local) const {
-    osh::I64 extent = data->diffOp.getExtent();
-    if (local) {
-        return extent;
-    }
-
-    osh::I64 global_ext{};
-    auto err = MPI_Allreduce(&extent, &global_ext, 1, MPI_INT64_T, MPI_SUM, this->comm());
-    if (err != MPI_SUCCESS) {
-        MPI_Abort(this->comm(), err);
-    }
-    return global_ext;
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::I64 OmegaHSimulation<SSA, SearchMethod>::getSSAOpExtent(bool local) const {
-    const osh::I64 extent = data->ssaOp.getExtent();
-    if (local) {
-        return extent;
-    }
-
-    osh::I64 global_extent{};
-    auto err = MPI_Allreduce(&extent, &global_extent, 1, MPI_INT64_T, MPI_SUM, this->comm());
-    if (err != MPI_SUCCESS) {
-        MPI_Abort(this->comm(), err);
-    }
-    return global_extent;
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-osh::I64 OmegaHSimulation<SSA, SearchMethod>::getNIterations() const noexcept {
-    return num_iterations;
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-std::string OmegaHSimulation<SSA, SearchMethod>::createStateReport() {
-    // TODO(TCL) FIXME
-    return "";
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::compute_num_species_per_elements(
-    DistMesh& t_mesh,
-    const Statedef& statedef,
-    osh::LOs& num_species_per_owned_elems,
-    osh::LOs& num_species_per_elems,
-    std::optional<osh::LOs>& num_species_per_bounds) {
-    const auto& owned_elems_mask = t_mesh.owned_elems_mask();
-
-    {
-        osh::Write<osh::LO> num_species_per_owned_elems_w(owned_elems_mask.size(), 0);
-        osh::Write<osh::LO> num_species_per_elems_w(owned_elems_mask.size(), 0);
-        for (const auto& compartment: statedef.compdefs()) {
-            const auto num_species = compartment->getNSpecs();
-            for (auto elem: t_mesh.getEntities(compartment->getID())) {
-                if (owned_elems_mask[elem.get()] != 0) {
-                    num_species_per_owned_elems_w[elem.get()] = num_species;
-                }
-                num_species_per_elems_w[elem.get()] = num_species;
-            }
-        }
-        num_species_per_owned_elems = num_species_per_owned_elems_w;
-        num_species_per_elems = num_species_per_elems_w;
-    }
-
-    if (!statedef.patchdefs().empty()) {
-        // initialize a vector to record the number of species owned by a patch
-        // element and owned by the process
-        osh::Write<osh::LO> num_species_per_bounds_w(t_mesh.owned_bounds_mask().size(), 0);
-        for (const auto& patch: statedef.patchdefs()) {
-            for (const auto boundary: t_mesh.getOwnedEntities(patch->getID())) {
-                num_species_per_bounds_w[boundary.get()] = patch->getNSpecs();
-            }
-        }
-        num_species_per_bounds = num_species_per_bounds_w;
-    } else {
-        num_species_per_bounds = std::nullopt;
-    }
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::init(std::unique_ptr<Statedef>&& t_statedef) {
-    this->statedef.swap(t_statedef);
-    assert(statedef != nullptr);
-    this->mesh.init();
-
-    osh::LOs num_species_per_owned_elems;
-    osh::LOs num_species_per_elems;
-    std::optional<osh::LOs> num_species_per_bounds;
-    compute_num_species_per_elements(mesh,
-                                     *statedef,
-                                     num_species_per_owned_elems,
-                                     num_species_per_elems,
-                                     num_species_per_bounds);
-    this->input = std::make_unique<SimulationInput>(num_species_per_owned_elems,
-                                                    num_species_per_bounds,
-                                                    num_species_per_elems,
-                                                    0 /*Unused in context*/,
-                                                    this->rng,
-                                                    mesh.owned_verts_mask().size());
-
-    // Initialize triangle capacitance on membranes
-    for (auto& memb: statedef->membranes()) {
-        auto capac = memb.second->capacitance();
-        for (const auto tri: mesh.getOwnedEntities(memb.second->getPatch())) {
-            input->capacitance_on_triangles_w[tri.get()] = capac;
-        }
-    }
-
-    data = std::make_unique<SimulationData<SSA, SearchMethod>>(
-        mesh, *this->statedef, *input, this->rng, indepKProcs);
-    initialize_discretized_rates();
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::reset() {
-    this->num_iterations = 0;
-    this->state_time = 0;
-    setPotential(DEFAULT_MEMB_POT);
-    data->reset(this->state_time);
-    {
-        // reset ohmic currents manually set with method \a setTriOhmicErev
-        for (auto& [_, current]: statedef->ohmicCurrents()) {
-            current->reset();
+        auto* patch = mesh.getTriPatch(local_index);
+        if (patch != nullptr) {
+            container::patch_id patch_id(patch->getMeshID().get());
+            const auto& patchdef = statedef->getPatchdef(patch_id);
+            const auto& currId = patchdef.getCurrIdx(ohmic_current);
+            const auto& currPtr = patchdef.template currents<CurrdefT>().at(currId.get());
+            currPtr->setReversalPotential(local_index, reversal_potential);
+        } else {
+            throw std::invalid_argument("Triangle " + std::to_string(local_index.get()) +
+                                        " not in a patch.");
         }
     }
 }
 
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::initialize_discretized_rates() {
-    const auto& measure_info = mesh.getMeasure();
-    data->diffusions.reset();
-    osh::parallel_for(
-        this->mesh.owned_elems().size(),
-        [&measure_info, this](osh::LO e) __attribute__((always_inline, flatten)) {
-            const mesh::tetrahedron_id_t elem(mesh.owned_elems()[e]);
-            const auto elem_measure = measure_info.element_measure(elem);
-            const auto compartment_id = this->mesh.getCompartment(elem);
-            const auto compartment_mid = this->mesh.getCompartmentMeshID(elem);
-            const auto& compartment = this->statedef->getCompdef(compartment_id);
-            for (const auto& diffusion: compartment.diffdefs()) {
-                const auto species = diffusion->getSpecContainerIdx();
-                const auto dcst = diffusion->getDcst();
-                data->diffusions.rates_sum(elem, species) = 0;
-                const auto num_neighbors = mesh.tet_neighbors_int_data().size(elem.get());
-                for (auto face_idx = 0; face_idx < num_neighbors; ++face_idx) {
-                    auto d = mesh.tet_neighbors_int_data()(elem.get(), face_idx);
+//-----------------------------------------------
 
-                    for (auto& db: mesh.diffusionBoundaries()) {
-                        if (static_cast<size_t>(species.get()) >=
-                            db.comp2_diffusing_species.size()) {
-                            db.comp2_diffusing_species.resize(species.get() + 1, false);
-                        }
-                        if (static_cast<size_t>(species.get()) >=
-                            db.comp1_diffusing_species.size()) {
-                            db.comp1_diffusing_species.resize(species.get() + 1, false);
-                        }
-                    }
-
-                    if (mesh.getCompartmentMeshID(mesh::tetrahedron_id_t(d[0])) ==
-                            compartment_mid ||
-                        mesh.isActiveDiffusionBoundary(mesh::triangle_id_t(d[2]),
-                                                       compartment_mid,
-                                                       species)) {
-                        const auto neighbor_boundary_distance =
-                            mesh.tet_neighbors_real_data()(elem.get(), face_idx)[0];
-                        const auto neighbor_boundary_measure =
-                            mesh.tet_neighbors_real_data()(elem.get(), face_idx)[1];
-                        const auto propensity = dcst * neighbor_boundary_measure / elem_measure /
-                                                neighbor_boundary_distance;
-                        data->diffusions.ith_rate(elem, species, face_idx) = propensity;
-                        data->diffusions.rates_sum(elem, species) += propensity;
-                    }
-                }
-            }
-        });
-    data->updateIterationTimeStep();
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::evolve_rd(const osh::Real rd_dt) {
-    util::TimeTracker t;
-    t.start();
-
-    data->pools.reset_occupancy_rd(state_time);
-    data->ssaOp.run(rd_dt, state_time);
-    t.stop();
-    this->reactions_timer += t.diff();
-
-    if (data->active_diffusions) {
-        t.start();
-        data->diffOp(rd_dt, state_time);
-        t.stop();
-        this->diffusions_timer += t.diff();
-    }
-    state_time += rd_dt;
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::run_rd(const osh::Real end_time) {
-    data->ssaOp.resetAndUpdateAll(state_time, end_time);
-    // number of standard steps
-    const auto rd_dt_std = data->time_delta;
-    // this can be negative
-    const int n_steps_std = std::floor((end_time - state_time) / rd_dt_std) - 1;
-    // std steps loop -1. n_steps_std can be negative so int is the correct type
-    for (int i_rd = 0; i_rd < n_steps_std; ++i_rd) {
-        evolve_rd(std::min(rd_dt_std, end_time - state_time));
-    }
-
-    // sync time steps
-    // we compare always with end_time because comparing dts can fail due to numerical error
-    const auto next_std_state_time = state_time + rd_dt_std;
-    if (!steps::util::almost_equal(next_std_state_time, end_time) &&
-        next_std_state_time < end_time) {
-        evolve_rd(rd_dt_std);
-        assert(end_time > state_time);
-        assert(!steps::util::almost_equal(end_time, state_time));
-        evolve_rd(end_time - state_time);
-    } else if (!steps::util::almost_equal(end_time, state_time)) {
-        evolve_rd(end_time - state_time);
-    }
-
-    assert(steps::util::almost_equal(end_time, state_time));
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::evolve(const osh::Real ef_dt) {
-    data->pools.reset_occupancy_ef(state_time);
-
-    ++this->num_iterations;
-    data->kproc_state.resetCurrents();
-    osh::Reals potential_on_vertices(input->potential_on_vertices_w);
-    data->kproc_state.updateVDepSReacs(potential_on_vertices);
-
-    run_rd(state_time + ef_dt);
-
-    // We divide the charge_flows in currents_ by ef_dt so we really get the currents
-    data->kproc_state.ghkSurfaceReactions().finalizeCurrents(ef_dt);
-#if USE_PETSC
-    if (data->efield) {
-        util::TimeTracker t;
-        t.start();
-        data->efield->evolve(input->potential_on_vertices_w,
-                             input->current_on_vertices_w,
-                             input->capacitance_on_triangles_w,
-                             input->conductivity_on_triangles_w,
-                             input->reversal_potential_on_triangles_w,
-                             input->pools,
-                             data->kproc_state.ghkSurfaceReactions().currents(),
-                             state_time,
-                             ef_dt);
-        t.stop();
-        this->efield_timer += t.diff();
-    }
 #endif  // USE_PETSC
+
+/////////////////////
+// Utility methods //
+/////////////////////
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+util::strongid_vector<model::complex_substate_id, uint>
+OmegaHSimulation<SSA, SearchMethod, DiffMethod>::_convertComplexState(
+    const std::vector<std::vector<steps::model::SubunitStateFilter>>& f) {
+    util::strongid_vector<model::complex_substate_id, uint> state;
+    AssertLog(f.size() == 1);
+    state.container().reserve(f[0].size());
+    for (const auto& susfilt: f[0]) {
+        AssertLog(susfilt.min == susfilt.max);
+        state.container().push_back(susfilt.min);
+    }
+    return state;
+}
+
+//-----------------------------------------------
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod, DiffusionMethod DiffMethod>
+std::vector<util::strongid_vector<model::complex_substate_id, steps::model::SubunitStateFilter>>
+OmegaHSimulation<SSA, SearchMethod, DiffMethod>::_convertComplexFilters(
+    const std::vector<std::vector<steps::model::SubunitStateFilter>>& f) {
+    std::vector<util::strongid_vector<model::complex_substate_id, steps::model::SubunitStateFilter>>
+        filts;
+    filts.reserve(f.size());
+    for (auto& filt: f) {
+        filts.emplace_back(filt);
+    }
+    return filts;
+}
+
+//-----------------------------------------------
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+std::unique_ptr<Simulation> GetSimulation(steps::model::Model& model,
+                                          DistMesh& mesh,
+                                          const rng::RNGptr& r,
+                                          int _ssaMethod,
+                                          int _searchMethod,
+                                          int _diffMethod,
+                                          bool indepKProcs,
+                                          bool isEfield) {
+    auto ssaMethod = static_cast<SSAMethod>(_ssaMethod);
+    auto searchMethod = static_cast<NextEventSearchMethod>(_searchMethod);
+    auto diffMethod = static_cast<DiffusionMethod>(_diffMethod);
+
+    switch (ssaMethod) {
+    case SSAMethod::SSA:
+        return _getSimulation<SSAMethod::SSA>(
+            model, mesh, r, searchMethod, diffMethod, indepKProcs, isEfield);
+    case SSAMethod::RSSA:
+        return _getSimulation<SSAMethod::RSSA>(
+            model, mesh, r, searchMethod, diffMethod, indepKProcs, isEfield);
+    case SSAMethod::RLeaping:
+        if (searchMethod == NextEventSearchMethod::RLeaping) {
+            return _getSimulation<SSAMethod::RLeaping>(
+                model, mesh, r, searchMethod, diffMethod, indepKProcs, isEfield);
+        } else {
+            throw std::invalid_argument(
+                "The RLeaping SSA method can only be used with the RLeaping next event "
+                "search method");
+        }
+    default:
+        throw std::invalid_argument("Invalid SSA method");
+    }
+}
+
+template <SSAMethod SSA>
+std::unique_ptr<Simulation> _getSimulation(steps::model::Model& model,
+                                           DistMesh& mesh,
+                                           const rng::RNGptr& r,
+                                           NextEventSearchMethod searchMethod,
+                                           DiffusionMethod diffMethod,
+                                           bool indepKProcs,
+                                           bool isEfield) {
+    switch (searchMethod) {
+    case NextEventSearchMethod::Direct:
+        return _getSimulation<SSA, NextEventSearchMethod::Direct>(
+            model, mesh, r, diffMethod, indepKProcs, isEfield);
+    case NextEventSearchMethod::GibsonBruck:
+        if constexpr (SSA == SSAMethod::RSSA) {
+            throw std::invalid_argument(
+                "Cannot use GibsonBruck next event search method with RSSA method");
+        } else {
+            return _getSimulation<SSA, NextEventSearchMethod::GibsonBruck>(
+                model, mesh, r, diffMethod, indepKProcs, isEfield);
+        }
+    case NextEventSearchMethod::RLeaping:
+        if constexpr (SSA == SSAMethod::RLeaping) {
+            return _getSimulation<SSA, NextEventSearchMethod::RLeaping>(
+                model, mesh, r, diffMethod, indepKProcs, isEfield);
+        } else {
+            throw std::invalid_argument(
+                "The RLeaping SSA method can only be used in conjunction with the RLeaping "
+                "next event search method.");
+        }
+    default:
+        throw std::invalid_argument("Invalid next event search method");
+    }
 }
 
 template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::run(osh::Real end_time) {
-    Instrumentor::phase p("OmegaHSimulation::run()");
-
-    assert(end_time >= 0.0);
-
-#if USE_PETSC
-    const osh::Real ef_dt_std = data->efield ? data->efield->getDt()
-                                             : std::numeric_limits<double>::infinity();
-#else
-    const osh::Real ef_dt_std = std::numeric_limits<double>::infinity();
-#endif
-
-
-    // number of standard steps -1. It can be negative
-    const int n_steps_std = std::floor((end_time - state_time) / ef_dt_std) - 1;
-    // std steps loop -1. n_steps_std can be negative so int is the correct type
-    for (int i_ef = 0; i_ef < n_steps_std; ++i_ef) {
-        evolve(ef_dt_std);
+std::unique_ptr<Simulation> _getSimulation(steps::model::Model& model,
+                                           DistMesh& mesh,
+                                           const rng::RNGptr& r,
+                                           DiffusionMethod diffMethod,
+                                           bool indepKProcs,
+                                           bool isEfield) {
+    switch (diffMethod) {
+    case DiffusionMethod::ConstantDiffDt:
+        return std::make_unique<
+            OmegaHSimulation<SSA, SearchMethod, DiffusionMethod::ConstantDiffDt>>(
+            model, mesh, r, indepKProcs, isEfield);
+    case DiffusionMethod::TauLeapingDiffDt:
+        return std::make_unique<
+            OmegaHSimulation<SSA, SearchMethod, DiffusionMethod::TauLeapingDiffDt>>(
+            model, mesh, r, indepKProcs, isEfield);
+    default:
+        throw std::invalid_argument("Invalid diffusion method");
     }
-
-    // sync time steps
-    // we compare always with end_time because comparing dts can fail due to numerical error
-    const auto next_std_state_time = state_time + ef_dt_std;
-    if (!steps::util::almost_equal(next_std_state_time, end_time) &&
-        next_std_state_time < end_time) {
-        evolve(ef_dt_std);
-        assert(end_time > state_time);
-        assert(!steps::util::almost_equal(end_time, state_time));
-        evolve(end_time - state_time);
-    } else if (!steps::util::almost_equal(end_time, state_time)) {
-        evolve(end_time - state_time);
-    }
-
-    assert(steps::util::almost_equal(end_time, state_time));
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setDiffusionBoundaryActive(
-    const mesh::diffusion_boundary_name& diffusion_boundary_name,
-    const model::species_name& spec_id,
-    bool set_active) {
-    auto diffusion_boundary_id = mesh.getDiffusionBoundaryIndex(diffusion_boundary_name);
-    model::species_id mdl_spec_id = statedef->getSpecModelIdx(spec_id);
-    if (diffusion_boundary_id >= mesh.diffusionBoundaries().size()) {
-        throw std::invalid_argument("Invalid diffusion boundary " +
-                                    std::to_string(diffusion_boundary_id));
-    }
-    DistMesh::DiffusionBoundary& db = mesh.diffusionBoundaries()[diffusion_boundary_id];
-    Compdef& comp1 = statedef->getCompdef(db.mdl_comp1);
-    Compdef& comp2 = statedef->getCompdef(db.mdl_comp2);
-    container::species_id sp1 = comp1.getSpecContainerIdx(mdl_spec_id);
-    container::species_id sp2 = comp2.getSpecContainerIdx(mdl_spec_id);
-    auto& comp1_specs = db.comp1_diffusing_species;
-    auto& comp2_specs = db.comp2_diffusing_species;
-    if (comp1_specs.size() <= static_cast<size_t>(sp1.get())) {
-        comp1_specs.resize(sp1.get() + 1, false);
-    }
-    if (comp2_specs.size() <= static_cast<size_t>(sp2.get())) {
-        comp2_specs.resize(sp2.get() + 1, false);
-    }
-    if (db.conv_12.size() <= static_cast<size_t>(sp1.get())) {
-        db.conv_12.resize(sp1.get() + 1);
-    }
-    if (db.conv_21.size() <= static_cast<size_t>(sp2.get())) {
-        db.conv_21.resize(sp2.get() + 1);
-    }
-    db.conv_12[sp1.get()] = sp2;
-    db.conv_21[sp2.get()] = sp1;
-    comp1_specs[sp1.get()] = set_active;
-    comp2_specs[sp2.get()] = set_active;
-    initialize_discretized_rates();
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-bool OmegaHSimulation<SSA, SearchMethod>::getDiffusionBoundaryActive(
-    const mesh::diffusion_boundary_name& diffusion_boundary_name,
-    const model::species_name& spec_id) {
-    auto diffusion_boundary_id = mesh.getDiffusionBoundaryIndex(diffusion_boundary_name);
-    model::species_id mdl_spec_id = statedef->getSpecModelIdx(spec_id);
-    if (diffusion_boundary_id >= mesh.diffusionBoundaries().size()) {
-        throw std::invalid_argument("Invalid diffusion boundary " +
-                                    std::to_string(diffusion_boundary_id));
-    }
-    DistMesh::DiffusionBoundary& db = mesh.diffusionBoundaries()[diffusion_boundary_id];
-    Compdef& comp1 = statedef->getCompdef(db.mdl_comp1);
-    Compdef& comp2 = statedef->getCompdef(db.mdl_comp2);
-    container::species_id sp1 = comp1.getSpecContainerIdx(mdl_spec_id);
-    container::species_id sp2 = comp2.getSpecContainerIdx(mdl_spec_id);
-    auto& comp1_specs = db.comp1_diffusing_species;
-    auto& comp2_specs = db.comp2_diffusing_species;
-    if (comp1_specs.size() <= static_cast<size_t>(sp1.get())) {
-        comp1_specs.resize(sp1.get() + 1, false);
-    }
-    if (comp2_specs.size() <= static_cast<size_t>(sp2.get())) {
-        comp2_specs.resize(sp2.get() + 1, false);
-    }
-    if (db.conv_12.size() <= static_cast<size_t>(sp1.get())) {
-        db.conv_12.resize(sp1.get() + 1);
-    }
-    if (db.conv_21.size() <= static_cast<size_t>(sp2.get())) {
-        db.conv_21.resize(sp2.get() + 1);
-    }
-    db.conv_12[sp1.get()] = sp2;
-    db.conv_21[sp2.get()] = sp1;
-    return comp1_specs[sp1.get()] && comp2_specs[sp2.get()];
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::setMembIClamp(const model::membrane_id& membrane,
-                                                        osh::Real current) {
-    statedef->setStimulus(membrane, current);
-}
-
-template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
-void OmegaHSimulation<SSA, SearchMethod>::dumpDepGraphToFile(const std::string& path) const {
-    std::ofstream ostr(path);
-    data->kproc_state.write_dependency_graph(ostr);
 }
 
 // explicit template instantiation definitions
 
-template class OmegaHSimulation<SSAMethod::SSA, NextEventSearchMethod::GibsonBruck>;
-template class OmegaHSimulation<SSAMethod::SSA, NextEventSearchMethod::Direct>;
-template class OmegaHSimulation<SSAMethod::RSSA, NextEventSearchMethod::Direct>;
+template class OmegaHSimulation<SSAMethod::SSA,
+                                NextEventSearchMethod::GibsonBruck,
+                                DiffusionMethod::ConstantDiffDt>;
+template class OmegaHSimulation<SSAMethod::SSA,
+                                NextEventSearchMethod::Direct,
+                                DiffusionMethod::ConstantDiffDt>;
+template class OmegaHSimulation<SSAMethod::RSSA,
+                                NextEventSearchMethod::Direct,
+                                DiffusionMethod::ConstantDiffDt>;
+template class OmegaHSimulation<SSAMethod::RLeaping,
+                                NextEventSearchMethod::RLeaping,
+                                DiffusionMethod::ConstantDiffDt>;
+template class OmegaHSimulation<SSAMethod::SSA,
+                                NextEventSearchMethod::GibsonBruck,
+                                DiffusionMethod::TauLeapingDiffDt>;
+template class OmegaHSimulation<SSAMethod::SSA,
+                                NextEventSearchMethod::Direct,
+                                DiffusionMethod::TauLeapingDiffDt>;
+template class OmegaHSimulation<SSAMethod::RSSA,
+                                NextEventSearchMethod::Direct,
+                                DiffusionMethod::TauLeapingDiffDt>;
+template class OmegaHSimulation<SSAMethod::RLeaping,
+                                NextEventSearchMethod::RLeaping,
+                                DiffusionMethod::TauLeapingDiffDt>;
 
 }  // namespace steps::dist

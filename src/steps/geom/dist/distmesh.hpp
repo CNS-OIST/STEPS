@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Omega_h_profile.hpp>
 #include <numeric>
 #include <optional>
 #include <set>
@@ -15,6 +16,8 @@
 
 #include "measure.hpp"
 
+#include "geom/dist/distcomp.hpp"
+#include "geom/dist/distpatch.hpp"
 #include "geom/dist/fwd.hpp"
 #include "geom/geom.hpp"
 #include "math/point.hpp"
@@ -22,12 +25,28 @@
 #include "util/flat_multimap.hpp"
 #include "util/mesh.hpp"
 #include "util/optional_num.hpp"
+#include "util/strong_ra.hpp"
 #include "util/vocabulary.hpp"
 
 
 namespace steps::dist {
 
 using optional_id_t = util::OptionalNum<size_t>;
+
+struct TetStruct {
+    DistComp* compPtr{nullptr};
+    container::tetrahedron_id cont_id;
+    osh::Real vol;
+    osh::Vector<3> centroid;
+};
+
+struct TriStruct {
+    DistPatch* patchPtr{nullptr};
+    container::triangle_id cont_id;
+    osh::LO num_neighbors;
+    osh::Real area;
+    osh::Vector<3> centroid;
+};
 
 class DistMesh: public wm::Geom {
   public:
@@ -37,7 +56,7 @@ class DistMesh: public wm::Geom {
                                         mesh::vertex_local_id_t>;
     using point3d = math::point3d;
     struct intersectionInfo {
-        intersectionInfo(){};
+        intersectionInfo() = default;
         intersectionInfo(const point3d& point, const intersectionID& intersection)
             : point_(point)
             , intersection_(intersection) {}
@@ -58,6 +77,9 @@ class DistMesh: public wm::Geom {
 
     DistMesh(osh::Mesh mesh, const std::string& path, osh::Real scale = 0);
     DistMesh(osh::Library& library, const std::string& path, osh::Real scale = 0);
+
+    // Copy data from Omega_h mesh to DistMesh class members
+    void sync_mesh();
 
     /// to be called once all compartments, patches, ... have been declared
     void init();
@@ -119,7 +141,7 @@ class DistMesh: public wm::Geom {
      *
      * \return A vector of pointers to the compartments.
      */
-    const std::vector<DistComp*>& getAllComps() const noexcept {
+    const util::strongid_vector<mesh::compartment_id, DistComp*>& getAllComps() const noexcept {
         return distcomps;
     }
 
@@ -135,8 +157,11 @@ class DistMesh: public wm::Geom {
      *
      * \param tet_index Local index of the tetrahedron.
      * \param compartment Pointer to the DistComp object.
+     * \param cont_id Index of the tetrahedron in the compartment
      */
-    void setTetComp(mesh::tetrahedron_local_id_t tet_index, DistComp* compartment);
+    void setTetComp(mesh::tetrahedron_local_id_t tet_index,
+                    DistComp* compartment,
+                    container::tetrahedron_id cont_id);
 
     /**
      * \brief Get the compartment of a tetrahedron.
@@ -469,17 +494,7 @@ class DistMesh: public wm::Geom {
      */
     std::vector<mesh::vertex_local_id_t> getTet_(mesh::tetrahedron_local_id_t tet_index);
 
-    void addComp(const model::compartment_id& comp_id,
-                 model::compartment_label cell_set_label,
-                 DistComp* comp = nullptr);
-
-    void addComp(const model::compartment_id& comp_id,
-                 const std::vector<mesh::tetrahedron_global_id_t>& tets,
-                 DistComp* comp = nullptr);
-
-    void addComp(const model::compartment_id& comp_id,
-                 const std::vector<mesh::tetrahedron_local_id_t>& tets,
-                 DistComp* comp = nullptr);
+    void addComp(const model::compartment_id& comp_id, DistComp* comp = nullptr);
 
     /********************************** Patch ************************************/
 
@@ -493,8 +508,11 @@ class DistMesh: public wm::Geom {
      *
      * \param tri_index Local index of the triangle.
      * \param patch Pointer to the DistPatch object.
+     * \param cont_id Index of the triangle in the patch
      */
-    void setTriPatch(mesh::triangle_local_id_t tri_index, DistPatch* patch);
+    void setTriPatch(mesh::triangle_local_id_t tri_index,
+                     DistPatch* patch,
+                     container::triangle_id cont_id);
 
     /**
      * \brief Get the patch of a triangle.
@@ -560,7 +578,7 @@ class DistMesh: public wm::Geom {
      *
      * \return A vector of points to the patches.
      */
-    const std::vector<DistPatch*>& getAllPatches() const noexcept {
+    const util::strongid_vector<mesh::patch_id, DistPatch*>& getAllPatches() const noexcept {
         return distpatches;
     }
 
@@ -789,14 +807,6 @@ class DistMesh: public wm::Geom {
 
     void addPatch(const model::patch_id& name, DistPatch* patch);
 
-    void addPatch(const model::patch_id& name,
-                  const std::vector<mesh::triangle_global_id_t>& tris,
-                  DistPatch* patch);
-
-    void addPatch(const model::patch_id& name,
-                  const std::vector<mesh::triangle_local_id_t>& tris,
-                  DistPatch* patch);
-
     /********************************** Bar ***********************************/
 
     /**
@@ -977,7 +987,7 @@ class DistMesh: public wm::Geom {
     // mostly to display errors
 
 
-    std::string print(const mesh::vertex_local_id_t elem) {
+    std::string print(const mesh::vertex_local_id_t elem) const {
         std::ostringstream ss;
         ss << "vert: " << elem << ' ' << getPoint3d(elem);
         return ss.str();
@@ -1106,6 +1116,10 @@ class DistMesh: public wm::Geom {
     mesh::vertex_global_id_t getGlobalIndex(mesh::vertex_local_id_t index) const;
     mesh::vertex_local_id_t getLocalIndex(mesh::vertex_global_id_t index, bool owned) const;
 
+    inline bool redistributed() const noexcept {
+        return redistributed_;
+    }
+
     /// Identifiers of the elements owned by this process
     inline const mesh::tetrahedron_ids& owned_elems() const noexcept {
         return owned_elems_;
@@ -1122,8 +1136,14 @@ class DistMesh: public wm::Geom {
     };
 
     /// Number of elements owned by this process
+    /// TODO: Rename these to make it clearer that they only consider owned elems
     inline osh::LO num_elems() const noexcept {
         return owned_elems_.size();
+    }
+
+    /// Number of local elements in this process
+    inline osh::LO num_local_elems() const noexcept {
+        return owned_elems_mask_.size();
     }
 
     /// Identifiers of the boundaries owned by this process
@@ -1191,10 +1211,27 @@ class DistMesh: public wm::Geom {
         return osh::create_dist_for_variable_sized(mesh_.ask_dist(dims), copies2data);
     }
 
-    /// Syn the array
+    /// Create a dist for a subset of elements
+    osh::Dist create_subset_dist(osh::Int dim, osh::LOs subset);
+
+    /// Create a dist for a subset of elements and a variable number of items per element
+    ///  Note that we use a2ab (mapping between element idx and array idx) instead of copies2data
+    osh::Dist create_variable_sized_subset_dist(osh::Int dim, osh::LOs subset, osh::LOs a2ab);
+
+    /// Sync the array
     template <typename T>
     osh::Read<T> sync_array(osh::Int ent_dim, osh::Read<T> a, osh::Int width) {
         return mesh_.sync_array(ent_dim, a, width);
+    }
+
+    /// Sync a subset of the array
+    template <typename T>
+    osh::Read<T> sync_subset_array(osh::Int ent_dim,
+                                   osh::Read<T> a,
+                                   osh::LOs a2e,
+                                   T default_val,
+                                   osh::Int width) {
+        return mesh_.sync_subset_array(ent_dim, a, a2e, default_val, width);
     }
 
     /// Mapping a2ab from objects of dimension \p from to objects \p to (\f$ from < to \f$)
@@ -1207,6 +1244,12 @@ class DistMesh: public wm::Geom {
         return mesh_.ask_up(from, to).ab2b;
     }
 
+    /// Adjacencies for objects of dimension \p from to objects of dimension \p to (\f$ from > to
+    /// \f$)
+    inline osh::Adj ask_down(osh::Int from, osh::Int to) {
+        return mesh_.ask_down(from, to);
+    }
+
     /// ids of vertices of object of dimension \p dim
     inline osh::LOs ask_verts_of(osh::Int dim) {
         return mesh_.ask_verts_of(dim);
@@ -1215,6 +1258,16 @@ class DistMesh: public wm::Geom {
     /// ask elem -> vert mapping
     inline osh::LOs ask_elem_verts() {
         return mesh_.ask_elem_verts();
+    }
+
+    /// Get owners for dimension \p dim
+    inline osh::Remotes ask_owners(osh::Int dim) {
+        return mesh_.ask_owners(dim);
+    }
+
+    /// Get dist for dimension \p dim
+    inline osh::Dist ask_dist(osh::Int dim) {
+        return mesh_.ask_dist(dim);
     }
 
     /// Global indices
@@ -1230,6 +1283,11 @@ class DistMesh: public wm::Geom {
     /// Communicator
     inline MPI_Comm comm_impl() const noexcept {
         return mesh_.comm()->get_impl();
+    }
+
+    /// OmegaH communicator
+    inline const osh::CommPtr comm() const noexcept {
+        return mesh_.comm();
     }
 
     /// Communicator rank
@@ -1329,7 +1387,7 @@ class DistMesh: public wm::Geom {
     }
 
     inline osh::Int num_compartments() const noexcept {
-        return compid2elems_.size();
+        return distcomps.size();
     }
 
     inline const Measure& getMeasure() const noexcept {
@@ -1344,33 +1402,22 @@ class DistMesh: public wm::Geom {
      */
     std::tuple<osh::LOs, osh::Reals, osh::Real> measure(const model::region_id& region);
 
-    struct TetStruct {
-        DistComp* compPtr{nullptr};
-        osh::Real vol;
-        osh::Vector<3> centroid;
-    };
-
-    struct TriStruct {
-        DistPatch* patchPtr{nullptr};
-        osh::LO num_neighbors;
-        osh::Real area;
-        osh::Vector<3> centroid;
-    };
-
-    inline const std::vector<TetStruct>& getTetInfo() const noexcept {
+    inline const util::strongid_vector<mesh::tetrahedron_local_id_t, TetStruct>& getTetInfo()
+        const noexcept {
         return tetInfo_;
     }
 
-    inline const std::vector<TriStruct>& getTriInfo() const noexcept {
+    inline const util::strongid_vector<mesh::triangle_local_id_t, TriStruct>& getTriInfo()
+        const noexcept {
         return triInfo_;
     }
 
-    inline const TriStruct& getTri(mesh::triangle_id_t id) const noexcept {
-        return triInfo_[static_cast<size_t>(id.get())];
+    inline const TriStruct& getTri(mesh::triangle_local_id_t tri) const noexcept {
+        return triInfo_[tri];
     }
 
-    inline const TetStruct& getTet(mesh::tetrahedron_id_t id) const noexcept {
-        return tetInfo_[static_cast<size_t>(id.get())];
+    inline const TetStruct& getTet(mesh::tetrahedron_local_id_t tet) const noexcept {
+        return tetInfo_[tet];
     }
 
     const auto& getClassSets() const noexcept {
@@ -1383,9 +1430,14 @@ class DistMesh: public wm::Geom {
 
     model::compartment_id getCompartment(mesh::tetrahedron_id_t element) const noexcept;
 
-    mesh::compartment_id getCompartmentMeshID(mesh::tetrahedron_id_t element) const noexcept {
-        return mesh::compartment_id(elem2compid_[element.get()]);
-    }
+    mesh::compartment_id getRegionMeshID(mesh::tetrahedron_local_id_t element) const noexcept;
+
+    mesh::patch_id getRegionMeshID(mesh::triangle_local_id_t element) const noexcept;
+
+    container::compartment_id getRegionContID(mesh::tetrahedron_local_id_t element) const noexcept;
+
+    container::patch_id getRegionContID(mesh::triangle_local_id_t element) const noexcept;
+
     /**
      * \param patch patch label
      * \return boundaries owned by this process that belong to the given patch
@@ -1495,10 +1547,6 @@ class DistMesh: public wm::Geom {
         return neighbors_per_element_;
     }
 
-    const std::unordered_map<model::compartment_id, model::compartment_label>& compartment_labels()
-        const noexcept {
-        return compIdtoLabel;
-    }
     /**
      * \brief Add to the mesh geometrical information about a diffusion
      * boundary. This is done by providing ids of neighbouring compartment and
@@ -1512,10 +1560,12 @@ class DistMesh: public wm::Geom {
         std::optional<std::set<mesh::triangle_global_id_t>> triangles = std::nullopt);
 
     struct DiffusionBoundary {
-        /// Test whether a species with container 1 index is diffusing
-        std::vector<bool> comp1_diffusing_species;
-        /// Test whether a species with container 2 index is diffusing
-        std::vector<bool> comp2_diffusing_species;
+        /// Diffusion constant for each species of comp1
+        /// (0 if not diffusing, -1 for default dcst, > 0 for custom dcst)
+        std::vector<osh::Real> comp1_spec2dcst;
+        /// Diffusion constant for each species of comp2
+        /// (0 if not diffusing, -1 for default dcst, > 0 for custom dcst)
+        std::vector<osh::Real> comp2_spec2dcst;
         /// Convert a container 1 index into a container 2 index
         std::vector<container::species_id> conv_12;
         /// Convert a container 2 index into a container 1 index
@@ -1527,9 +1577,12 @@ class DistMesh: public wm::Geom {
         model::compartment_id mdl_comp1, mdl_comp2;
     };
 
-    std::vector<DiffusionBoundary>& diffusionBoundaries() noexcept {
+    util::strongid_vector<mesh::diffusion_boundary_id, DiffusionBoundary>&
+    diffusionBoundaries() noexcept {
         return diffusion_boundaries_;
     }
+
+    void resetDiffBoundaries();
 
     void addMembrane(const model::membrane_id name, DistMemb* memb);
 
@@ -1544,43 +1597,48 @@ class DistMesh: public wm::Geom {
     inline container::species_id convertSpeciesID(mesh::triangle_id_t triangle,
                                                   mesh::compartment_id from_comp_id,
                                                   container::species_id spec_id) const {
-        const auto& db = diffusion_boundaries_[*diffusion_boundary_ids_[triangle.get()]];
+        const auto& db = diffusion_boundaries_[diffusion_boundary_ids_[triangle]];
         return (db.msh_comp1 == from_comp_id)
-                   ? diffusion_boundaries_[*diffusion_boundary_ids_[triangle.get()]]
-                         .conv_12[spec_id.get()]
-                   : diffusion_boundaries_[*diffusion_boundary_ids_[triangle.get()]]
+                   ? diffusion_boundaries_[diffusion_boundary_ids_[triangle]].conv_12[spec_id.get()]
+                   : diffusion_boundaries_[diffusion_boundary_ids_[triangle]]
                          .conv_21[spec_id.get()];
     }
 
     /**
-     * \brief  Determine whether a triangle allows diffusion of a species id
+     * \brief  Return the diffusion constant across a triangle for a species id
      * spec_id defined in the compartment comp_id
+     * Return 0 if the triangle is not part of a diffusion boundary or if diffusion is off
+     * Otherwise, return a positive value if a specific diffusion constant has been specified
+     * by the user, or -1 if the default value should be used.
      */
-    inline bool isActiveDiffusionBoundary(mesh::triangle_id_t triangle,
-                                          mesh::compartment_id comp_id,
-                                          container::species_id spec_id) const {
-        if (diffusion_boundary_ids_[triangle.get()]) {
-            return (diffusion_boundaries_[*diffusion_boundary_ids_[triangle.get()]].msh_comp1 ==
-                    comp_id)
-                       ? diffusion_boundaries_[*diffusion_boundary_ids_[triangle.get()]]
-                             .comp1_diffusing_species[spec_id.get()]
-                       : diffusion_boundaries_[*diffusion_boundary_ids_[triangle.get()]]
-                             .comp2_diffusing_species[spec_id.get()];
+    inline osh::Real getDiffusionBoundaryDcst(mesh::triangle_id_t triangle,
+                                              mesh::compartment_id comp_id,
+                                              container::species_id spec_id) const {
+        auto dbid = diffusion_boundary_ids_[triangle];
+        if (dbid.valid()) {
+            return (diffusion_boundaries_[dbid].msh_comp1 == comp_id)
+                       ? diffusion_boundaries_[dbid].comp1_spec2dcst[spec_id.get()]
+                       : diffusion_boundaries_[dbid].comp2_spec2dcst[spec_id.get()];
         } else {
-            return false;
+            return 0.0;
         }
     }
 
     /**
      * \brief Extract the boundary index from the nickname
      */
-    size_t getDiffusionBoundaryIndex(const mesh::diffusion_boundary_name& name) const {
+    mesh::diffusion_boundary_id getDiffusionBoundaryIndex(
+        const mesh::diffusion_boundary_name& name) const {
         auto it = diff_bound_name_2_index_.find(name);
         if (it != diff_bound_name_2_index_.end()) {
             return it->second;
         } else {
             throw std::invalid_argument(std::string("Unknown diffusion boundary ") + name);
         }
+    }
+
+    inline DiffusionBoundary& getDiffusionBoundary(const mesh::diffusion_boundary_name& name) {
+        return diffusion_boundaries_[getDiffusionBoundaryIndex(name)];
     }
 
     // public alias type for segment intersections
@@ -1603,14 +1661,27 @@ class DistMesh: public wm::Geom {
                                        const double init_seg_length,
                                        intersection_list_t& ans);
 
+  private:
+    /// Helper to sync intersect results, convert lid to gid and distribute results among all ranks
+    std::vector<std::vector<std::pair<mesh::tetrahedron_global_id_t, double>>>
+    _syncIntersectResults(const std::vector<intersection_list_t>& local_ans) const;
+
+  public:
     /**
      * \brief Computes the percentage of intersection of a line of segments with the mesh tets
      *
      * \return A vector of vectors (for each segment) containing pairs <tet, intersection ratio>
      */
-    std::vector<intersection_list_t> intersect(const double* points,
-                                               int n_points,
-                                               int sampling = -1);
+    std::vector<intersection_list_t> localIntersect(const double* points,
+                                                    int n_points,
+                                                    int sampling = -1);
+
+    /**
+     * \brief Global version of localIntersect
+     */
+    std::vector<std::vector<std::pair<mesh::tetrahedron_global_id_t, double>>>
+    intersect(const double* points, int n_points, int sampling = -1);
+
 
     /**
      * \brief Similar to the intersect method but here we deal with independent segments, i.e.
@@ -1620,9 +1691,14 @@ class DistMesh: public wm::Geom {
      * \return  A vector of vectors (for each segment) containing pairs <tet, intersection
      * ratio>
      */
-    std::vector<intersection_list_t> intersectIndependentSegments(const double* points,
-                                                                  int n_points,
-                                                                  int sampling = -1);
+    std::vector<intersection_list_t> localIntersectIndependentSegments(const double* points,
+                                                                       int n_points,
+                                                                       int sampling = -1);
+    /**
+     * \brief Global version of intersectIndependentSegments
+     */
+    std::vector<std::vector<std::pair<mesh::tetrahedron_global_id_t, double>>>
+    intersectIndependentSegments(const double* points, int n_points, int sampling = -1);
 
     /**
      * \brief Gather geometrical entities indices across MPI processes
@@ -1639,7 +1715,8 @@ class DistMesh: public wm::Geom {
                                           MPI_Datatype datatype);
 
   private:
-    std::unordered_map<mesh::diffusion_boundary_name, size_t> diff_bound_name_2_index_;
+    std::unordered_map<mesh::diffusion_boundary_name, mesh::diffusion_boundary_id>
+        diff_bound_name_2_index_;
 
     // Split of findNextIntersection. Case when p_beg lies on a vert
     std::pair<intersectionInfo, intersectionID> _findNextIntersectionFromVert(
@@ -1719,6 +1796,9 @@ class DistMesh: public wm::Geom {
     const std::string path_;
     const osh::Real scale_;
 
+    /// \brief Whether the mesh was redistributed during initialization
+    bool redistributed_{false};
+
     std::unique_ptr<Measure> measure_;
     Measure::element_measure_func measureFunc_;
 
@@ -1779,30 +1859,18 @@ class DistMesh: public wm::Geom {
     point3d ownedBBoxMin{};
     point3d ownedBBoxMax{};
 
-    std::vector<TetStruct> tetInfo_;
-    std::vector<TriStruct> triInfo_;
+    util::strongid_vector<mesh::tetrahedron_local_id_t, TetStruct> tetInfo_;
+    util::strongid_vector<mesh::triangle_local_id_t, TriStruct> triInfo_;
     /// provide the number of neighbors of a given element
     osh::Read<osh::LO> neighbors_per_element_;
     /// provide the number of neighbors of an owned element index
     osh::Read<osh::LO> neighbors_per_owned_element_idx_;
 
-    /// get compartment identifier of a given element
-    osh::Write<osh::LO> elem2compid_;
-    std::unordered_map<mesh::compartment_id, mesh::tetrahedron_ids> compid2elems_;
-    /// FIXME TCL: compid2ownedvol should be moved in the `measure` class
-    std::vector<osh::Real> compid2ownedvol;
-    std::vector<mesh::tetrahedron_ids> comp2owned_elems_;
-    std::unordered_map<model::compartment_label, model::compartment_id> compLabelToId;
-    std::unordered_map<model::compartment_id, model::compartment_label> compIdtoLabel;
     std::map<model::compartment_id, mesh::compartment_id> apicompid2meshcompid;
-    std::vector<model::compartment_id> meshcompid2apicompid;
-    std::vector<DistComp*> distcomps;
+    util::strongid_vector<mesh::compartment_id, DistComp*> distcomps;
 
     std::map<model::patch_id, mesh::patch_id> apipatchid2meshpatchid;
-    std::vector<model::patch_id> meshpatchid2apipatchid;
-    std::unordered_map<mesh::patch_id, mesh::triangle_ids> patchid2bounds_;
-    std::vector<mesh::triangle_ids> patch2owned_bounds_;
-    std::vector<DistPatch*> distpatches;
+    util::strongid_vector<mesh::patch_id, DistPatch*> distpatches;
 
     /// store neighbors distance and area
     util::flat_multimap<osh::Real, 2> tet_neighbors_real_data_;
@@ -1813,25 +1881,26 @@ class DistMesh: public wm::Geom {
     /// same compartment
     util::flat_multimap<osh::LO, 1> tet_neighbors_in_comp_index_;
     /// all diffusion boundaries
-    std::vector<DiffusionBoundary> diffusion_boundaries_;
+    util::strongid_vector<mesh::diffusion_boundary_id, DiffusionBoundary> diffusion_boundaries_;
     /// store the diffusion boundary id
-    std::vector<optional_id_t> diffusion_boundary_ids_;
+    util::strongid_vector<mesh::triangle_local_id_t, mesh::diffusion_boundary_id>
+        diffusion_boundary_ids_;
     /// all membranes
     std::map<model::membrane_id, DistMemb*> membranes_;
 
     /// \brief number of elements in the entire mesh
-    const osh::GO total_num_elems_;
+    osh::GO total_num_elems_;
 
     /// \brief number of boundaries in the entire mesh
-    const osh::GO total_num_bounds_;
+    osh::GO total_num_bounds_;
 
     /// \brief number of boundaries in the entire mesh.
     ///
     /// Equal to total_num_bounds_ in 2D.
-    const osh::GO total_num_bars_;
+    osh::GO total_num_bars_;
 
     /// \brief number of vertices in the entire mesh
-    const osh::GO total_num_verts_;
+    osh::GO total_num_verts_;
 
     /// \brief representative tolerance based on a sample (per rank) of volumes
     double linTol_ = -1.0;

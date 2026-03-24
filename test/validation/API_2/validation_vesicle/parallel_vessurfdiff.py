@@ -38,7 +38,7 @@ dt=0.0001
 
 class TestRDMPITetvesicleVesSurfDiff(unittest.TestCase):
 
-    def test_tetVesicle_vessurfdiff(self):
+    def _test_tetVesicle_vessurfdiff(self, defaultDiam, newDiam, shouldPass):
 
         model = Model()
         with model:
@@ -46,8 +46,7 @@ class TestRDMPITetvesicleVesSurfDiff(unittest.TestCase):
             vsys = VolumeSystem.Create()
             vssys = VesicleSurfaceSystem.Create()
 
-            # radius of 50nm
-            Ves1 = Vesicle.Create(ves_radius*2, 0, vssys)
+            Ves1 = Vesicle.Create(defaultDiam, 0, vssys)
 
             SA = Species.Create()
 
@@ -85,11 +84,15 @@ class TestRDMPITetvesicleVesSurfDiff(unittest.TestCase):
                 print(n, 'of', NITER)
 
             sim.newRun()
-            sim.setVesicleDT(dt)
+            if not shouldPass:
+                sim.setVesicleDT(dt)
             
-            v = sim.comp.addVesicle(Ves1)
+            v = sim.comp.addVesicle(Ves1, diameter=newDiam)
             v.Pos = [0,0,0] # make the vector calculation nice and easy
             v('surf').SA.Count = 1
+
+            if shouldPass:
+                sim.setVesicleDT(dt)
             
             for t in tpnts:
                 sim.run(t)
@@ -135,5 +138,24 @@ class TestRDMPITetvesicleVesSurfDiff(unittest.TestCase):
 
         for i in range(ntpnts):
             if i > 0:
-                self.assertTrue(tol_funcs.tolerable(res_mean[i], resQ_mean[i], tolerance))
-                self.assertTrue(tol_funcs.tolerable(res_std[i], resQ_std[i], tolerance))
+                if shouldPass:
+                    self.assertTrue(tol_funcs.tolerable(res_mean[i], resQ_mean[i], tolerance))
+                    self.assertTrue(tol_funcs.tolerable(res_std[i], resQ_std[i], tolerance))
+                else:
+                    self.assertFalse(tol_funcs.tolerable(res_mean[i], resQ_mean[i], tolerance))
+                    self.assertFalse(tol_funcs.tolerable(res_std[i], resQ_std[i], tolerance))
+
+
+    def test_tetVesicle_vessurfdiff(self):
+        # Give unexpected diameter as default but correct diameter when adding the vesicle
+        self._test_tetVesicle_vessurfdiff(
+            defaultDiam=ves_radius * 1,
+            newDiam=ves_radius * 2,
+            shouldPass=True
+        )
+        # Give correct diameter as default but unexpected diameter when adding the vesicle
+        self._test_tetVesicle_vessurfdiff(
+            defaultDiam=ves_radius * 2,
+            newDiam=ves_radius * 1,
+            shouldPass=False
+        )

@@ -20,6 +20,7 @@ import steps.rng as srng
 import steps.utilities.meshio as meshio
 import steps.mpi
 import steps.mpi.solver as ssolver
+import steps.utilities.geom_decompose as gd
 
 comm_world = MPI.COMM_WORLD
 
@@ -37,7 +38,6 @@ sim_parameters = {
 # STEPS
     'sim_end':  0.05,           # simulation stop time s
     'EF_dt':    1.0e-5,         # E-field evaluation time step s
-    'SSA_solver': 'Tetvesicle'
 }
 
 def ROIset(x):
@@ -117,7 +117,7 @@ def build_geometry(mesh_path):
     mesh.addROI('v_zmin',sgeom.ELEM_VERTEX,zmin_vset)
     mesh.addROI('v_zmin_sample',sgeom.ELEM_VERTEX,radial_extrema(mesh,zmin_vset))
     mesh.addROI('v_zmax_sample',sgeom.ELEM_VERTEX,radial_extrema(mesh,zmax_vset))
-    return mesh
+    return mesh, memb_tris
 
 
 def build_model(mesh, param):
@@ -139,19 +139,23 @@ def build_model(mesh, param):
     return mdl
 
 
-def init_sim(model, mesh, seed, param, efsolver):
+def init_sim(model, mesh, seed, param, efsolver, ssasolver, membtris):
     # Create the solver objects
-    if param['SSA_solver'] == 'Tetvesicle':
-        rng = srng.create('mt19937', 512)
-        rng.initialize(seed)
+    rng = srng.create('mt19937', 512)
+    rng.initialize(seed)
+    if ssasolver == 'Tetvesicle':
         sim = ssolver.TetVesicle(model, mesh, rng, efsolver)
-        sim.reset()
-        sim.setEfieldDT(param['EF_dt'])
+    elif ssasolver == 'TetOpSplit':
+        tet_hosts = gd.linearPartition(mesh, [1, 1, steps.mpi.nhosts])
+        tri_hosts = gd.partitionTris(mesh, tet_hosts, membtris)
+        sim = ssolver.TetOpSplit(model, mesh, rng, efsolver, tet_hosts, tri_hosts)
+    else:
+        raise ValueError('SSA solver ' + ssasolver + 'not available')
+    
+    sim.reset()
+    sim.setEfieldDT(param['EF_dt'])
 
-    else :
-        raise ValueError('SSA solver ' + param['SSA_solver'] + 'not available')
-
-    print('Running Rallpack1 test with ' + param['SSA_solver'])
+    print('Running Rallpack1 test with ' + ssasolver)
 
     # Correction factor for deviation between mesh and model cylinder:
     area_cylinder = np.pi * param['diameter'] * param['length']
@@ -189,7 +193,6 @@ def run_sim(sim, dt, t_end, vertices, verbose=False):
         if verbose and not l%100:  print(str(l)+" out of "+str(N))
         if (l==int(N/2)):
             sim.checkpoint('./validation_cp_mpi/cp/rallpack1')
-            sim.reset()
             sim.restore('./validation_cp_mpi/cp/rallpack1')
         sim.run(l*dt)
         result[l,:] = [sim.getVertV(v) for v in vertices]
@@ -200,7 +203,7 @@ def run_sim(sim, dt, t_end, vertices, verbose=False):
 # Returns RMS error, table containing computed end-point voltages
 # and reference voltage data.
 
-def run_comparison(seed, mesh_file, v0_datafile, v1_datafile, efsolver, verbose=False):
+def run_comparison(seed, mesh_file, v0_datafile, v1_datafile, efsolver, ssasolver, verbose=False):
     # sample at same interval as rallpack1 reference data
     sim_dt = 5.0e-5
 
@@ -212,9 +215,9 @@ def run_comparison(seed, mesh_file, v0_datafile, v1_datafile, efsolver, verbose=
     vref_0um = np.array([v for (t,v) in snarf(v0_datafile)])
     vref_1000um = np.array([v for (t,v) in snarf(v1_datafile)])
 
-    geom = build_geometry(mesh_file)
+    geom, membtris = build_geometry(mesh_file)
     model = build_model(geom, sim_parameters)
-    sim = init_sim(model, geom, seed, sim_parameters, efsolver)
+    sim = init_sim(model, geom, seed, sim_parameters, efsolver, ssasolver, membtris)
 
     # grab sample vertices
     zmin_sample = geom.getROIData('v_zmin_sample')

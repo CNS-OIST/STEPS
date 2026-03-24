@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,7 +28,7 @@ from . import objects
 from . import state
 from . import utils
 
-from .utils import Event, Loc, spherical2Cartesian
+from .utils import Event, Loc, spherical2Cartesian, progress
 
 
 # class MeshGroup(objects.BlenderCollection):
@@ -80,14 +80,14 @@ class MeshGroup(objects.BlenderCollection, state.State):
                 finalGroups[name] = surf
                 compSurfaces = compSurfaces[1:]
 
-        for name, tris in finalGroups.items():
+        for name, tris in progress(finalGroups.items(), 'Add mesh parts'):
             # These meshes are not user parameterizable
             self._compMeshes[name] = self._getParam(
                 name,
                 objects.STEPSMeshObject,
                 name=name,
                 material=None,
-                solidifySurface=False,
+                surfaceThickness=0,
                 _scale=self.parent.scale,
                 _verts=self._meshVertices,
                 _tris=tris,
@@ -137,7 +137,7 @@ class VesiclePathGroup(objects.BlenderCollection):
     def setUp(self, coll, fromScratch):
         super().setUp(coll, fromScratch)
         self._paths = {}
-        for pathName, path in self._pathData.items():
+        for pathName, path in progress(self._pathData.items(), 'Add vesicle paths'):
             self._paths[pathName] = self._getParam(
                 pathName,
                 objects.STEPSVesiclePath,
@@ -155,7 +155,7 @@ class SpeciesGroup(objects.BlenderCollection, state.State):
     def setUp(self, coll, fromScratch):
         super().setUp(coll, fromScratch)
         self._species = {}
-        for spec in self._specData:
+        for spec in progress(self._specData, 'Add species'):
             self._species[spec] = self._getParam(
                 spec,
                 objects.BlenderSpecies,
@@ -213,31 +213,13 @@ class SpeciesGroup(objects.BlenderCollection, state.State):
             positions = []
             for tri, cnt in zip(*state[specName][Loc.TRI]):
                 p0, p1, p2 = [self.parent._allElems[Loc.VERT][v] for v in self.parent._allElems[Loc.TRI][tri]]
-                for i in range(int(cnt)):
-                    s, t = np.random.random(2)
-                    u = s**0.5
-                    v = u * t
-                    positions.append((1 - u) * p0 + (u - v) * p1 + v * p2)
+                positions += utils.get_points_in_triangle(p0, p1, p2, cnt)
 
             for tet, cnt in zip(*state[specName][Loc.TET]):
                 p0, p1, p2, p3 = [
                     self.parent._allElems[Loc.VERT][v] for v in self.parent._allElems[Loc.TET][tet]
                 ]
-                for i in range(int(cnt)):
-                    s, t, u = np.random.random(3)
-                    if s + t > 1:
-                        s = 1 - s
-                        t = 1 - t
-                    if t + u > 1:
-                        tmp = u
-                        u = 1 - s - t
-                        t = 1 - tmp
-                    elif s + t + u > 1:
-                        tmp = u
-                        u = s + t + u - 1
-                        s = 1 - t - tmp
-                    a = 1 - s - t - u
-                    positions.append(a * p0 + s * p1 + t * p2 + u * p3)
+                positions += utils.get_points_in_tetrahedron(p0, p1, p2, p3, cnt)
 
             spec._setPositions(scene, depg, self.parent.scale * np.array(positions))
 
@@ -251,7 +233,7 @@ class LinkSpeciesGroup(objects.BlenderCollection, state.State):
     def setUp(self, coll, fromScratch):
         super().setUp(coll, fromScratch)
         self._linkSpecs = {}
-        for i, (linkspec, indexes) in enumerate(self._linkSpecData):
+        for i, (linkspec, indexes) in progress(enumerate(self._linkSpecData), 'Add link species'):
             self._linkSpecs[linkspec] = self._getParam(
                 linkspec,
                 objects.BlenderLinkSpecies,
@@ -331,13 +313,15 @@ class VesicleGroup(objects.BlenderCollection, state.State):
         super().setUp(coll, fromScratch)
         self._vesicles = {}
         self._ves2Rad = {}
-        for i, (ves, radius, indexesLocations, specs) in enumerate(self._vesData):
+        self._nonDefVesRad = {}
+        for i, (ves, radius, indexesLocations, specs, nonDefRads) in progress(enumerate(self._vesData), 'Add vesicles'):
             meshLocations = {
                 idx: self.parent.Meshes.getCompMesh(loc)
                 for idx, loc in indexesLocations.items()
             }
             species = [self.parent.Species._species[specName] for specName in specs]
             self._ves2Rad[ves] = radius
+            self._nonDefVesRad.update(nonDefRads)
             self._vesicles[ves] = self._getParam(
                 ves,
                 objects.BlenderVesicles,
@@ -356,13 +340,15 @@ class VesicleGroup(objects.BlenderCollection, state.State):
             pos = self.parent._getVesPositions(vesName, tind)
             countIn = self.parent._getVesInSpecCounts(vesName, tind)
             posSurf = self.parent._getVesSurfSpecRelPos(vesName, tind)
+            onPath = self.parent._getVesOnPath(vesName, tind)
             events = self.parent._getVesEvents(vesName, tind)
             vesDct, evDct = state.setdefault(vesName, ({}, events))
             for idx, p in pos.items():
                 ci = countIn.get(idx, {})
                 ps = posSurf.get(idx, {})
                 ev = events.get(idx, [])
-                vesDct[idx] = (p, ci, ps)
+                pp = onPath.get(idx, None)
+                vesDct[idx] = (p, ci, ps, pp)
         return state
 
     def _getTriNormal(self, triIdx):
@@ -374,7 +360,7 @@ class VesicleGroup(objects.BlenderCollection, state.State):
             return norm / np.linalg.norm(norm)
         return None
 
-    def _animateExocytosis(self, vesName, pos1, triPos, triIdx, ratio):
+    def _animateExocytosis(self, vesName, vesIdx, pos1, triPos, triIdx, ratio):
         pos = None
         if ratio <= 0.5:
             pos = pos1 + 2 * ratio * (triPos - pos1)
@@ -382,31 +368,34 @@ class VesicleGroup(objects.BlenderCollection, state.State):
             triNorm = self._getTriNormal(triIdx)
             if np.dot(triNorm, triPos - pos1) < 0:
                 triNorm = -triNorm
-            dest = triPos + triNorm * self._ves2Rad[vesName]
+            dest = triPos + triNorm * self.getVesRad(vesName, vesIdx)
             pos = triPos + 4 * (ratio - 0.5) * (dest - triPos)
         return pos
 
-    def _animateEndocytosis(self, vesName, pos2, triPos, triIdx, ratio):
+    def _animateEndocytosis(self, vesName, vesIdx, pos2, triPos, triIdx, ratio):
         pos = None
         if 0.25 <= ratio <= 0.5:
             triNorm = self._getTriNormal(triIdx)
             if np.dot(triNorm, triPos - pos2) < 0:
                 triNorm = -triNorm
-            orig = triPos + triNorm * self._ves2Rad[vesName]
+            orig = triPos + triNorm * self.getVesRad(vesName, vesIdx)
             pos = orig + 4 * (ratio - 0.25) * (triPos - orig)
         elif ratio > 0.5:
             pos = triPos + (2 * ratio - 1) * (pos2 - triPos)
         return pos
+
+    def _getProjectionOnSurface(self, center, r, p):
+        return center + (p - center) / np.linalg.norm(p - center) * r
 
     def _stateInterpolation(self, state1, state2, ratio):
         state = {}
         for vesName, (st1, ev1) in state1.items():
             st2, ev2 = state2[vesName]
             st, _ = state.setdefault(vesName, ({}, ev2))
-            for idx, (pos1, cnts1, surfPos1) in st1.items():
+            for idx, (pos1, cnts1, surfPos1, pathPos1) in st1.items():
                 st2Tpl = st2.get(idx, None)
                 if st2Tpl is not None:
-                    pos2, cnts2, surfPos2 = st2Tpl
+                    pos2, cnts2, surfPos2, pathPos2 = st2Tpl
 
                     pos = pos1 + (pos2 - pos1) * ratio
                     cnts = {
@@ -432,35 +421,44 @@ class VesicleGroup(objects.BlenderCollection, state.State):
                             for sidx2 in set(sdata2.keys()) - set(sdata1.keys()):
                                 spDct[sidx2] = sdata2[sidx2]
 
-                    st[idx] = (pos, cnts, surfPos)
+                    if pathPos1 is None and pathPos2 is None:
+                        pathPos = None
+                    else:
+                        if pathPos1 is None:
+                            pathPos1 = self._getProjectionOnSurface(pos, self._ves2Rad[vesName], pathPos2)
+                        if pathPos2 is None:
+                            pathPos2 = self._getProjectionOnSurface(pos, self._ves2Rad[vesName], pathPos1)
+                        pathPos = pathPos1 + (pathPos2 - pathPos1) * ratio
+
+                    st[idx] = (pos, cnts, surfPos, pathPos)
                 elif idx in ev2:
                     # Exocytosis
                     for evType, evRatio, triIdx, triPos, ridx in ev2[idx]:
                         if evType == Event.EXOCYTOSIS.value:
-                            pos = self._animateExocytosis(vesName, pos1, triPos, triIdx, ratio)
+                            pos = self._animateExocytosis(vesName, idx, pos1, triPos, triIdx, ratio)
                             if pos is not None:
-                                st[idx] = (pos, cnts1, surfPos1)
+                                st[idx] = (pos, cnts1, surfPos1, pathPos1)
                         else:
                             raise NotImplementedError(evType)
                 elif ratio <= 0.5:
                     # disapearing vesicles
-                    st[idx] = (pos1, cnts1, surfPos1)
+                    st[idx] = (pos1, cnts1, surfPos1, pathPos1)
             # appearing vesicles
             for idx in set(st2.keys()) - set(st1.keys()):
-                pos2, cnts2, surfPos2 = st2[idx]
+                pos2, cnts2, surfPos2, pathPos2 = st2[idx]
                 if idx in ev2:
                     # Endocytosis and Raft endocytosis
                     for evType, evRatio, *evInfo in ev2[idx]:
                         if evType == Event.RAFT_ENDOCYTOSIS.value:
                             triIdx, triPos, ridx = evInfo
-                            pos = self._animateEndocytosis(vesName, pos2, triPos, triIdx, ratio)
+                            pos = self._animateEndocytosis(vesName, idx, pos2, triPos, triIdx, ratio)
                             if pos is not None:
-                                st[idx] = (pos, cnts2, surfPos2)
+                                st[idx] = (pos, cnts2, surfPos2, pathPos2)
                         elif evType == Event.ENDOCYTOSIS.value:
                             triIdx, triPos = evInfo
-                            pos = self._animateEndocytosis(vesName, pos2, triPos, triIdx, ratio)
+                            pos = self._animateEndocytosis(vesName, idx, pos2, triPos, triIdx, ratio)
                             if pos is not None:
-                                st[idx] = (pos, cnts2, surfPos2)
+                                st[idx] = (pos, cnts2, surfPos2, pathPos2)
                         else:
                             raise NotImplementedError(evType)
                 elif ratio >= 0.5:
@@ -472,24 +470,35 @@ class VesicleGroup(objects.BlenderCollection, state.State):
         for vesName, ves in self._vesicles.items():
             specCounts = {}
             scaledVesPos = {}
+            scaledPathLinkPos = {}
             vesDct, events = self.state[vesName]
-            for idx, (pos, counts, surfPos) in vesDct.items():
+            for idx, (pos, counts, surfPos, pathPos) in vesDct.items():
                 scaledVesPos[idx] = self.parent.scale * pos
                 specCounts.setdefault(Loc.VES_IN, {})[idx] = counts
                 specCounts.setdefault(Loc.VES_SURF,
                                       {})[idx] = {spec: len(spos)
                                                   for spec, spos in surfPos.items()}
+                if pathPos is not None:
+                    surfPos = self._getProjectionOnSurface(pos, self._ves2Rad[vesName], pathPos)
+                    scaledPathLinkPos[idx] = (self.parent.scale * pathPos, self.parent.scale * surfPos)
             # Update vesicle position here otherwise it would trigger a depgraph update because of the
             # boolean modifiers
             ves._setPositions(scene, depg, scaledVesPos)
             ves._updateSpecCounts(specCounts)
             ves._setEventStatus(scene, depg, events)
+            ves._setPathLinksPositions(scene, depg, scaledPathLinkPos)
 
     def _updateDisplay(self, scene, depg, state):
         s = self.parent.scale
         for vesName, (st, events) in state.items():
             scaledSpecPos = {}
-            for idx, (pos, _, surfPos) in st.items():
+            for idx, (pos, counts, surfPos, _) in st.items():
+                vesPos = pos * s
+                rad = self.getVesRad(vesName, idx) * s
+                scaledSpecPos.setdefault(Loc.VES_IN, {})[idx] = {
+                    spec: utils.get_points_in_sphere(vesPos, rad * (1 - self._vesicles[vesName].innerSpecMargin), cnt)
+                    for spec, cnt in counts.items()
+                }
                 scaledSpecPos.setdefault(Loc.VES_SURF, {})[idx] = {
                     spec: s * (spherical2Cartesian(np.array(list(spos.values()))) + pos)
                     for spec, spos in surfPos.items() if len(spos) > 0
@@ -499,14 +508,14 @@ class VesicleGroup(objects.BlenderCollection, state.State):
     def getVesStateInfo(self, vesTpe):
         """Return the state information that will be used for state-dependent vesicles"""
         vesInfos, vesEvents = self.state.get(vesTpe, ({}, {}))
-        for idx, (pos, specIn, specSurf) in vesInfos.items():
-            yield idx, pos, specIn, specSurf
+        for idx, (pos, specIn, specSurf, pathPos) in vesInfos.items():
+            yield idx, pos, specIn, specSurf, pathPos
 
     def getVesPos(self, vesTpe, vesIdx):
         return self._state[vesTpe][0][vesIdx][0]
 
-    def getVesRad(self, vesTpe):
-        return self._ves2Rad[vesTpe]
+    def getVesRad(self, vesTpe, vesIdx=None):
+        return self._nonDefVesRad.get(vesIdx, self._ves2Rad[vesTpe])
 
     def isVesUnderEvent(self, vesTpe, vesIdx):
         return len(self._state[vesTpe][1].get(vesIdx, [])) > 0
@@ -524,12 +533,14 @@ class RaftGroup(objects.BlenderCollection, state.State):
     def setUp(self, coll, fromScratch):
         super().setUp(coll, fromScratch)
         self._rafts = {}
-        for i, (raftTpe, radius, indexesLocations, specs) in enumerate(self._raftData):
+        self._raft2Rad = {}
+        for i, (raftTpe, radius, indexesLocations, specs) in progress(enumerate(self._raftData), 'Add rafts'):
             meshLocations = {
                 idx: self.parent.Meshes.getSurfMesh(loc)
                 for idx, loc in indexesLocations.items()
             }
             species = [self.parent.Species._species[specName] for specName in specs]
+            self._raft2Rad[raftTpe] = radius * self.parent.scale
             self._rafts[raftTpe] = self._getParam(
                 raftTpe,
                 objects.BlenderRafts,
@@ -612,22 +623,26 @@ class RaftGroup(objects.BlenderCollection, state.State):
     def updateState(self, scene, depg, blenderLoader):
         super().updateState(scene, depg, blenderLoader)
         for raftName, raft in self._rafts.items():
+            pos = {}
             specCounts = {}
-            for idx, (pos, counts) in self.state[raftName][0].items():
+            for idx, (p, counts) in self.state[raftName][0].items():
+                pos[idx] = self.parent.scale * p
                 specCounts.setdefault(Loc.RAFT_IN, {})[idx] = counts
             raft._updateSpecCounts(specCounts)
+            raft._setPositions(scene, depg, pos)
 
     def _updateDisplay(self, scene, depg, state):
         for raftTpe, (vals, evs) in state.items():
-            pos = {}
             counts = {}
             for idx, (p, cnt) in vals.items():
-                pos[idx] = self.parent.scale * p
                 counts[idx] = cnt
-            self._rafts[raftTpe]._setPositions(scene, depg, pos)
+            self._rafts[raftTpe]._setSpecPositions(scene, depg, counts)
 
     def getRaftStateInfo(self, raftTpe):
         """Return the state information that will be used for state-dependent rafts"""
         raftInfos, raftEvents = self.state.get(raftTpe, ({}, {}))
         for idx, (pos, specIn) in raftInfos.items():
             yield idx, pos, specIn
+
+    def getRaftRad(self, raftTpe):
+        return self._raft2Rad[raftTpe]

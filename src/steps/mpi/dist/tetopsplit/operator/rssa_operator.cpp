@@ -8,6 +8,7 @@
 #include "mpi/dist/tetopsplit/kproc/fwd.hpp"
 #include "mpi/dist/tetopsplit/kproc/kproc_state.hpp"
 #include "mpi/dist/tetopsplit/kproc/reactions.hpp"
+#include "util/error.hpp"
 
 #undef MPI_Allreduce
 
@@ -15,22 +16,29 @@ namespace steps::dist {
 
 //---------------------------------------------------------
 
-RSSAOperator::RSSAOperator(MolState& mol_state,
-                           kproc::KProcState& k_proc_state,
-                           rng::RNG& t_rng,
-                           osh::Reals potential_on_vertices)
+RSSAOperator::RSSAOperator(MolState& mol_state, kproc::KProcState& k_proc_state, rng::RNG& t_rng)
     : pMolState(mol_state)
     , pKProcState(k_proc_state)
-    , mol_state_lower_bound_(pMolState.species_per_elements(),
+    , mol_state_lower_bound_(mol_state.mesh(),
+                             mol_state.statedef(),
+                             pMolState.species_per_elements(),
+                             pMolState.moleculesOnElements().substates(),
+                             {0, 1},
                              false,
                              pMolState.species_per_boundaries())
-    , mol_state_upper_bound_(pMolState.species_per_elements(),
+    , mol_state_upper_bound_(mol_state.mesh(),
+                             mol_state.statedef(),
+                             pMolState.species_per_elements(),
+                             pMolState.moleculesOnElements().substates(),
+                             {0, 1},
                              false,
                              pMolState.species_per_boundaries())
     , uniform_(0.0, 1.0)
-    , rng_(t_rng)
-    , potential_on_vertices_(potential_on_vertices) {
+    , rng_(t_rng) {
     static_assert(delta_rel_ >= 0.0 && delta_rel_ <= 0.5, "delta_rel_ out of bounds");
+    ArgErrLogIf(pKProcState.hasComplexReactions(),
+                "The RSSA operator cannot be used if the model contains complexes with "
+                "statesAsSpecies=False.");
     pKProcState.initPropensities(a_lower_bound_);
     pKProcState.initPropensities(a_upper_bound_);
 }
@@ -183,11 +191,9 @@ osh::Real RSSAOperator::run(const osh::Real period, const osh::Real state_time) 
                 break;
             }
             slack = std::max(slack, cumulative_dt - period);
-            if (reaction_id.type() == kproc::KProcType::GHKSReac) {
-                pKProcState.updateGHKChargeFlow(reaction_id.id());
-            }
+            pKProcState.updateChargeFlow(reaction_id);
             auto elementsUpdated = pKProcState.updateMolStateAndOccupancy(
-                pMolState, state_time + cumulative_dt, reaction_id);
+                pMolState, rng_, state_time + cumulative_dt, reaction_id);
             checkAndUpdateReactionRatesBounds(a_lower_bound_.groups()[k],
                                               a_upper_bound_.groups()[k],
                                               pMolState,

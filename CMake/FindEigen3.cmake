@@ -38,7 +38,17 @@ if(NOT Eigen3_FIND_VERSION)
 endif(NOT Eigen3_FIND_VERSION)
 
 macro(_eigen3_check_version)
-  file(READ "${EIGEN3_INCLUDE_DIR}/Eigen/src/Core/util/Macros.h" _eigen3_version_header)
+  if(EXISTS "${EIGEN3_INCLUDE_DIR}/Eigen/Version")
+    # Since Eigen3 5.0.0, the version is kept in a different file
+    file(READ "${EIGEN3_INCLUDE_DIR}/Eigen/Version" _eigen3_version_header)
+  elseif(EXISTS "${EIGEN3_INCLUDE_DIR}/Eigen/src/Core/util/Macros.h")
+    file(READ "${EIGEN3_INCLUDE_DIR}/Eigen/src/Core/util/Macros.h" _eigen3_version_header)
+  else()
+    # If the version file cannot be found, it's better to let the compilation proceed than to fail
+    # here
+    set(EIGEN3_VERSION_OK TRUE)
+    message(STATUS "Cannot find Eigen3 version file, ignoring the version checks.")
+  endif()
 
   string(REGEX MATCH "define[ \t]+EIGEN_WORLD_VERSION[ \t]+([0-9]+)" _eigen3_world_version_match
                "${_eigen3_version_header}")

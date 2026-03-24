@@ -3,9 +3,10 @@
 #include <string>
 #include <unordered_set>
 
-#include "geom/dist/distcomp.hpp"
-#include "geom/dist/distmesh.hpp"
+#include "geom/dist/fwd.hpp"
 #include "geom/patch.hpp"
+#include "util/error.hpp"
+#include "util/mesh.hpp"
 #include "util/vocabulary.hpp"
 
 namespace steps::dist {
@@ -95,6 +96,21 @@ class DistPatch: public wm::Patch {
               DistComp& icomp,
               DistComp* ocomp = nullptr);
 
+    void init(const mesh::triangle_local_ids& localInds);
+
+    /**
+     * \brief Synchronize patch triangles across ranks
+     *
+     * In case the user created the patch with triangle lists that only include owned
+     * triangles, this method returns a list of local triangle indices that are part of
+     * the patch, including ghost triangles.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \return Vector of local triangle indices
+     */
+    mesh::triangle_local_ids syncLocalInds(const mesh::triangle_local_ids& localInds) const;
+
     /**
      * \brief Get the list of all triangle indices of the patch.
      *
@@ -112,7 +128,15 @@ class DistPatch: public wm::Patch {
      * \param owned Whether the tetrahedron are owned by the process.
      * \return Vector of global tetrahedron indices.
      */
-    const std::vector<mesh::triangle_local_id_t>& getLocalTriIndices(bool owned = true) const;
+    std::vector<mesh::triangle_local_id_t> getLocalTriIndices(bool owned = true) const;
+
+    const mesh::triangle_local_ids& getTris(bool owned = true) const noexcept {
+        if (owned) {
+            return ownedTriLocalIndices;
+        } else {
+            return triLocalIndices;
+        }
+    }
 
     /**
      * \brief Get the area of patch segment owned by the process.
@@ -167,42 +191,22 @@ class DistPatch: public wm::Patch {
      */
     std::vector<double> getBoundMax(bool local = false) const;
 
+    void setMeshID(mesh::patch_id id) {
+        assert(not id_.valid());
+        id_ = id;
+    }
+
+    mesh::patch_id getMeshID() const noexcept {
+        assert(id_.valid());
+        return id_;
+    }
+
   private:
-    /**
-     * \brief Add a triangle to the patch.
-     *
-     * Add a triangle to the patch using its local index.
-     * This is an internal method.
-     *
-     * \attention Parallelism: Local
-     *
-     * \param local_index Local index of the triangle.
-     */
-    void _addTri(mesh::triangle_local_id_t local_index);
-
-    /**
-     * \brief Compute and update the total area of the patch.
-     *
-     * Compute and update the total area of the patch across
-     * the whole compmunicator.
-     *
-     * \attention Parallelism: Collective
-     *
-     */
-    void _computeTotalArea();
-
-    /**
-     * \brief Compute the owned bounding box of the compartment.
-     *
-     * \attention Parallelism: Local
-     *
-     */
-    void _computeBBox();
-
+    mesh::patch_id id_;
     DistMesh& meshRef;
     osh::Real ownedArea{};
-    std::vector<mesh::triangle_local_id_t> triLocalIndices;
-    std::vector<mesh::triangle_local_id_t> ownedTriLocalIndices;
+    mesh::triangle_local_ids triLocalIndices;
+    mesh::triangle_local_ids ownedTriLocalIndices;
 
     // Bounding box of the owned elements
     std::array<osh::Real, mesh_dimensions()> ownedBBoxMin{};

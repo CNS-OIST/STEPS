@@ -128,6 +128,9 @@ class TestRDUnbdiff2DLinesourceRing(unittest.TestCase):
             sim.reset()
             for t in inject_tris:
                 sim.setTriSpecCount(t, 'X', float(NINJECT)/len(inject_tris))
+
+            sim.setPatchSpecClamped('patch', 'X', True)
+
             for i in range(ntpnts):
                 sim.run(tpnts[i])
                 for k in range(patch_tris_n):

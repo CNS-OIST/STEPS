@@ -32,15 +32,16 @@ class RSSAOperator {
      * \param dv molecules transferred to neighbours
      * \param kproc_state kinetic processes state
      */
-    RSSAOperator(MolState& mol_state,
-                 kproc::KProcState& kproc_state,
-                 rng::RNG& t_rng,
-                 osh::Reals potential_on_vertices);
+    RSSAOperator(MolState& mol_state, kproc::KProcState& kproc_state, rng::RNG& t_rng);
 
     /// \return the number of kinetic events that arose on the current process
     inline osh::I64 getExtent() const noexcept {
         return extent;
     }
+
+    std::map<std::string, double> getDebugInfo() const {
+        return {};
+    };
 
     osh::Real run(osh::Real period, osh::Real state_time);
 
@@ -131,8 +132,6 @@ class RSSAOperator {
     std::uniform_real_distribution<double> uniform_;
 
     rng::RNG& rng_;
-
-    osh::Reals potential_on_vertices_;
 
     // counter
     osh::I64 extent{};

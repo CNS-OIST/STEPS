@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -278,7 +278,34 @@ double VesBind::rate(TetVesicleRDEF* /*solver*/) {
                         for (auto const& spec2_pos_abs: spec2_positions_abs) {
                             double dist = distance(spec1_pos_abs.second, spec2_pos_abs.second);
                             if (dist <= max_distance && dist >= min_distance) {
-                                pairs += 1;
+                                // Need to now check angles
+                                auto vectorA = spec2_pos_abs.second - spec1_pos_abs.second;
+                                auto vesApos = vesproxy1->getPos();
+                                auto posA_rel = spec1_pos_abs.second - vesApos;
+
+                                double newcos2A = math::cos2_signed(posA_rel[0],
+                                                                    posA_rel[1],
+                                                                    posA_rel[2],
+                                                                    vectorA[0],
+                                                                    vectorA[1],
+                                                                    vectorA[2]);
+
+
+                                auto vectorB = spec1_pos_abs.second - spec2_pos_abs.second;
+                                auto vesBpos = vesproxy2->getPos();
+                                auto posB_rel = spec2_pos_abs.second - vesBpos;
+
+                                double newcos2B = math::cos2_signed(posB_rel[0],
+                                                                    posB_rel[1],
+                                                                    posB_rel[2],
+                                                                    vectorB[0],
+                                                                    vectorB[1],
+                                                                    vectorB[2]);
+
+                                if (newcos2A >= def()->getLinkSpec1def().getMinCos2() &&
+                                    newcos2B >= def()->getLinkSpec2def().getMinCos2()) {
+                                    pairs += 1;
+                                }
                             }
                         }
                     }
@@ -419,65 +446,90 @@ void VesBind::apply(const rng::RNGptr& /*rng*/,
                             // OK, these are absolute positions
                             double dist = distance(spec1_pos, spec2_pos);
                             if (dist <= max_distance && dist >= min_distance) {
-                                // 1 Remove reactant species from the two vesicles
-                                // 2 Create complex- add it to BOTH vesicles
+                                // Need to now check angles
+                                auto vectorA = spec2_pos - spec1_pos;
+                                auto vesApos = vesproxy1->getPos();
+                                auto posA_rel = spec1_pos - vesApos;
 
-                                // Need global species indices
-                                solver::linkspec_global_id linkspec1_gidx =
-                                    def()->getLinkSpec1gidx();
-                                solver::linkspec_global_id linkspec2_gidx =
-                                    def()->getLinkSpec2gidx();
+                                double newcos2A = math::cos2_signed(posA_rel[0],
+                                                                    posA_rel[1],
+                                                                    posA_rel[2],
+                                                                    vectorA[0],
+                                                                    vectorA[1],
+                                                                    vectorA[2]);
 
-                                // Remove specific spec, record positions relative to vesicle
-                                // centre
-                                vesproxy1->removeOneSurfSpec(spec1_gidx, spec1_idx_pos);
-                                vesproxy2->removeOneSurfSpec(spec2_gidx, spec2_idx_pos);
+                                auto vectorB = spec1_pos - spec2_pos;
+                                auto vesBpos = vesproxy2->getPos();
+                                auto posB_rel = spec2_pos - vesBpos;
 
-                                // Link spec effectively has two positions. Both are relative to
-                                // respective vesicle centres
-                                // LinkSpec * link_spec = new
-                                // LinkSpec(complexdef, tet_gidx, tet_gidx,
-                                // spec1_pos_rel, spec2_pos_rel, vesproxy1, vesproxy2);
-                                // vesproxy1->addLinkSpec(link_spec);
-                                // vesproxy2->addLinkSpec(link_spec);
-                                // ABOVE INFO NOW STORED IN TET AND MUST BE APPLIED AT NEXT
-                                // UPDATE CHANCE
-                                // pTet->addLinkSpec_proxy(complexdef, vesproxy1, vesproxy2,
-                                // spec1_pos, spec2_pos);
+                                double newcos2B = math::cos2_signed(posB_rel[0],
+                                                                    posB_rel[1],
+                                                                    posB_rel[2],
+                                                                    vectorB[0],
+                                                                    vectorB[1],
+                                                                    vectorB[2]);
+                                if (newcos2A >= def()->getLinkSpec1def().getMinCos2() &&
+                                    newcos2B >= def()->getLinkSpec2def().getMinCos2()) {
+                                    // 1 Remove reactant species from the two vesicles
+                                    // 2 Create complex- add it to BOTH vesicles
 
-                                // Add linkspec to a certain position
-                                // These per vesicle indices need to be taken from a pool
-                                // assigned to the vesproxy by comp
-                                solver::linkspec_individual_id linkspec1_unique_idx =
-                                    pTet->getNextLinkSpecUniqueIndex();
-                                solver::linkspec_individual_id linkspec2_unique_idx =
-                                    pTet->getNextLinkSpecUniqueIndex();
+                                    // Need global species indices
+                                    solver::linkspec_global_id linkspec1_gidx =
+                                        def()->getLinkSpec1gidx();
+                                    solver::linkspec_global_id linkspec2_gidx =
+                                        def()->getLinkSpec2gidx();
 
-                                vesproxy1->addLinkSpec(linkspec1_unique_idx,
-                                                       linkspec1_gidx,
-                                                       spec1_pos);
-                                vesproxy2->addLinkSpec(linkspec2_unique_idx,
-                                                       linkspec2_gidx,
-                                                       spec2_pos);
+                                    // Remove specific spec, record positions relative to vesicle
+                                    // centre
+                                    vesproxy1->removeOneSurfSpec(spec1_gidx, spec1_idx_pos);
+                                    vesproxy2->removeOneSurfSpec(spec2_gidx, spec2_idx_pos);
 
-                                // Needs to be something like this to add to Comp so that pairs
-                                // can be checked for vesicle unbinding
-                                pTet->addNewLinkedSpecs(linkspec1_gidx,
-                                                        linkspec2_gidx,
-                                                        linkspec1_unique_idx,
-                                                        linkspec2_unique_idx,
-                                                        vesproxy1,
-                                                        vesproxy2,
-                                                        spec1_pos,
-                                                        spec2_pos,
-                                                        min_distance,
-                                                        max_distance);
+                                    // Link spec effectively has two positions. Both are relative to
+                                    // respective vesicle centres
+                                    // LinkSpec * link_spec = new
+                                    // LinkSpec(complexdef, tet_gidx, tet_gidx,
+                                    // spec1_pos_rel, spec2_pos_rel, vesproxy1, vesproxy2);
+                                    // vesproxy1->addLinkSpec(link_spec);
+                                    // vesproxy2->addLinkSpec(link_spec);
+                                    // ABOVE INFO NOW STORED IN TET AND MUST BE APPLIED AT NEXT
+                                    // UPDATE CHANCE
+                                    // pTet->addLinkSpec_proxy(complexdef, vesproxy1, vesproxy2,
+                                    // spec1_pos, spec2_pos);
 
-                                vesproxy1->updImmobility(def()->immobility());
-                                vesproxy2->updImmobility(def()->immobility());
+                                    // Add linkspec to a certain position
+                                    // These per vesicle indices need to be taken from a pool
+                                    // assigned to the vesproxy by comp
+                                    solver::linkspec_individual_id linkspec1_unique_idx =
+                                        pTet->getNextLinkSpecUniqueIndex();
+                                    solver::linkspec_individual_id linkspec2_unique_idx =
+                                        pTet->getNextLinkSpecUniqueIndex();
 
-                                rExtent++;
-                                return;
+                                    vesproxy1->addLinkSpec(linkspec1_unique_idx,
+                                                           linkspec1_gidx,
+                                                           spec1_pos);
+                                    vesproxy2->addLinkSpec(linkspec2_unique_idx,
+                                                           linkspec2_gidx,
+                                                           spec2_pos);
+
+                                    // Needs to be something like this to add to Comp so that pairs
+                                    // can be checked for vesicle unbinding
+                                    pTet->addNewLinkedSpecs(linkspec1_gidx,
+                                                            linkspec2_gidx,
+                                                            linkspec1_unique_idx,
+                                                            linkspec2_unique_idx,
+                                                            vesproxy1,
+                                                            vesproxy2,
+                                                            spec1_pos,
+                                                            spec2_pos,
+                                                            min_distance,
+                                                            max_distance);
+
+                                    vesproxy1->updImmobility(def()->immobility());
+                                    vesproxy2->updImmobility(def()->immobility());
+
+                                    rExtent++;
+                                    return;
+                                }
                             }
                         }
                     }

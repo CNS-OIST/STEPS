@@ -68,6 +68,15 @@ if(NOT METIS_LIBRARY)
     DOC "Directory where the METIS library is located")
 endif()
 
+if(APPLE
+   AND SKBUILD_PROJECT_NAME
+   AND METIS_LIBRARY MATCHES ".*cmeel\.prefix.*")
+  # If installing from the source distribution and the metis version that was found was installed
+  # through pip, need to fix the install ID of the metis library from cmeel-metis
+  execute_process(COMMAND install_name_tool -id "@rpath/libmetis${CMAKE_SHARED_LIBRARY_SUFFIX}"
+                          "${METIS_LIBRARY}" ERROR_STRIP_TRAILING_WHITESPACE)
+endif()
+
 # Get METIS version
 if(NOT METIS_VERSION_STRING
    AND METIS_INCLUDE_DIR

@@ -2,6 +2,7 @@
 
 #include <functional>
 
+#include "fwd.hpp"
 #include "util/vocabulary.hpp"
 
 #include <Omega_h_array.hpp>
@@ -29,7 +30,8 @@ class Measure {
             osh::Int num_compartments,
             const element_measure_func& t_element_measure_func);
 
-    void init(const mesh::tetrahedron_ids& t_owned_elements, const osh::LOs& t_elem2compid);
+    void init(const mesh::tetrahedron_ids& t_owned_elements,
+              const util::strongid_vector<mesh::tetrahedron_local_id_t, TetStruct>& tetInfo);
 
     /**
      * \return the sum of all element measures assigned to this MPI rank

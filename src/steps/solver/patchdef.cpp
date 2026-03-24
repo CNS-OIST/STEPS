@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -609,6 +609,11 @@ void Patchdef::setup_indices() {
         for (auto ri: sreac_local_id::range(countSReacs())) {
             const SReacdef& srdef = sreacdef(ri);
 
+            if (srdef.charge()) {
+                pSReac_L2Charge[ri] = sreac_charge_local_id(
+                    static_cast<unsigned int>(pSReac_L2Charge.size()));
+            }
+
             // Handle surface stuff.
             for (auto si: spec_global_id::range(ngspecs)) {
                 if (srdef.reqspec_S(si) == false) {
@@ -858,6 +863,11 @@ void Patchdef::setup_indices() {
         // Fill the vectors with all kinds of useful information.
         for (auto ri: vdepsreac_local_id::range(countVDepSReacs())) {
             const VDepSReacdef& vdsrdef = vdepsreacdef(ri);
+
+            if (vdsrdef.charge()) {
+                pVDepSReac_L2Charge[ri] = vdepsreac_charge_local_id(
+                    static_cast<unsigned int>(pVDepSReac_L2Charge.size()));
+            }
 
             // Handle surface stuff.
             for (auto si: spec_global_id::range(ngspecs)) {

@@ -6,6 +6,7 @@
 #include <variant>
 
 #include "common.hpp"
+#include "solver/fwd.hpp"
 #include "strong_id.hpp"
 #if STEPS_USE_DIST_MESH
 #include "strong_ids.hpp"
@@ -13,6 +14,7 @@
 #include "strong_string.hpp"
 
 namespace steps {
+
 
 struct tetrahedron_id_trait {};
 struct tetrahedron_global_id_trait {};
@@ -31,6 +33,13 @@ using triangle_local_id = util::strong_id<index_t, triangle_local_id_trait>;
 using vertex_id_t = util::strong_id<index_t, vertex_id_trait>;
 using bar_id_t = util::strong_id<index_t, bar_id_trait>;  // edge
 
+namespace model {
+
+enum Location { COMP = 0, PATCH_IN = 1, PATCH_SURF = 2, PATCH_OUT = 3 };
+extern const std::array<Location, 3> AllPatchLocations;
+
+}  // namespace model
+
 namespace tetmesh {
 
 // Forward declarations.
@@ -47,6 +56,7 @@ namespace dist {
 
 /// user API i.e Python bindings
 namespace model {
+
 struct tag_species_id {};
 struct tag_species_name {};
 struct tag_patch_id {};
@@ -56,6 +66,10 @@ using species_name = util::strong_string<tag_species_name>;
 
 /// internal id generated for the species
 using species_id = util::strong_id<osh::I32, tag_species_id>;
+
+/// complex name provided by the user
+struct tag_complex_name {};
+using complex_name = util::strong_string<tag_complex_name>;
 
 /// compartment label used in the mesh
 struct tag_compartment_label {};
@@ -83,14 +97,39 @@ using channel_id = util::strong_string<struct tag_channel_id>;
 
 /// ohmic current identifier given by the user
 using ohmic_current_id = util::strong_string<struct tag_ohmic_current_id>;
+using complex_ohmic_current_id = util::strong_string<struct tag_complex_ohmic_current_id>;
 
 /// ghk current identifier given by the user
 using ghk_current_id = util::strong_string<struct tag_ghk_current_id>;
+using complex_ghk_current_id = util::strong_string<struct tag_complex_ghk_current_id>;
 
 /// surface reaction identifier given by the user
 using surface_reaction_id = util::strong_string<struct tag_surface_reaction_id>;
+using complex_surface_reaction_id = util::strong_string<struct tag_complex_surface_reaction_id>;
+using vdep_surface_reaction_id = util::strong_string<struct tag_vdep_surface_reaction_id>;
+using vdep_complex_surface_reaction_id =
+    util::strong_string<struct tag_vdep_complex_surface_reaction_id>;
+
+using reaction_id = util::strong_string<struct tag_reaction_id>;
+using complex_reaction_id = util::strong_string<struct tag_complex_reaction_id>;
+using diffusion_id = util::strong_string<struct tag_diffusion_id>;
 
 using region_id = std::variant<patch_id, compartment_id>;
+
+using complex_id = steps::solver::complex_global_id;
+using complex_substate_id = steps::solver::complex_substate_id;
+struct complex_individual_id_trait {};
+using complex_individual_id = util::strong_id<osh::I64, complex_individual_id_trait>;
+using complex_filter_id = util::strong_id<osh::I32, struct complex_filter_id_trait>;
+using complex_filter_occupancy_id =
+    util::strong_id<osh::I32, struct complex_filter_occupancy_id_trait>;
+struct complex_filter_full_id {
+    complex_filter_full_id(complex_id cid, complex_filter_id fid)
+        : complexId(cid)
+        , filterId(fid) {}
+    complex_id complexId;
+    complex_filter_id filterId;
+};
 
 }  // namespace model
 
@@ -108,6 +147,13 @@ using triangle_local_id_t = util::strong_id<osh::LO, struct triangle_id_trait>;
 using vertex_local_id_t = util::strong_id<osh::LO, struct vertex_id_trait>;
 using bar_local_id_t = util::strong_id<osh::LO, struct bar_id_trait>;  // edge
 
+// Internal ids are indexes in an internal data structure
+
+using tetrahedron_internal_id_t = util::strong_id<size_t, struct tetrahedron_id_trait_>;
+using triangle_internal_id_t = util::strong_id<size_t, struct triangle_id_trait_>;
+using vertex_internal_id_t = util::strong_id<size_t, struct vertex_id_trait_>;
+using bar_internal_id_t = util::strong_id<size_t, struct bar_id_trait_>;  // edge
+
 /// TODO TCL add host_id_t primitive type
 
 using tetrahedron_id_t = tetrahedron_local_id_t;
@@ -122,6 +168,7 @@ struct tag_patch_name {};
 struct tag_patch_physical_tag {};
 struct tag_patch_id {};
 struct tag_diffusion_boundary_name {};
+struct tag_diffusion_boundary_id {};
 
 /// Compartment name given by the user
 using compartment_name = util::strong_string<tag_compartment_name>;
@@ -142,6 +189,9 @@ using patch_physical_tag = util::strong_id<osh::I32, tag_patch_physical_tag>;
 /// internal patch identifier
 using patch_id = util::strong_id<osh::I32, tag_patch_id>;
 
+/// internal diffusion boundary identifier
+using diffusion_boundary_id = util::strong_id<osh::I32, tag_diffusion_boundary_id>;
+
 using tetrahedron_ids = util::strong_ids<tetrahedron_id_t>;
 using triangle_ids = util::strong_ids<triangle_id_t>;
 using vertex_ids = util::strong_ids<vertex_id_t>;
@@ -158,6 +208,33 @@ using triangle_local_ids = util::strong_ids<triangle_local_id_t>;
 using vertex_local_ids = util::strong_ids<vertex_local_id_t>;
 /// unused
 
+template <class Entity>
+struct entity_info {};
+
+template <>
+struct entity_info<mesh::tetrahedron_local_id_t> {
+    typedef mesh::tetrahedron_internal_id_t internal;
+    static const Omega_h::Int dim = 3;
+};
+
+template <>
+struct entity_info<mesh::triangle_local_id_t> {
+    typedef mesh::triangle_internal_id_t internal;
+    static const Omega_h::Int dim = 2;
+};
+
+template <>
+struct entity_info<mesh::bar_local_id_t> {
+    typedef mesh::bar_internal_id_t internal;
+    static const Omega_h::Int dim = 1;
+};
+
+template <>
+struct entity_info<mesh::vertex_local_id_t> {
+    typedef mesh::vertex_internal_id_t internal;
+    static const Omega_h::Int dim = 0;
+};
+
 }  // namespace mesh
 
 /// internal simulation description
@@ -165,10 +242,12 @@ namespace container {
 
 struct compartment_id_tag {};
 struct species_id_tag {};
+struct complex_id_tag {};
 struct reaction_id_tag {};
 struct diffusion_id_tag {};
 struct kproc_id_tag {};
 struct patch_id_tag {};
+struct membrane_id_tag {};
 
 /// internal compartment identifier
 using compartment_id = util::strong_id<osh::I32, compartment_id_tag>;
@@ -176,20 +255,45 @@ using compartment_id = util::strong_id<osh::I32, compartment_id_tag>;
 /// internal patch identifier
 using patch_id = util::strong_id<osh::I32, patch_id_tag>;
 
+/// internal membrane identifier
+using membrane_id = util::strong_id<osh::I32, membrane_id_tag>;
+
+// element container ids (index of the element in the container)
+using tetrahedron_id = util::strong_id<osh::LO, struct tag_tetrahedron_id>;
+using triangle_id = util::strong_id<osh::LO, struct tag_triangle_id>;
+
 /// internal specie identifier
 using species_id = util::strong_id<osh::I32, species_id_tag>;
 
+/// internal complex identifier
+using complex_id = util::strong_id<osh::I32, complex_id_tag>;
+
 /// internal reaction identifier
 using reaction_id = util::strong_id<osh::I64, reaction_id_tag>;
+using complex_reaction_id = util::strong_id<osh::I64, struct complex_reaction_id_tag>;
 
 /// internal diffusion identifier
 using diffusion_id = util::strong_id<osh::I64, diffusion_id_tag>;
 
 /// internal surface reaction identifier
 using surface_reaction_id = util::strong_id<osh::I64, struct surface_reaction_id_tag>;
+using complex_surface_reaction_id =
+    util::strong_id<osh::I64, struct complex_surface_reaction_id_tag>;
+using vdep_surface_reaction_id = util::strong_id<osh::I64, struct vdep_surface_reaction_id_tag>;
+using vdep_complex_surface_reaction_id =
+    util::strong_id<osh::I64, struct vdep_complex_surface_reaction_id_tag>;
+using ghk_surface_reaction_id = util::strong_id<osh::I64, struct ghk_surface_reaction_id_tag>;
+using complex_ghk_surface_reaction_id =
+    util::strong_id<osh::I64, struct complex_ghk_surface_reaction_id_tag>;
 
 /// internal kinetic process identifier
 using kproc_id = util::strong_id<osh::I64, kproc_id_tag>;
+
+/// internal current identidier
+using ohmic_current_id = util::strong_id<osh::I64, struct ohmic_current_id_tag>;
+using complex_ohmic_current_id = util::strong_id<osh::I64, struct complex_ohmic_current_id_tag>;
+using ghk_current_id = util::strong_id<osh::I64, struct ghk_current_id_tag>;
+using complex_ghk_current_id = util::strong_id<osh::I64, struct complex_ghk_current_id_tag>;
 
 }  // namespace container
 
@@ -216,6 +320,62 @@ struct entity_dimension<Dim, model::patch_id> {
 template <Omega_h::Int Dim>
 struct entity_dimension<Dim, model::compartment_id> {
     static const Omega_h::Int value = Dim;
+};
+
+// Map model strong ids to their equivalent container strong ids
+template <typename ModelID>
+struct ModID2ContID {};
+
+template <>
+struct ModID2ContID<model::reaction_id> {
+    using type = container::reaction_id;
+};
+
+template <>
+struct ModID2ContID<model::complex_reaction_id> {
+    using type = container::complex_reaction_id;
+};
+
+template <>
+struct ModID2ContID<model::surface_reaction_id> {
+    using type = container::surface_reaction_id;
+};
+
+template <>
+struct ModID2ContID<model::complex_surface_reaction_id> {
+    using type = container::complex_surface_reaction_id;
+};
+
+template <>
+struct ModID2ContID<model::vdep_surface_reaction_id> {
+    using type = container::vdep_surface_reaction_id;
+};
+
+template <>
+struct ModID2ContID<model::vdep_complex_surface_reaction_id> {
+    using type = container::vdep_complex_surface_reaction_id;
+};
+
+template <>
+struct ModID2ContID<model::ohmic_current_id> {
+    using curr_type = container::ohmic_current_id;
+};
+
+template <>
+struct ModID2ContID<model::complex_ohmic_current_id> {
+    using curr_type = container::complex_ohmic_current_id;
+};
+
+template <>
+struct ModID2ContID<model::ghk_current_id> {
+    using type = container::ghk_surface_reaction_id;
+    using curr_type = container::ghk_current_id;
+};
+
+template <>
+struct ModID2ContID<model::complex_ghk_current_id> {
+    using type = container::complex_ghk_surface_reaction_id;
+    using curr_type = container::complex_ghk_current_id;
 };
 
 }  // namespace dist

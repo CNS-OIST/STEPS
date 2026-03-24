@@ -65,6 +65,7 @@ class Distribution {
         , sum_rates_(std::accumulate(rates_.begin(), rates_.end(), value_type{}, std::plus<>()))
         , ret_(output) {
         assert(std::all_of(rates.begin(), rates.end(), [](auto v) { return v >= 0; }));
+        assert(!rates.size() || sum_rates_ > 0);
     }
 
     /// selector of distribution method

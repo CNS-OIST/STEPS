@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -86,16 +86,15 @@ class SReac: public KProc {
         return rate() / pCcst;
     }
 
+    solver::sreac_charge_local_id getChargeLidx() const {
+        return pChargeLidx;
+    }
+
     ////////////////////////////////////////////////////////////////////////
     // VIRTUAL INTERFACE METHODS
     ////////////////////////////////////////////////////////////////////////
 
     void setupDeps() override;
-    /*
-    bool depSpecTet(solver::spec_global_id  gidx, mpi::tetopsplit::WmVol *
-    tet) override; bool depSpecTri(solver::spec_global_id  gidx,
-    mpi::tetopsplit::Tri * tri) override;
-    */
     void reset() override;
     double rate(mpi::tetopsplit::TetOpSplitP* solver = nullptr) override;
     inline double getScaledDcst(mpi::tetopsplit::TetOpSplitP* /*solver*/ = nullptr) const override {
@@ -112,11 +111,6 @@ class SReac: public KProc {
     void resetOccupancies() override;
 
     ////////////////////////////////////////////////////////////////////////
-
-    // inline solver::Reacdef * defr() const
-    //{ return pReacdef; }
-
-    ////////////////////////////////////////////////////////////////////////
     // mpi
     inline bool getInHost() const noexcept override {
         return pTri->getInHost();
@@ -131,6 +125,8 @@ class SReac: public KProc {
 
     solver::SReacdef* pSReacdef;
     mpi::tetopsplit::Tri* pTri;
+
+    solver::sreac_charge_local_id pChargeLidx{};
 
     std::vector<KProc*> localUpdVec;
     std::vector<solver::kproc_global_id> remoteUpdVec;

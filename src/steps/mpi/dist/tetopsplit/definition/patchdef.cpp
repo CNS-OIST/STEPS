@@ -1,116 +1,116 @@
 
 #include "patchdef.hpp"
 
+#include "geom/dist/distpatch.hpp"
+#include "model/ghkcurr.hpp"
+#include "model/spec.hpp"
+#include "model/sreac.hpp"
+#include "model/vdepsreac.hpp"
 #include "sreacdef.hpp"
 #include "statedef.hpp"
+#include "util/vocabulary.hpp"
+#include <optional>
 
 namespace steps::dist {
 
 //-------------------------------------------------------
 
-template <>
-std::vector<std::unique_ptr<SReacdef>>& Patchdef::getContainer<SReacInfo>() {
-    return reacdefPtrs_;
-}
-
-//-------------------------------------------------------
-
-template <>
-std::vector<std::unique_ptr<VDepSReacdef>>& Patchdef::getContainer<VDepInfo>() {
-    return vdepSReacPtrs_;
-}
-
-//-------------------------------------------------------
-
-template <>
-std::vector<std::unique_ptr<GHKSReacdef>>& Patchdef::getContainer<GHKInfo>() {
-    return ghkSReacPtrs_;
-}
-
-//-------------------------------------------------------
-
-container::species_id Patchdef::getSpecPatchIdx(model::species_id species) const {
+container::species_id Patchdef::getSpecContainerIdx(model::species_id species) const {
     const auto& it = specM2C_.find(species);
     if (it != specM2C_.end()) {
         return it->second;
     }
-    throw std::logic_error("Unregistered species id " + pStatedef_.getSpecID(species));
+    throw std::logic_error("Unregistered species id " + pStatedef_.getSpecID(species) +
+                           " in patch " + model_patch_);
+}
+
+//-------------------------------------------------------
+
+container::species_id Patchdef::getSpecContainerIdx(const steps::model::Spec& spec) const {
+    return getSpecContainerIdx(pStatedef_.getSpecModelIdx(spec));
+}
+
+//-------------------------------------------------------
+
+container::species_id Patchdef::getSpecContainerIdx(model::species_name species) const {
+    return getSpecContainerIdx(pStatedef_.getSpecModelIdx(species));
 }
 
 //-------------------------------------------------------
 
 Patchdef::Patchdef(const Statedef& statedef,
-                   model::patch_id t_model_patch,
-                   container::patch_id container_patch_id,
-                   model::compartment_id inner_compartment_id,
-                   const std::optional<model::compartment_id>& outer_compartment_id)
-    : pStatedef_(statedef)
-    , model_patch_(t_model_patch)
-    , inner_compartment_id_(inner_compartment_id)
-    , outer_compartment_id_(outer_compartment_id)
+                   const DistPatch& patch,
+                   container::patch_id container_patch_id)
+    : pPatch_(patch)
+    , pStatedef_(statedef)
+    , model_patch_(patch.getID())
+    , inner_compartment_id_(patch.getIComp().getID())
     , container_patch_id_(container_patch_id)
-    , nKProcs_(0) {}
+    , nKProcs_(0) {
+    if (patch.getOComp() != nullptr) {
+        outer_compartment_id_.emplace(patch.getOComp()->getID());
+    }
+    // Species
+    for (auto* spec: patch.getAllSpecs(pStatedef_.model())) {
+        addSpec(pStatedef_.getSpecModelIdx(model::species_name(spec->getID())));
+    }
+    // Surface diffusions
+    auto diffs = patch.getAllDiffs(pStatedef_.model());
+    if (not diffs.empty()) {
+        throw std::logic_error("Model contains surface diffusion rules.");
+    }
+    // Surface reactions
+    for (auto* sreac: patch.getAllSReacs(pStatedef_.model())) {
+        addReac(*sreac);
+    }
+    // Voltage dependent surface reactions
+    for (auto* vdepsreac: patch.getAllVDepSReacs(pStatedef_.model())) {
+        addReac(*vdepsreac);
+    }
+    // Complex surface reactions
+    for (auto* sreac: patch.getAllComplexSReacs(pStatedef_.model())) {
+        addReac(*sreac);
+    }
+    // Complex surface reactions
+    for (auto* sreac: patch.getAllVDepComplexSReacs(pStatedef_.model())) {
+        addReac(*sreac);
+    }
+}
 
 //-------------------------------------------------------
 
-template <typename PropensityType>
-container::surface_reaction_id Patchdef::addSurfaceReacImpl(
-    const std::vector<container::species_id>& reactants_i,
-    const std::vector<container::species_id>& reactants_s,
-    const std::vector<container::species_id>& reactants_o,
-    const std::vector<container::species_id>& products_i,
-    const std::vector<container::species_id>& products_s,
-    const std::vector<container::species_id>& products_o,
-    PropensityType kcst) {
-    typename SReacdefBase<PropensityType>::SurfaceReactionComponents reaction_components;
-    reaction_components.reserve(reactants_i.size() + reactants_s.size() + reactants_o.size() +
-                                products_i.size() + products_s.size() + products_o.size());
-
-    // prepare arguments for building SReacdef
-    auto accum_reaction_comps = [&reaction_components,
-                                 this](const auto loc, const auto classifier, const auto& vec) {
-        return std::transform(vec.begin(),
-                              vec.end(),
-                              std::back_inserter(reaction_components),
-                              [&loc, &classifier, this](const auto& v) {
-                                  if (loc == SReacdefBase<PropensityType>::SpecieLocation::Patch) {
-                                      getSpecModelIdx(v);  // Test whether species is registered
-                                  }
-                                  return std::make_tuple(v, classifier, loc);
-                              });
-    };
-    accum_reaction_comps(SReacdefBase<PropensityType>::SpecieLocation::InnerCompartment,
-                         SReacdefBase<PropensityType>::SpecieClassifier::Reactant,
-                         reactants_i);
-    accum_reaction_comps(SReacdefBase<PropensityType>::SpecieLocation::Patch,
-                         SReacdefBase<PropensityType>::SpecieClassifier::Reactant,
-                         reactants_s);
-    accum_reaction_comps(SReacdefBase<PropensityType>::SpecieLocation::OuterCompartment,
-                         SReacdefBase<PropensityType>::SpecieClassifier::Reactant,
-                         reactants_o);
-    accum_reaction_comps(SReacdefBase<PropensityType>::SpecieLocation::InnerCompartment,
-                         SReacdefBase<PropensityType>::SpecieClassifier::Product,
-                         products_i);
-    accum_reaction_comps(SReacdefBase<PropensityType>::SpecieLocation::Patch,
-                         SReacdefBase<PropensityType>::SpecieClassifier::Product,
-                         products_s);
-    accum_reaction_comps(SReacdefBase<PropensityType>::SpecieLocation::OuterCompartment,
-                         SReacdefBase<PropensityType>::SpecieClassifier::Product,
-                         products_o);
-
-    container::surface_reaction_id reac_id(
-        static_cast<osh::I64>(getContainer<PropensityType>().size()));
-
-    getContainer<PropensityType>().push_back(
-        std::make_unique<SReacdefBase<PropensityType>>(pStatedef_,
-                                                       container_patch_id_,
-                                                       container::kproc_id(nKProcs_),
-                                                       reac_id,
-                                                       reaction_components,
-                                                       kcst));
-    // nkprocs_ records the number of kprocs in the patch
-    nKProcs_++;
-    return reac_id;
+void Patchdef::reset() {
+    for (auto& reac: reacdefPtrs_) {
+        reac->reset();
+    }
+    for (auto& reac: complexReacdefPtrs_) {
+        reac->reset();
+    }
+    for (auto& reac: vdepComplexReacdefPtrs_) {
+        reac->reset();
+    }
+    for (auto& reac: vdepSReacPtrs_) {
+        reac->reset();
+    }
+    for (auto& reac: ghkSReacPtrs_) {
+        reac->reset();
+    }
+    for (auto& reac: complexGhkSReacPtrs_) {
+        reac->reset();
+    }
+    std::fill(clamped.begin(), clamped.end(), false);
+    for (auto& curr: ohmicCurrPtrs) {
+        curr->reset();
+    }
+    for (auto& curr: complexOhmicCurrPtrs) {
+        curr->reset();
+    }
+    for (auto& curr: ghkCurrPtrs) {
+        curr->reset();
+    }
+    for (auto& curr: complexGhkCurrPtrs) {
+        curr->reset();
+    }
 }
 
 //-------------------------------------------------------
@@ -125,7 +125,7 @@ model::species_id Patchdef::getSpecModelIdx(container::species_id species) const
 
 //-------------------------------------------------------
 
-inline const Compdef& Patchdef::getInnerComp() const noexcept {
+const Compdef& Patchdef::getInnerComp() const noexcept {
     return pStatedef_.getCompdef(inner_compartment_id_);
 }
 
@@ -146,6 +146,7 @@ container::species_id Patchdef::addSpec(model::species_id species) {
         static_cast<container::species_id::value_type>(specC2M_.size()));
     specM2C_[species] = spec_container_idx;
     specC2M_.push_back(species);
+    clamped.push_back(false);
     return spec_container_idx;
 }
 
@@ -157,52 +158,8 @@ inline osh::I64 Patchdef::getNReacs() const {
 
 //-------------------------------------------------------
 
-inline kproc::KProcType Patchdef::getKProcType(container::kproc_id kproc) const {
-    if (kproc.get() >= 0 && kproc < getNReacs()) {
-        return kproc::KProcType::SReac;
-    } else {
-        throw std::out_of_range("KProc local index error.");
-    }
-}
-
-//-------------------------------------------------------
-
 inline osh::I64 Patchdef::getNKProcs() const {
     return nKProcs_;
 }
-
-//-------------------------------------------------------
-
-template container::surface_reaction_id Patchdef::addSurfaceReacImpl(
-    const std::vector<container::species_id>& reactants_i,
-    const std::vector<container::species_id>& reactants_s,
-    const std::vector<container::species_id>& reactants_o,
-    const std::vector<container::species_id>& product_i,
-    const std::vector<container::species_id>& product_s,
-    const std::vector<container::species_id>& product_o,
-    SReacInfo kcst);
-
-//-------------------------------------------------------
-
-template container::surface_reaction_id Patchdef::addSurfaceReacImpl(
-    const std::vector<container::species_id>& reactants_i,
-    const std::vector<container::species_id>& reactants_s,
-    const std::vector<container::species_id>& reactants_o,
-    const std::vector<container::species_id>& product_i,
-    const std::vector<container::species_id>& product_s,
-    const std::vector<container::species_id>& product_o,
-    VDepInfo kcst);
-//-------------------------------------------------------
-
-template container::surface_reaction_id Patchdef::addSurfaceReacImpl(
-    const std::vector<container::species_id>& reactants_i,
-    const std::vector<container::species_id>& reactants_s,
-    const std::vector<container::species_id>& reactants_o,
-    const std::vector<container::species_id>& product_i,
-    const std::vector<container::species_id>& product_s,
-    const std::vector<container::species_id>& product_o,
-    GHKInfo kcst);
-
-//-------------------------------------------------------
 
 }  // namespace steps::dist

@@ -3,9 +3,12 @@
 #include <petscksp.h>
 
 #include "geom/dist/fwd.hpp"
+#include "mpi/dist/tetopsplit/definition/compdef.hpp"
 #include "mpi/dist/tetopsplit/definition/patchdef.hpp"
 #include "mpi/dist/tetopsplit/definition/statedef.hpp"
 #include "mpi/dist/tetopsplit/fwd.hpp"
+#include "mpi/dist/tetopsplit/kproc/kproc_state.hpp"
+#include "util/vocabulary.hpp"
 
 namespace steps::dist {
 
@@ -66,10 +69,7 @@ class EFieldOperator {
      * e-field step size. Actual step size will depend on other operators as
      * well
      */
-    EFieldOperator(DistMesh& o_mesh,
-                   const Statedef& statedef,
-                   const std::vector<mesh::triangle_id_t>& ghk_current_boundaries,
-                   MolState& mol_state);
+    EFieldOperator(DistMesh& o_mesh, const Statedef& statedef, MolState& mol_state);
 
     EFieldOperator(const EFieldOperator&) = delete;
 
@@ -98,6 +98,8 @@ class EFieldOperator {
      */
     void setPetscOptions();
 
+    void resetStiffnessMatrix();
+
   private:
     /**
      * \brief Initialize matrix and vectors
@@ -107,20 +109,25 @@ class EFieldOperator {
 
     /** \brief Setup the stiffness matrix
      *
-     * @param fixed_voltage_verts: set of indexes of the vertexes for which the voltage must remain
-     * constant
+     * \param reset_fixed_voltages whether the clamped voltages should be reset
      */
-    void setupStiffnessMatrix();
+    void setupStiffnessMatrix(bool reset_fixed_voltages = true);
 
     /// Track efield occupancy
     void setupEfieldOccupancyTracking(MolState& mol_state);
 
-
-    /** Apply ghk currents to i()
+    /** Apply specific surface reactions currents to i()
      *
-     * @param ghk_currents
+     * \param sreacs reactions that involve charge transfers
      */
-    void apply_GHKcurrents(const osh::Reals& ghk_currents);
+    template <typename SReacT>
+    void apply_charge_currents(const SReacT sreacs);
+
+    /** Apply all surface reactions currents to i()
+     *
+     * \param kproc_state
+     */
+    void apply_charge_currents(const kproc::KProcState& kproc_state);
 
     /** Apply membrane-repated boundary conditions:
      *
@@ -128,35 +135,40 @@ class EFieldOperator {
      * - ohmic currents
      * - current injections
      *
-     * @param A0
-     * @param mol_state
-     * @param ghk_currents
-     * @param sim_time
-     * @param dt
+     * \param A0
+     * \param mol_state molecular state
+     * \param sim_time simulation time (s)
+     * \param dt time interval (s)
+     * \param potential_on_verts potential on vertices (V)
+     * \param current_on_triangles current injection on triangles (A)
+     * \param capacitance_on_triangles membrane capacitance on triangles (F/m^2)
+     * \param conductivity_on_triangles membrane conductivity on triangles (S/m^2)
+     * \param reversal_potential_on_triangles reversal potential of membrane leak on triangles (V)
      */
     void apply_membrane_BC(Mat& A0,
                            const MolState& mol_state,
                            const osh::Real sim_time,
                            const osh::Real dt,
                            const osh::Write<osh::Real>& potential_on_verts,
+                           const osh::Read<osh::Real>& current_on_triangles,
                            const osh::Read<osh::Real>& capacitance_on_triangles,
-                           const osh::Read<osh::Real>& resistivity_on_triangles,
+                           const osh::Read<osh::Real>& conductivity_on_triangles,
                            const osh::Read<osh::Real>& reversal_potential_on_triangles);
 
     /** Add ohmic currents contributions
      *
      * The real input from the reaction-diffusion part is in the mol_state and the occupancies
      *
-     * @param tri_mat_and_vecs
-     * @param membrane
-     * @param b_id
-     * @param mol_state
-     * @param Avert
-     * @param sim_time
-     * @param potential_on_verts
+     * \param tri_mat_and_vecs
+     * \param membrane membrane object
+     * \param b_id triangle on which the ohmic currents should be added
+     * \param mol_state molecular state
+     * \param Avert area associated to each vertex (m^2)
+     * \param sim_time simulation time (s)
+     * \param potential_on_verts potential on vertices (V)
      */
     void add_ohmic_currents(TriMatAndVecs& tri_mat_and_vecs,
-                            const Membrane& membrane,
+                            const Patchdef& patchdef,
                             const mesh::triangle_id_t& b_id,
                             const MolState& mol_state,
                             const double Avert,
@@ -168,16 +180,15 @@ class EFieldOperator {
      *
      * Leaks are implemented as ohmic currents in the membrane
      *
-     * @param tri_mat_and_vecs
-     * @param membrane
-     * @param Avert
-     * @param resistivity
-     * @param reversal_potential
-     * @param potential_on_verts
+     * \param tri_mat_and_vecs
+     * \param Avert area associated to each vertex (m^2)
+     * \param conductivity membrane conductivity for the leak (S/m^2)
+     * \param reversal_potential reversal potential for the leak (V)
+     * \param potential_on_verts potential on vertices (V)
      */
     void add_leaks(TriMatAndVecs& tri_mat_and_vecs,
                    double Avert,
-                   const double resistivity,
+                   const double conductivity,
                    const double reversal_potential,
                    const osh::Reals& potential_on_verts) const;
 
@@ -192,8 +203,8 @@ class EFieldOperator {
      * We do not finalize assembly so we can still add stuff
      *
      * \param A0
-     * \param potential_on_verts
-     * \param current_on_verts current injection on vertices
+     * \param potential_on_verts potential on vertices (V)
+     * \param current_on_verts current injection on vertices (A)
      */
     void evolve_init(Mat& A0,
                      const osh::Write<osh::Real>& potential_on_verts,
@@ -203,7 +214,7 @@ class EFieldOperator {
      *
      * After this we cannot write into a particular element of a vector.
      *
-     * @param A0
+     * \param A0
      */
     void finalize_assembly(Mat& A0);
 
@@ -218,22 +229,30 @@ class EFieldOperator {
     /**
      * \brief Evolve the E-Field PDE over an interval of time dt
      *
-     * \param potential_on_verts potential on vertices
-     * \param current_on_verts current injection on vertices
+     * \param potential_on_verts potential on vertices (V)
+     * \param current_on_verts current injection on vertices (A)
+     * \param current_on_triangles current injection on triangles (A)
+     * \param capacitance_on_triangles membrane capacitance on triangles (F/m^2)
+     * \param conductivity_on_triangles membrane conductivity on triangles (S/m^2)
+     * \param reversal_potential_on_triangles reversal potential of membrane leak on triangles (V)
      * \param mol_state molecular state
-     * \param ghk_currents mapping from ghk reaction index to ghk current intensity
-     * \param sim_time simulation time
-     * \param dt time interval
+     * \param ghk_currents mapping from ghk reaction index to ghk current intensity (A)
+     * \param sim_time simulation time (s)
+     * \param dt time interval (s)
      */
     void evolve(osh::Write<osh::Real>& potential_on_verts,
                 const osh::Read<osh::Real>& current_on_verts,
+                const osh::Read<osh::Real>& current_on_triangles,
                 const osh::Read<osh::Real>& capacitance_on_triangles,
-                const osh::Read<osh::Real>& resistivity_on_triangles,
+                const osh::Read<osh::Real>& conductivity_on_triangles,
                 const osh::Read<osh::Real>& reversal_potential_on_triangles,
                 const MolState& mol_state,
-                const osh::Reals& ghk_currents,
+                const kproc::KProcState& kproc_state,
                 osh::Real sim_time,
                 osh::Real dt);
+
+    bool getVertVClamped(mesh::vertex_local_id_t vert) const;
+    void setVertVClamped(mesh::vertex_local_id_t vert, bool clamp);
 
     /// pretty printer
     friend std::ostream& operator<<(std::ostream& ostr, const EFieldOperator& efo);
@@ -244,15 +263,6 @@ class EFieldOperator {
 
     /// triangle to vertices
     osh::LOs tri2verts_;
-
-    /// patch areas
-    std::map<model::patch_id, PetscReal> patch_areas_;
-
-    /// patch triangles
-    std::map<model::patch_id, mesh::triangle_ids> patch_tris_;
-
-    /// GHK current boundaries
-    const std::vector<mesh::triangle_id_t>& ghk_current_boundaries_;
 
     /// indexes of the fixed voltages. Keep it sorted for log(N) insertions and possible petsc
     /// optimizations

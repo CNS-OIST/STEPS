@@ -33,7 +33,7 @@ cdef extern from "tetexact/tetexact.hpp" namespace "steps::tetexact":
     ###### Cybinding for Tetexact ######
     cdef cppclass Tetexact:
         # Heavily modified by Iain
-        Tetexact(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int) except +
+        Tetexact(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int, bool) except +
         std.string getSolverName() except +
         std.string getSolverDesc() except +
         std.string getSolverAuthors() except +
@@ -117,6 +117,7 @@ cdef extern from "tetexact/tetexact.hpp" namespace "steps::tetexact":
         double getPatchSReacH(std.string, std.string) except +
         double getPatchSReacA(std.string, std.string) except +
         unsigned long long getPatchSReacExtent(std.string, std.string) except +
+        unsigned long long getPatchVDepSReacExtent(std.string, std.string) except +
         void resetPatchSReacExtent(std.string, std.string) except +
         bool getPatchVDepSReacActive(std.string, std.string) except +
         void setPatchVDepSReacActive(std.string, std.string, bool) except +

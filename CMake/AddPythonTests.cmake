@@ -60,11 +60,11 @@ function(add_python_tests name path prefix)
   endif()
 
   if(ENABLE_PYTHON_CODECOVERAGE)
-    set(PYTHON_COVERAGE_FILE ${CMAKE_SOURCE_DIR}/.coverage)
+    set(PYTHON_COVERAGE_FILE ${CMAKE_BINARY_DIR}/coverage/ctest_python_coverage)
     execute_process(COMMAND coverage erase --data-file=${PYTHON_COVERAGE_FILE})
 
-    set(PYTHON_TEST_EXECUTABLE coverage run --source=${CMAKE_SOURCE_DIR}/build/packages/steps
-                               --data-file=${PYTHON_COVERAGE_FILE} -a)
+    set(PYTHON_TEST_EXECUTABLE coverage run --source=${CMAKE_BINARY_DIR}/packages/steps/API_2
+                               --data-file=${PYTHON_COVERAGE_FILE} --parallel-mode)
   else()
     set(PYTHON_TEST_EXECUTABLE ${Python_EXECUTABLE})
   endif()

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -91,6 +91,11 @@ class VDepSReacdef {
     /// Returns the reaction constant for value of V in the range.
     ///
     double getVDepK(double v) const;
+
+    /// Return the charge carried by this voltage-dependent reaction.
+    double charge() const {
+        return pCharge;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS: STOICHIOMETRY
@@ -199,30 +204,15 @@ class VDepSReacdef {
     bool reqspec_S(spec_global_id gidx) const;
     bool reqspec_O(spec_global_id gidx) const;
 
-    inline spec_global_id_vecCI beginUpdColl_I() const noexcept {
-        return pSpec_I_UPD_Coll.begin();
-    }
-    inline spec_global_id_vecCI endUpdColl_I() const noexcept {
-        return pSpec_I_UPD_Coll.end();
-    }
+
     inline const spec_global_id_vec& updcoll_I() const noexcept {
         return pSpec_I_UPD_Coll;
     }
-    inline spec_global_id_vecCI beginUpdColl_S() const noexcept {
-        return pSpec_S_UPD_Coll.begin();
-    }
-    inline spec_global_id_vecCI endUpdColl_S() const noexcept {
-        return pSpec_S_UPD_Coll.end();
-    }
+
     inline const spec_global_id_vec& updcoll_S() const noexcept {
         return pSpec_S_UPD_Coll;
     }
-    inline spec_global_id_vecCI beginUpdColl_O() const noexcept {
-        return pSpec_O_UPD_Coll.begin();
-    }
-    inline spec_global_id_vecCI endUpdColl_O() const noexcept {
-        return pSpec_O_UPD_Coll.end();
-    }
+
     inline const spec_global_id_vec& updcoll_O() const noexcept {
         return pSpec_O_UPD_Coll;
     }
@@ -237,6 +227,8 @@ class VDepSReacdef {
     const std::string pName;
 
     const uint pOrder;
+
+    const int pCharge;
 
     /// True if setup() has been called.
     bool pSetupdone{false};

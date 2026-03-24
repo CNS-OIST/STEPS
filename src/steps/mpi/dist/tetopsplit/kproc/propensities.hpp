@@ -1,13 +1,22 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
+#include <boost/range/adaptors.hpp>
+#include <boost/range/numeric.hpp>
+#include <cstddef>
 #include <iosfwd>
+#include <iterator>
+#include <limits>
+#include <numeric>
 #include <random>
+#include <stdexcept>
 #include <vector>
 
 #include "event_queue.hpp"
 #include "kproc_id.hpp"
 #include "mpi/dist/tetopsplit/fwd.hpp"
+#include "mpi/dist/tetopsplit/kproc/fwd.hpp"
 #include "mpi/dist/tetopsplit/mol_state.hpp"
 #include "rng/rng.hpp"
 #include "util/error.hpp"
@@ -26,6 +35,7 @@ struct PropensitiesPolicy {
     static constexpr unsigned int with_next_event = 0b10;
     static constexpr unsigned int direct_event = 0b100;
     static constexpr unsigned int gibson_bruck_event = 0b1000;
+    static constexpr unsigned int rleaping_events = 0b10000;
 
     static constexpr unsigned int direct_without_next_event = without_next_event | direct_event;
     static constexpr unsigned int direct_with_next_event = with_next_event | direct_event;
@@ -33,10 +43,12 @@ struct PropensitiesPolicy {
                                                                     gibson_bruck_event;
     static constexpr unsigned int gibson_bruck_with_next_event = with_next_event |
                                                                  gibson_bruck_event;
+    static constexpr unsigned int rleaping_without_next_event = with_next_event | rleaping_events;
 
     static constexpr unsigned int default_policy = direct_with_next_event;
 
-    static constexpr unsigned int search_method_mask = direct_event | gibson_bruck_event;
+    static constexpr unsigned int search_method_mask = direct_event | gibson_bruck_event |
+                                                       rleaping_events;
     static constexpr unsigned int next_event_mask = with_next_event | without_next_event;
 
     /**
@@ -65,6 +77,8 @@ struct PropensitiesPolicy {
             return direct_event;
         case NextEventSearchMethod::GibsonBruck:
             return gibson_bruck_event;
+        case NextEventSearchMethod::RLeaping:
+            return rleaping_events;
         default:
             static_assert(true, "Unexpected enum value");
         }
@@ -92,6 +106,8 @@ struct PropensitiesTraits {
     static constexpr bool is_gibson_bruck = (Policy & PropensitiesPolicy::gibson_bruck_event) != 0;
     /// true if the direect method is selected, false otherwise
     static constexpr bool is_direct = (Policy & PropensitiesPolicy::direct_event) != 0;
+    /// true if the rleaping method is selected, false otherwise
+    static constexpr bool is_rleaping = (Policy & PropensitiesPolicy::rleaping_events) != 0;
     /// true if the propensities should handle the next event, false otherwise
     static constexpr bool handle_next_event = (Policy & PropensitiesPolicy::with_next_event) != 0;
 };
@@ -106,8 +122,7 @@ using Event = std::pair<EventTime, kproc::KProcID>;
 using kproc_groups_t = util::flat_multimap<osh::LO, 1>;
 using kproc_group_t = kproc_groups_t::const_element_type;
 
-/// Hold all dependenc
-/// ies of a given kinetic process
+/// Hold all dependencies of a given kinetic process
 using dependencies_t = util::flat_multimap<osh::LO, 1>;
 /// the kinetic processes that depend on a change of propensity
 using KProcDeps = dependencies_t::const_element_type;
@@ -324,13 +339,10 @@ struct PropensitiesGroup<Policy, std::enable_if_t<PropensitiesTraits<Policy>::is
      * \param mol_state molecular state
      * \param rng random number generator
      */
-    void update_outdated(MolState& mol_state, rng::RNG& rng, const osh::Real state_time) {
-        for (auto kp: mol_state.outdated_kprocs()) {
-            KProcID kid{kp};
-            adjust_existing_events(kid, mol_state, rng, state_time);
-        }
-        mol_state.outdated_kprocs().clear();
-    }
+    void update_outdated(const std::vector<KProcID>& outdated,
+                         const MolState& mol_state,
+                         rng::RNG& rng,
+                         const osh::Real state_time);
 
     /**
      * \brief Update Gibson Bruck next reaction structure following the
@@ -471,10 +483,6 @@ struct PropensitiesGroup<Policy, std::enable_if_t<PropensitiesTraits<Policy>::is
         // do nothing
     }
 
-    void updateMaxTime(const osh::Real /*max_time*/) {
-        // do nothing
-    }
-
     /**
      * \brief Update the propensities of all kprocs and state of the class.
      *
@@ -496,7 +504,8 @@ struct PropensitiesGroup<Policy, std::enable_if_t<PropensitiesTraits<Policy>::is
      *
      * \param mol_state molecular state
      */
-    void update_outdated(const MolState& mol_state,
+    void update_outdated(const std::vector<KProcID>& /*outdated*/,
+                         const MolState& mol_state,
                          rng::RNG& /*rng*/,
                          const osh::Real /*state_time*/) {
         /* TODO : Follow the same approach as in Gibson Bruck, i.e. update outdated propensities
@@ -599,6 +608,310 @@ struct PropensitiesGroup<Policy, std::enable_if_t<PropensitiesTraits<Policy>::is
     Propensities<Policy>& propensities_;
 };
 
+//--------------------------------------------------------
+
+/**
+ * \brief A group of propensities where the next events are searched via the R-leaping method
+ *
+ * A. Auger, P. Chatelain, and P. Koumoutsakos. R-leaping: Accelerating the stochastic simulation
+ * algorithm by reaction leaps. The Journal of chemical physics, 125(8), 2006.
+ */
+template <unsigned int Policy>
+struct PropensitiesGroup<Policy, std::enable_if_t<PropensitiesTraits<Policy>::is_rleaping>> {
+    /**
+     * \brief Constructor
+     *
+     * \param propensities all propensities of kprocs
+     * \param ids KProcIds of kprocs handled by the group
+     */
+    PropensitiesGroup(Propensities<Policy>& propensities, const kproc_group_t& ids)
+        : idx_(static_cast<size_t>(ids.size()))
+        , ids_(ids)
+        , propensities_(propensities)
+        , groupInfos(ids.size()) {
+        std::transform(ids.begin(), ids.end(), idx_.begin(), [&propensities](osh::LO id) {
+            return propensities.ab(KProcID(static_cast<unsigned>(id)));
+        });
+        idx_.shrink_to_fit();
+    }
+
+    /**
+     * \brief Initialize the group
+     *
+     * \param state molecular state
+     * \param kpState kinetic processes state
+     */
+    void init(const MolState& state, const kproc::KProcState& kpState);
+
+    /**
+     * \brief reset the group data structure
+     */
+    void reset(const MolState& /*mol_state*/, rng::RNG& /*rng*/, const osh::Real /*state_time*/) {
+        // do nothing
+    }
+
+    /**
+     * \brief Update the propensities of all kprocs and state of the class.
+     *
+     * \param mol_state molecular state
+     */
+    void update_all(const MolState& mol_state, rng::RNG& /*rng*/, const osh::Real /*state_time*/) {
+        a0_ = 0;
+        size_t k{};
+        for (auto it = ids_.begin(); it != ids_.end(); it++, k++) {
+            const osh::Real oldProp = propensities_.v_[idx_[k]];
+            propensities_.v_[idx_[k]] = propensities_.fun_(KProcID(static_cast<unsigned>(*it)),
+                                                           mol_state);
+            a0_ += propensities_.v_[idx_[k]];
+            updateCRGroups(k, oldProp);
+        }
+        a0_ = std::max(0.0, a0_);
+    }
+
+    /**
+     * \brief Update the state of propensities of a selected number of kprocs.
+     *
+     * \param mol_state molecular state
+     * \param rng random number generator (unused here)
+     * \param selection of kprocs that need update in the current group
+     */
+    template <typename T>
+    void update(const MolState& mol_state, rng::RNG& /*rng*/, const T& selection) {
+        using cast_type =
+            typename std::conditional<std::is_same<T, KProcDeps>::value, unsigned, KProcID>::type;
+        for (auto k: selection) {
+            KProcID kp(static_cast<cast_type>(k));
+            auto idx = propensities_.ab(kp);
+            auto local_idx = propensities_.local_indices_[idx];
+            const osh::Real oldProp = propensities_.v_[idx];
+            propensities_.v_[idx] = propensities_.fun_(kp, mol_state);
+            updateCRGroups(local_idx, oldProp);
+            a0_ += propensities_.v_[idx] - oldProp;
+        }
+        a0_ = std::max(0.0, a0_);
+    }
+
+    /**
+     * \brief Draw several events at once, without updating the propensities
+     *
+     * \param rng a random number generator
+     * \param L the number of events to draw
+     * \return The events that were drawn, each event is a KProcID and a number of times this
+     * KProcID was fired
+     */
+    std::vector<std::pair<KProcID, unsigned int>> drawEvents(rng::RNG& rng, unsigned int L) const;
+
+    [[nodiscard]] double a0() const {
+        return a0_;
+    }
+
+    [[nodiscard]] long long computeL(const MolState& state,
+                                     const double& epsilon,
+                                     const double& theta) const;
+
+  private:
+    // Internal structures for keeping track of information required for computing L
+    struct ReacUpdateInfo {
+        ReacUpdateInfo() = default;
+        ReacUpdateInfo(unsigned int _ridx, int _update)
+            : ridx(_ridx)
+            , update(_update) {}
+        unsigned int ridx{0};  // Kproc id of the reaction that will do the change
+        int update{0};         // Change in species counts (non-zero)
+    };
+    struct SpecInfo {
+        SpecInfo() = delete;
+        SpecInfo(MolStateElementID id, unsigned int _h, unsigned int _n)
+            : elemId(id)
+            , h(_h)
+            , n(_n) {}
+        MolStateElementID elemId;
+        unsigned int h{0};  // Maximum order of reaction that the species is involved in
+        unsigned int n{1};  // Maximum number of species required by one of the maximum order
+                            // reactions
+    };
+
+    // Composition-rejection group
+    struct CRGroup {
+        CRGroup() = default;
+
+        std::vector<size_t> indices;  // Local indices of KProcs that are in this
+                                      // composition-rejection group
+        osh::Real sum{0};  // Sum of propensities of KProcs in that composition-rejection group
+    };
+
+    // Composition-rejection data relative to a single KProc
+    struct CRKProcInfo {
+        CRKProcInfo() = default;
+        CRKProcInfo(int _pow, size_t _idx)
+            : pow(_pow)
+            , idx(_idx) {}
+        int pow{std::numeric_limits<int>::max()};  // Exponent of the propensity of the KProc. When
+                                                   // pow >= 0, the corresponding
+                                                   // composition-rejection group is posGroups[pow].
+                                                   // When pow < 0, it is negGroups[-pow].
+        size_t idx{0};  // Index of the KProc in its Composition-rejection group
+    };
+
+    static constexpr osh::Real min_propensity() {
+        return 1e-20;
+    }
+
+    static constexpr osh::Real binomial_threshold() {
+        return 2.0;
+    }
+
+    /**
+     * \brief Remove a KProc from its composition-rejection group
+     *
+     * \param info the corresponding CRKProcInfo
+     * \param oldProp the previous value for the propensity of the KProc
+     */
+    inline void removeFromCRGroup(const CRKProcInfo& info, const osh::Real& oldProp) {
+        auto& oldGroup = info.pow >= 0 ? posGroups[info.pow] : negGroups[-info.pow];
+        if (info.idx != oldGroup.indices.size() - 1) {
+            groupInfos[oldGroup.indices.back()].idx = info.idx;
+            std::swap(oldGroup.indices.back(), oldGroup.indices[info.idx]);
+        }
+        oldGroup.indices.resize(oldGroup.indices.size() - 1);
+        if (oldGroup.indices.empty()) {
+            oldGroup.sum = 0;
+        } else {
+            oldGroup.sum -= oldProp;
+        }
+    }
+
+    /**
+     * \brief Add a KProc from to a composition-rejection group
+     *
+     * \param groups the composition-rejection groups
+     * \param i the local index of the KProc
+     * \param info the corresponding CRKProcInfo
+     * \param newPow the exponent of the propensity of the KProc
+     * \param newProp the propensity of the KProc
+     */
+    inline void addToCRGroup(std::vector<CRGroup>& groups,
+                             const int& i,
+                             CRKProcInfo& info,
+                             const int& newPow,
+                             const osh::Real& newProp) {
+        uint powInd = newPow >= 0 ? newPow : -newPow;
+        if (powInd >= groups.size()) {
+            groups.resize(powInd + 1);
+        }
+        auto& newGroup = groups[powInd];
+        info.pow = newPow;
+        info.idx = newGroup.indices.size();
+        newGroup.sum += newProp;
+        newGroup.indices.push_back(i);
+    }
+
+    /**
+     * \brief Process a KProc (add if missing, move if propensity exponent changed)
+     *
+     * \param groups the composition-rejection groups (based on where the KProc will be after
+     * processing)
+     * \param i the local index of the KProc
+     * \param oldProp the previous value for the propensity of the KProc
+     * \param newProp the current propensity of the KProc
+     */
+    inline void processProp(std::vector<CRGroup>& groups,
+                            const int& i,
+                            const osh::Real& oldProp,
+                            const osh::Real& newProp) {
+        int newPow;
+        std::frexp(newProp, &newPow);
+        auto& info = groupInfos[i];
+        if (info.pow == std::numeric_limits<int>::max()) {
+            // Not in any group yet
+            addToCRGroup(groups, i, info, newPow, newProp);
+        } else {
+            // Already in a group, need to update
+            if (info.pow == newPow) {
+                // Stays in same group
+                groups[newPow >= 0 ? newPow : -newPow].sum += newProp - oldProp;
+            } else {
+                // Changed group
+                removeFromCRGroup(info, oldProp);
+                addToCRGroup(groups, i, info, newPow, newProp);
+            }
+        }
+    }
+
+    /**
+     * \brief Update the composition-rejection groups for a given KProc
+     *
+     * \param i the local index of the KProc
+     * \param oldProp the previous value for the propensity of the KProc
+     */
+    void updateCRGroups(const size_t& i, osh::Real oldProp = 0) {
+        osh::Real newProp = propensities_.v_[idx_[i]];
+        if (newProp >= 0.5) {
+            processProp(posGroups, i, oldProp, newProp);
+        } else if (newProp > min_propensity()) {
+            processProp(negGroups, i, oldProp, newProp);
+        } else {
+            // Not tracked anymore
+            auto& info = groupInfos[i];
+            if (info.pow != std::numeric_limits<int>::max()) {
+                removeFromCRGroup(info, oldProp);
+                info.pow = std::numeric_limits<int>::max();
+            }
+        }
+    }
+
+    /**
+     * \brief Get the next Composition-rejection group
+     *
+     * The iteration through composition-rejection groups starts at the group with highest exponent
+     * (the last element in posGroups) and goes down in exponent values until the lowest exponent
+     * (the last element in negGroups).
+     *
+     * \param sel a value that controls whether we are currently walking in positive exponent groups
+     * (sel == 0) or negative exponent groups (sel == -1)
+     * \param indsel the index of the Composition-rejection group in either posGroups (if sel == 0)
+     * or negGroups (if sel == -1)
+     */
+    bool getNextGroup(int& sel, int& indsel) const {
+        if (sel < 0) {
+            indsel++;
+            if (indsel >= static_cast<int>(negGroups.size())) {
+                return false;
+            }
+        } else {
+            indsel--;
+            if (indsel < 0) {
+                sel--;
+                indsel = 1;
+                if (indsel > static_cast<int>(negGroups.size())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    std::vector<size_t> idx_;
+    kproc::kproc_group_t ids_;
+    Propensities<Policy>& propensities_;
+    osh::Real a0_{};
+
+    // Information about species, only computed once and used when computing L
+    std::vector<SpecInfo> specInfos;
+    // Information about reactions, only computed once and used when computing L
+    util::flat_multimap<ReacUpdateInfo, 1, fmm_stl> reacInfos;
+
+    // Structure for keeping track of the Composition-rejection group in which each KProc currently
+    // is
+    std::vector<CRKProcInfo> groupInfos;
+    // Composition-rejection groups of KProcs that have a positive-exponent propensity (p >= 0.5)
+    std::vector<CRGroup> posGroups;
+    // Composition-rejection groups of KProcs that have a negative-exponent propensity (p < 0.5)
+    std::vector<CRGroup> negGroups;
+};
+
+//--------------------------------------------------------
+
 /**
  * \a PropensitiesGroup pretty printer
  */
@@ -614,10 +927,12 @@ extern template class Propensities<PropensitiesPolicy::direct_without_next_event
 extern template class Propensities<PropensitiesPolicy::gibson_bruck_without_next_event>;
 extern template class Propensities<PropensitiesPolicy::direct_with_next_event>;
 extern template class Propensities<PropensitiesPolicy::gibson_bruck_with_next_event>;
+extern template class Propensities<PropensitiesPolicy::rleaping_without_next_event>;
 
 extern template struct PropensitiesGroup<PropensitiesPolicy::direct_without_next_event>;
 extern template struct PropensitiesGroup<PropensitiesPolicy::gibson_bruck_without_next_event>;
 extern template struct PropensitiesGroup<PropensitiesPolicy::direct_with_next_event>;
 extern template struct PropensitiesGroup<PropensitiesPolicy::gibson_bruck_with_next_event>;
+extern template struct PropensitiesGroup<PropensitiesPolicy::rleaping_without_next_event>;
 
 }  // namespace steps::dist::kproc

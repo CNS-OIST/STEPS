@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -36,6 +36,7 @@ SReacdef::SReacdef(Statedef& sd, sreac_global_id idx, model::SReac& sr)
     , pName(sr.getID())
     , pOrder(sr.getOrder())
     , pKcst(sr.getKcst())
+    , pCharge(sr.getCharge())
     , pCountSpecs(sd.countSpecs())
     , pIlhs(sr.getILHS())
     , pOlhs(sr.getOLHS())
@@ -46,8 +47,8 @@ SReacdef::SReacdef(Statedef& sd, sreac_global_id idx, model::SReac& sr)
     , pOrient(sr.getInner() ? SReacdef::INSIDE : SReacdef::OUTSIDE) {
     if (pOrder == 0) {
         std::ostringstream os;
-        os << "\nModel contains zero-order surface reaction, which are not "
-              "permitted. ";
+        os << "\nModel contains zero-order surface reaction: '" << pName
+           << "'. Zero-order surface reactions are not permitted.";
         os << " Zero-order volume reaction may be used instead\n.";
         ArgErrLog(os.str());
     }

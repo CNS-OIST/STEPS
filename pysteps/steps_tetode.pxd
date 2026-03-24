@@ -25,7 +25,7 @@ cdef extern from "tetode/tetode.hpp" namespace "steps::tetode":
     ###### Cybinding for TetODE ######
     cdef cppclass TetODE:
     	# Heavily modified by Iain
-        TetODE(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int) except +
+        TetODE(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int, bool) except +
         std.string getSolverName() except +
         std.string getSolverDesc() except +
         std.string getSolverAuthors() except +

@@ -1,3 +1,62 @@
+Installation
+============
+
+To isolate STEPS from other python packages, we recommend using a [virtual environment](https://docs.python.org/3/library/venv.html). For example:
+```
+python -m venv stepsenv
+source stepsenv/bin/activate
+```
+Once the environment is activated, you can install STEPS from PyPI or from the source code.
+
+Install from PyPI
+=================
+
+The easiest way to install STEPS is by installing the [STEPS](https://pypi.org/project/STEPS) package from PyPI.
+
+Minimum system requirements
+---------------------------
+
+1. C++ compiler supporting c++17 (e.g. gcc 7.4, clang 6)
+2. [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
+3. [Python](https://www.python.org) 3.9 or above, along with `pip`
+4. [Git](https://git-scm.com) SCM utility
+5. BLAS/[OpenBLAS](http://www.openblas.net) library
+6. MPI library (Open MPI, MPICH, ...)
+
+On Ubuntu 24.04, the non-default packages can be installed with:
+```
+sudo apt install build-essential pkg-config git libopenblas-dev libopenmpi-dev
+```
+
+On MacOS 15 (Sequoia), the non-default packages can be installed with [Homebrew](https://brew.sh/) (not installed by default):
+```
+brew install pkg-config openblas open-mpi
+```
+
+Installing with pip
+-------------------
+
+```
+pip install STEPS
+```
+
+This will build and install STEPS using the Python source distribution from [PyPI](https://pypi.org/project/STEPS).
+
+Optional system requirements
+----------------------------
+
+1. [Boost](https://www.boost.org)
+2. [METIS](https://github.com/KarypisLab/METIS)
+3. [Eigen3](https://eigen.tuxfamily.org)
+4. [Gmsh](https://gmsh.info)
+5. [PETsc](https://www.mcs.anl.gov/petsc)
+
+By default, `pip install STEPS` will download and install these dependencies through pip, if you have all of them installed on your system, you can get STEPS to use them with:
+
+```
+STEPS_NO_BUNDLE=True pip install STEPS
+```
+
 Install using Docker
 ====================
 If you don't want to do the compilation yourself and just want to quickly try STEPS, we provide a prebuilt Docker image for you. Please check https://github.com/CNS-OIST/STEPS_Docker and follow the instructions.
@@ -68,7 +127,7 @@ If STEPS is installed successfully, you should be able to see similar informatio
 
 ```
 STochastic Engine for Pathway Simulation
-Version:  5.0.4
+Version:  5.1.0
 License:  GPL3.0
 Website:  steps.sourceforge.net
 CXX Binding: Cython

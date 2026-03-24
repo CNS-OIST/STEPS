@@ -115,6 +115,7 @@ class TestRDUnbdiff2D(unittest.TestCase):
             sim.newRun()
 
             sim.TRI(ctri).X.Count = NINJECT
+            sim.patch.X.Clamped = True
 
             sim.run(INT)
 

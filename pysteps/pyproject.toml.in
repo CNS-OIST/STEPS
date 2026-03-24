@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "steps"
 authors = [{name = "STEPS Development Team", email = "steps.dev@gmail.com"}]
 description = "STochastic Engine for Pathway Simulation"
-license = {text = "GNU General Public License Version 3"}
+license = "GPL-3.0-only"
 requires-python = ">=3.8"
 dependencies = ["numpy>=1.19", "scipy>=1.5"]
 dynamic = ["version"]

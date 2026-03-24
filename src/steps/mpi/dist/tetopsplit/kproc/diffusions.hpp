@@ -8,10 +8,12 @@
 #include <Omega_h_mesh.hpp>
 
 #include "geom/dist/distmesh.hpp"
+#include "mpi/dist/tetopsplit/definition/statedef.hpp"
 #include "mpi/dist/tetopsplit/fwd.hpp"
 #include "rng/rng.hpp"
 #include "util/collections.hpp"
 #include "util/flat_multimap.hpp"
+#include "util/strong_ra.hpp"
 #include "util/vocabulary.hpp"
 
 
@@ -80,6 +82,8 @@ class DiffusionDiscretizedRates: public util::flat_multimap<osh::Real, 1> {
     }
 
     osh::Real rates_max_sum() const;
+    osh::Real rates_sum_sum() const;
+    osh::Real rates_min_sum() const;
 
     inline void reset() {
         assign(0.0);
@@ -93,15 +97,23 @@ class DiffusionDiscretizedRates: public util::flat_multimap<osh::Real, 1> {
 
 
 /**
- * Wrapper for number of molecules transferred to neighbors through boundaries
+ * Templated class for holding and synchronizing species data for mesh elements
+ *
+ * ElemT is the type of mesh element (tetrahedron or triangle)
+ * T is the type of the data that is held
+ * Width is the number of values held for each element-species pair
+ * IElemT is the type of internal index. When it is different from ElemT, it is used to synchronize
+ *        values on a subset of tetrahedrons or triangles in the mesh
  */
-class PoolsIncrements: public util::flat_multimap<molecules_t, DistMesh::dim() + 1> {
+template <typename ElemT, typename T, int Width = 1, typename IElemT = ElemT>
+class ElementSpecValues: public util::flat_multimap<T, Width> {
   public:
-    using super_type = util::flat_multimap<molecules_t, DistMesh::dim() + 1>;
+    using super_type = util::flat_multimap<T, Width>;
 
-    PoolsIncrements(DistMesh& mesh, const osh::LOs& elem2num_species)
+    ElementSpecValues(DistMesh& mesh, const osh::LOs& elem2num_species)
         : super_type(elem2num_species)
-        , synced_delta_pools_(this->ab2c().size())
+        , species_per_elements_(elem2num_species)
+        , synced_values_(this->ab2c().size())
         , mesh_(mesh) {
         // find the index of the element that is not equal to the previous one
         const bool num_species_all_equal = std::adjacent_find(elem2num_species.begin(),
@@ -123,7 +135,7 @@ class PoolsIncrements: public util::flat_multimap<molecules_t, DistMesh::dim() +
         }
 
         if (nspecies == 0 || nspecies_MPI[0] != -nspecies_MPI[1]) {
-            // Warning! sync_delta_pools relies on the fact that dist_ is
+            // Warning! sync_values relies on the fact that dist_ is
             // initialized (and its pointer to the communicator not null) only if
             // this if is true
             dist_ = mesh_.create_dist_for_variable_sized(dims(), sizes2offsets(elem2num_species))
@@ -131,21 +143,47 @@ class PoolsIncrements: public util::flat_multimap<molecules_t, DistMesh::dim() +
         }
     }
 
-    PoolsIncrements(const PoolsIncrements&) = delete;
+    /**
+     * Construct from a subset of elements
+     * elem2num_species should only contain the information about the subset
+     */
+    ElementSpecValues(DistMesh& mesh,
+                      const osh::LOs elem2num_species,
+                      const util::strongid_vector<IElemT, ElemT>& subset)
+        : super_type(elem2num_species)
+        , species_per_elements_(elem2num_species)
+        , synced_values_(this->ab2c().size())
+        , mesh_(mesh) {
+        assert(elem2num_species.size() == static_cast<osh::LO>(subset.size()));
+        assert((std::is_same_v<typename mesh::entity_info<ElemT>::internal, IElemT>) );
 
-    inline void increment_ith_delta_pool(mesh::tetrahedron_id_t element,
-                                         container::species_id species,
-                                         int element_face,
-                                         molecules_t num_molecules) noexcept {
-        this->operator()(element.get(),
-                         species.get())[static_cast<size_t>(element_face)] += num_molecules;
+        osh::Write<osh::LO> _subset(subset.size());
+        osh::parallel_for(subset.size(), [&](osh::LO i) { _subset[i] = subset[IElemT(i)].get(); });
+        dist_ = mesh_.create_variable_sized_subset_dist(dims(), _subset, this->a2ab()).invert();
     }
 
-    inline void reset() {
-        this->assign(0);
+    ElementSpecValues(const ElementSpecValues<ElemT, T, Width>&) = delete;
+
+    inline T& value(IElemT element, container::species_id species) noexcept {
+        assert(Width == 1);
+        return this->operator()(element.get(), species.get());
     }
 
-    /** Sync the molecule counts among elements (and ghost elements)
+    inline T& value(IElemT element, container::species_id species, int widx) noexcept {
+        return this->operator()(element.get(), species.get())[widx];
+    }
+
+    inline auto species(IElemT element) const noexcept {
+        const auto num_species = species_per_elements_[element.get()];
+        return util::EntityIterator<container::species_id, container::species_id::value_type>(
+            num_species);
+    }
+
+    inline void reset(T val = 0) {
+        this->assign(val);
+    }
+
+    /** Sync the values among elements (and ghost elements)
      * There are 2 ways to sync species in ghost elements:
      *
      * - sync_array: it is the fastest one and does not do alltoallv. It works
@@ -156,38 +194,47 @@ class PoolsIncrements: public util::flat_multimap<molecules_t, DistMesh::dim() +
      * Therefore, checking the pointer to the communicator is a cheap trick to
      * check which function we should use
      */
-    inline void sync_delta_pools() {
+    inline void sync_values() {
         if (dist_.comm()) {
             // multiple compartment
-            synced_delta_pools_ = dist_.exch(util::createRead(this->ab2c()), 1 /* unused width */);
+            synced_values_ = dist_.exch(util::createRead(this->ab2c()), 1 /* unused width */);
         } else {
             // same number of species per element
             const auto element_num_values = this->a2ab()[1] - this->a2ab()[0];
-            synced_delta_pools_ =
+            synced_values_ =
                 mesh_.sync_array(dims(), util::createRead(this->ab2c()), element_num_values);
         }
     }
 
-    inline molecules_t ith_delta_pool(mesh::tetrahedron_id_t element,
-                                      container::species_id species,
-                                      int face) const noexcept {
+    inline T synced_value(IElemT element, container::species_id species) const noexcept {
+        assert(Width == 1);
         const auto index = this->ab(element.get(), species.get());
-        return synced_delta_pools_[index + face];
+        return synced_values_[index];
+    }
+
+    inline T synced_value(IElemT element, container::species_id species, int widx) const noexcept {
+        const auto index = this->ab(element.get(), species.get());
+        return synced_values_[index + widx];
     }
 
     /**
      * \return Total number of diffusions
      */
-    inline molecules_t num_diffusions() const {
+    inline T sum() const {
         return osh::get_sum(util::createRead(this->ab2c()));
     }
 
     static constexpr osh::Int dims() noexcept {
-        return DistMesh::dim();
+        return mesh::entity_info<ElemT>::dim;
+    }
+
+    const osh::LOs& species_per_elements() const noexcept {
+        return species_per_elements_;
     }
 
   private:
-    osh::Read<molecules_t> synced_delta_pools_;
+    const osh::LOs species_per_elements_;
+    osh::Read<T> synced_values_;
     DistMesh& mesh_;
     osh::Dist dist_;
 
@@ -203,6 +250,23 @@ class PoolsIncrements: public util::flat_multimap<molecules_t, DistMesh::dim() +
         return offsets;
     }
 };
+
+template <typename T>
+using PoolsOutValues = ElementSpecValues<mesh::tetrahedron_local_id_t, T, DistMesh::dim() + 1>;
+
+using PoolsIncrements = PoolsOutValues<molecules_t>;
+using PoolsOutFluxes = PoolsOutValues<osh::Real>;
+
+// One value per border triangle, representing the number of specs moving from tet0 to tet1
+// The value can be negative, indicating that species are moving from tet1 to tet0
+// The spec ids are defined relative to tet0
+using BorderTriangleDiff =
+    ElementSpecValues<mesh::triangle_local_id_t, molecules_t, 1, mesh::triangle_internal_id_t>;
+// One value per border tetrahedron, representing the available population for each spec
+using BorderTetrahedronPopulation = ElementSpecValues<mesh::tetrahedron_local_id_t,
+                                                      molecules_t,
+                                                      1,
+                                                      mesh::tetrahedron_internal_id_t>;
 
 /**
  * Functor to compute number of leaving molecules of a certain species from a
@@ -230,7 +294,7 @@ class LeavingMolecules {
  */
 class Diffusions {
   public:
-    Diffusions(DistMesh& t_mesh, SimulationInput& t_input);
+    Diffusions(DistMesh& t_mesh, const Statedef& statedef, SimulationInput& t_input);
 
     inline const DiffusionDiscretizedRates& rates() const noexcept {
         return rates_;
@@ -274,15 +338,43 @@ class Diffusions {
         return leaving_molecules_;
     }
 
-    inline void reset() {
+    inline void leaving_molecules_reset() {
         leaving_molecules_.reset();
     }
 
-    /// \return maximum sum of rates on all processes
+    inline void reset() {
+        leaving_molecules_reset();
+        dcsts_.clear();
+    }
+
+    osh::Real get_tet_dcst(mesh::tetrahedron_local_id_t element,
+                           container::diffusion_id diff,
+                           int i) const;
+
+    void set_tet_dcst(mesh::tetrahedron_local_id_t element,
+                      container::diffusion_id diff,
+                      int i,
+                      osh::Real dcst) {
+        dcsts_[std::make_tuple(element, diff, i)] = dcst;
+    }
+
+    void clear_tet_dcst(mesh::tetrahedron_local_id_t element, container::diffusion_id diff, int i);
+
+    void initialize_discretized_rates();
+
+    /// \return maximum, mean and minimum sum of rates on all processes
     osh::Real global_rates_max_sum() const;
+    osh::Real global_rates_mean_sum() const;
+    osh::Real global_rates_min_sum() const;
 
   private:
     const MPI_Comm comm_;
+    DistMesh& mesh_;
+    const Statedef& statedef_;
+    // Dcst values for specific (tetrahedron, diffusion, face idx) tuples
+    // A negative face idx indicates a diffusion constant for the overall tetrahedron
+    std::map<std::tuple<mesh::tetrahedron_local_id_t, container::diffusion_id, int>, osh::Real>
+        dcsts_;
     DiffusionDiscretizedRates rates_;
     const LeavingMolecules& total_leaving_;
     /// number of molecules leaving from every boundary/faces of every

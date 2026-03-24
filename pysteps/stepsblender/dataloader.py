@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,7 +29,7 @@ from queue import Queue
 import re
 import warnings
 
-from .utils import Orders, Loc, Event, zipNone, cartesian2Spherical
+from .utils import Orders, Loc, Event, zipNone, cartesian2Spherical, progress
 
 
 class _HDF5BlenderDataLoader:
@@ -38,6 +38,10 @@ class _HDF5BlenderDataLoader:
         self._hdfPath = HDFPath
         self._queue_snd = queue_snd
         self._queue_rcv = queue_rcv
+
+        self._include = []
+        self._exclude = []
+        self._elemInds = {}
 
     def isIncluded(self, name):
         return any(reg.match(name)
@@ -48,6 +52,7 @@ class _HDF5BlenderDataLoader:
         import steps.API_2.utils as utils
 
         self._allElems = {}
+        self._elemInds = {}
         self._tri2Tets = {}
         self._spec2Rs = {}
         self._ves2SpecsRs = {}
@@ -57,6 +62,7 @@ class _HDF5BlenderDataLoader:
         self._currVesPos = {}
         self._currRaftPos = {}
         self._ves2Rad = {}
+        self._nonDefVesRad = {}
         self._vesEvents = {}
         self._raftEvents = {}
 
@@ -112,6 +118,8 @@ class _HDF5BlenderDataLoader:
                     ret = self._getVesEvents(*args)
                 elif order == Orders.GET_VES_POS:
                     ret = self._getVesPos(*args)
+                elif order == Orders.GET_VES_ON_PATH:
+                    ret = self._getVesOnPath(*args)
                 elif order == Orders.GET_RAFT_POS:
                     ret = self._getRaftPos(*args)
                 elif order == Orders.GET_RAFT_COUNTS:
@@ -130,7 +138,7 @@ class _HDF5BlenderDataLoader:
                 self._queue_snd.put(ret)
         utils.SetVerbosity(1)
 
-    def _getMesh(self, hdf, hdfgroup, meshGroup):
+    def _getMesh(self, hdf, hdfgroup, meshGroup, addSubPatches):
         self._allElems = {
             Loc.VERT: {},  # {elem_ind: (x, y, z)}
             Loc.TRI: {},  # {elem_ind: (v1, v2, v3)}
@@ -140,14 +148,17 @@ class _HDF5BlenderDataLoader:
         compSurfaces = {}
         allTetSizes = []
         bbox = [None, None]
-        for groupName in meshGroup:
+        for groupName in progress(meshGroup, "Mesh groups"):
             group = meshGroup[groupName]
             if 'topology' in group:
                 vertInds = np.array(group['vertInds'])
                 elemInds = np.array(group['elemInds'])
                 positions = np.array(group['XYZ'])
                 topology = np.array(group['topology'])
-                loc_id = group.attrs['loc_id']
+                loc_id = group.attrs.get('loc_id', groupName)
+
+                if not self.isIncluded(loc_id):
+                    continue
 
                 groupSurface = set()
 
@@ -175,6 +186,9 @@ class _HDF5BlenderDataLoader:
                         bbox[0] = np.min([bbox[0], vmin], axis=0) if bbox[0] is not None else vmin
                         bbox[1] = np.max([bbox[1], vmax], axis=0) if bbox[1] is not None else vmax
                 if len(triGrid) > 0:
+                    if addSubPatches:
+                        key = f'{loc_id}_{groupName}' if loc_id != groupName else loc_id
+                        triGrids[key] = triGrid
                     triGrids.setdefault(loc_id, [])
                     triGrids[loc_id] += triGrid
                 if len(groupSurface) > 0:
@@ -182,7 +196,8 @@ class _HDF5BlenderDataLoader:
 
         # Add Endocytic zones
         for zoneName, zoneDct in hdfgroup.staticData.get('EndocyticZones', {}).items():
-            triGrids[zoneName] = [self._allElems[Loc.TRI].get(tidx, tuple()) for tidx in zoneDct['tris']]
+            if self.isIncluded(zoneName):
+                triGrids[zoneName] = [self._allElems[Loc.TRI].get(tidx, tuple()) for tidx in zoneDct['tris']]
 
         # Compute tri 2 tets mapping
         self._tri2Tets = {}
@@ -211,6 +226,9 @@ class _HDF5BlenderDataLoader:
         # Average tet size
         avgTetSize = np.mean(allTetSizes)
 
+        for loc in [Loc.TRI, Loc.TET]:
+            self._elemInds[loc] = set(self._allElems.get(loc, {}).keys())
+
         return (self._allElems, triGrids, compSurfaces, avgTetSize, bbox)
 
     def _getModelObjects(self, hdf, hdfgroup, results):
@@ -223,6 +241,7 @@ class _HDF5BlenderDataLoader:
         self._ves2SpecsRs = {}
         self._spec2RaftRs = {}
         self._ves2Rs = {}
+        self._vesOnPath2Rs = {}
         self._raft2Rs = {}
         self._vesInds2Tpe = {}
         self._raftInds2Tpe = {}
@@ -239,7 +258,7 @@ class _HDF5BlenderDataLoader:
         allRaft = set()
         allSpecs = set()
         maxTime = 0
-        for sel in results:
+        for sel in progress(results, "Result selectors"):
             obj_type = sel.metaData.get('obj_type', None)
             obj_id = sel.metaData.get('obj_id', None)
             loc_type = sel.metaData.get('loc_type', None)
@@ -270,47 +289,51 @@ class _HDF5BlenderDataLoader:
 
             # Tet and tri species
             if all(x is not None for x in [obj_type, obj_id, loc_type, loc_id]):
-                for i, (tpe, oid, etpe, eid) in enumerate(zipNone(obj_type, obj_id, loc_type, loc_id)):
+                for i, (tpe, oid, etpe, eid) in progress(enumerate(zipNone(obj_type, obj_id, loc_type, loc_id)), "Tets and tris"):
                     # TODO Inprovement: also load link species from there when it is saved with e.g. sim.comp.VESICLES().L1.Pos
-                    if tpe == model.Species._elemStr:
+                    if tpe == model.Species._elemStr and oid is not None and self.isIncluded(oid):
                         if etpe in str2TpeMap:
-                            allSpecs.add(oid)
 
                             # TODO Optimization: make this structure more efficient?
                             loc = str2TpeMap[etpe]
                             struct = self._spec2Rs.setdefault(loc, {})
                             elems, colInds = struct.setdefault(oid, {}).setdefault(sel, ([], []))
-                            elems.append(eid)
-                            colInds.append(i)
+                            if eid in self._elemInds[loc]:
+                                allSpecs.add(oid)
+                                elems.append(eid)
+                                colInds.append(i)
             if ves_type is not None and props is not None and linkspec_type is None:
                 # Vesicle positions
-                for i, (vesTpe, prop, oid, lid) in enumerate(zipNone(ves_type, props, obj_id, loc_id)):
-                    if oid is None and vesTpe is not None and prop == 'Pos':
+                for i, (vesTpe, prop, oid, lid) in progress(enumerate(zipNone(ves_type, props, obj_id, loc_id)), "Vesicle positions"):
+                    if oid is None and vesTpe is not None and self.isIncluded(vesTpe):
                         allVes.add(vesTpe)
-                        self._ves2Rs.setdefault(vesTpe, {}).setdefault(sel, []).append(i)
-                        for vesDct in sel.data[self._rInd, :, i]:
-                            if isinstance(vesDct, dict):
-                                for idx in vesDct.keys():
-                                    ves2IndsLocs.setdefault(vesTpe, {})[idx] = lid
-                                    self._vesInds2Tpe[idx] = vesTpe
+                        if prop == 'Pos':
+                            self._ves2Rs.setdefault(vesTpe, {}).setdefault(sel, []).append(i)
+                            for vesDct in sel.data[self._rInd, :, i]:
+                                if isinstance(vesDct, dict):
+                                    for idx in vesDct.keys():
+                                        ves2IndsLocs.setdefault(vesTpe, {})[idx] = lid
+                                        self._vesInds2Tpe[idx] = vesTpe
+                        elif prop == 'OnPath':
+                            self._vesOnPath2Rs.setdefault(vesTpe, {}).setdefault(sel, []).append(i)
                 if ves_loc is not None:
                     # Vesicle specs
-                    for i, (vesTpe, vesLoc, prop, objTpe, oid, psTpe) in enumerate(
-                            zipNone(ves_type, ves_loc, props, obj_type, obj_id, pointspec_type)):
-                        if psTpe is not None:
+                    for i, (vesTpe, vesLoc, prop, objTpe, oid, psTpe) in progress(enumerate(
+                            zipNone(ves_type, ves_loc, props, obj_type, obj_id, pointspec_type)), "Vesicle species"):
+                        if psTpe is not None and self.isIncluded(psTpe):
                             # Individual point spec positions
                             allSpecs.add(psTpe)
                             self._ves2SpecsRs.setdefault(vesTpe, {}).setdefault(
                                 (prop, vesLoc, 'dct'), {}).setdefault(psTpe, {}).setdefault(sel, []).append(i)
-                        elif objTpe == 'Spec' and vesLoc is not None and vesTpe is not None:
+                        elif objTpe == 'Spec' and vesLoc is not None and vesTpe is not None and self.isIncluded(oid):
                             # Bulk point spec positions
                             allSpecs.add(oid)
                             self._ves2SpecsRs.setdefault(vesTpe, {}).setdefault(
                                 (prop, vesLoc, 'lst'), {}).setdefault(oid, {}).setdefault(sel, []).append(i)
             if raft_type is not None and props is not None:
                 for i, (raftTpe, prop, objTpe, oid,
-                        lid) in enumerate(zipNone(raft_type, props, obj_type, obj_id, loc_id)):
-                    if oid is None and raftTpe is not None and prop == 'Pos':
+                        lid) in progress(enumerate(zipNone(raft_type, props, obj_type, obj_id, loc_id)), "Rafts"):
+                    if oid is None and raftTpe is not None and prop == 'Pos' and self.isIncluded(raftTpe):
                         # Rafts positions
                         allRaft.add(raftTpe)
                         self._raft2Rs.setdefault(raftTpe, {}).setdefault(lid, {}).setdefault(sel,
@@ -320,7 +343,7 @@ class _HDF5BlenderDataLoader:
                                 for idx in raftDct.keys():
                                     raft2IndsLocs.setdefault(raftTpe, {})[idx] = lid
                                     self._raftInds2Tpe[idx] = raftTpe
-                    if oid is not None and objTpe == 'Spec':
+                    if oid is not None and objTpe == 'Spec' and self.isIncluded(oid):
                         # Raft specs
                         if prop in ['Pos', 'Count']:
                             allSpecs.add(oid)
@@ -328,8 +351,8 @@ class _HDF5BlenderDataLoader:
                             self._spec2RaftRs.setdefault(oid, {}).setdefault(sel, {}).setdefault(
                                 raftTpe, {}).setdefault(lid, {}).setdefault(prop, []).append(i)
             if linkspec_type is not None and props is not None:
-                for i, (lsTpe, prop) in enumerate(zipNone(linkspec_type, props)):
-                    if prop in ['Pos', 'LinkedTo']:
+                for i, (lsTpe, prop) in progress(enumerate(zipNone(linkspec_type, props)), "Link Species"):
+                    if prop in ['Pos', 'LinkedTo'] and self.isIncluded(lsTpe):
                         self._linkspec2RS.setdefault(lsTpe, {}).setdefault(prop, {}).setdefault(sel,
                                                                                                 []).append(i)
                         for veslsDct in sel.data[self._rInd, :, i]:
@@ -340,7 +363,7 @@ class _HDF5BlenderDataLoader:
                                         ls2Inds[lsTpe] |= set(lsDct.keys())
             # Events
             if obj_type is not None and obj_id is not None and props is not None:
-                for i, (tpe, oid, prop) in enumerate(zipNone(obj_type, obj_id, props)):
+                for i, (tpe, oid, prop) in progress(enumerate(zipNone(obj_type, obj_id, props)), "Vesicle events"):
                     if prop == 'Events':
                         if tpe == 'Exocytosis':
                             self._vesEventsRs.setdefault(Event.EXOCYTOSIS, []).append((sel, i))
@@ -351,21 +374,28 @@ class _HDF5BlenderDataLoader:
 
         VesInfos = []
         RaftInfos = []
-        for vesTpe in filter(self.isIncluded, allVes):
+        for vesTpe in allVes:
             indsLocs = ves2IndsLocs.get(vesTpe, {})
             allVesSpecs = set()
             for _, specDct in self._ves2SpecsRs.get(vesTpe, {}).items():
-                allVesSpecs |= set(filter(self.isIncluded, specDct.keys()))
+                allVesSpecs |= set(specDct.keys())
             if len(indsLocs) > 0:
                 # Fetch ves diameter from model data
+                nonDefDiam = hdfgroup.staticData.get('RuntimeInfo', {}).get('VesicleDiameters', {}).get(vesTpe, {})
+                if self._rInd == -1 and len(nonDefDiam) > 0:
+                    rind = max(nonDefDiam.keys())
+                else:
+                    rind = self._rInd
+                nonDefRads = {vidx: d / 2 for vidx, d in nonDefDiam.get(rind, {}).items()}
+                self._nonDefVesRad.update(nonDefRads)
                 diam = hdfgroup.staticData.get('Vesicles', {}).get(vesTpe, {}).get('Diameter', None)
                 if diam is not None:
                     self._ves2Rad[vesTpe] = diam / 2
-                    VesInfos.append((vesTpe, diam / 2, indsLocs, allVesSpecs))
+                    VesInfos.append((vesTpe, diam / 2, indsLocs, allVesSpecs, nonDefRads))
 
-        for raftTpe in filter(self.isIncluded, allRaft):
+        for raftTpe in allRaft:
             indsLocs = raft2IndsLocs.get(raftTpe, {})
-            allRaftSpecs = set(filter(self.isIncluded, raft2Specs.get(raftTpe, set())))
+            allRaftSpecs = set(raft2Specs.get(raftTpe, set()))
             # Only add a raft if it appears at least once
             if len(indsLocs) > 0:
                 # Fetch raft diameter from model data
@@ -375,14 +405,13 @@ class _HDF5BlenderDataLoader:
 
         PathInfos = hdfgroup.staticData.get('VesiclePaths', {})
 
-        SpecInfos = sorted(filter(self.isIncluded, allSpecs))
+        SpecInfos = sorted(allSpecs)
         for loc, spec2RS in self._spec2Rs.items():
             for specTpe in spec2RS.keys():
-                if self.isIncluded(specTpe) and specTpe not in SpecInfos:
+                if specTpe not in SpecInfos:
                     SpecInfos.append(specTpe)
 
-        LinkSpecInfos = [(lsTpe, ls2Inds[lsTpe]) for lsTpe in self._linkspec2RS.keys()
-                         if self.isIncluded(lsTpe)]
+        LinkSpecInfos = [(lsTpe, ls2Inds[lsTpe]) for lsTpe in self._linkspec2RS.keys()]
 
         return (SpecInfos, LinkSpecInfos, VesInfos, RaftInfos, PathInfos)
 
@@ -435,7 +464,7 @@ class _HDF5BlenderDataLoader:
                                         positions = cartesian2Spherical(positions -
                                                                         self._currVesPos[(ves, tind)][vesIdx])
                                     elif prop == 'PosSpherical':
-                                        positions = np.hstack((self._ves2Rad[ves] * np.ones(
+                                        positions = np.hstack((self._getVesRad(ves, vesIdx) * np.ones(
                                             (len(positions), 1)), positions))
                                     allPositions.setdefault(
                                         vesIdx, {})[spec] = {idx: pos
@@ -475,6 +504,17 @@ class _HDF5BlenderDataLoader:
                             self._currVesPos[(ves, tind)][idx] = np.array(pos)
 
         return self._currVesPos[(ves, tind)]
+
+    def _getVesOnPath(self, ves, tind):
+        # TODO: Implement some caching?
+        res = {}
+        for sel, colInds in self._vesOnPath2Rs.get(ves, {}).items():
+            for dct in sel.data[self._rInd, tind, colInds]:
+                for idx, pathPos in dct.items():
+                    if pathPos is not None:
+                        path, pos = pathPos
+                        res[idx] = np.array(pos)
+        return res
 
     def _getRaftPos(self, raftTpe, tind):
         raftTimeKey = (raftTpe, tind)
@@ -601,6 +641,9 @@ class _HDF5BlenderDataLoader:
                 return None
         return np.array(verts)
 
+    def _getVesRad(self, vesTpe, vesIdx=None):
+        return self._nonDefVesRad.get(vesIdx, self._ves2Rad[vesTpe])
+
 
 D2BQueue, B2DQueue = Queue(), Queue()
 
@@ -620,7 +663,8 @@ class QueueManager(BaseManager):
 QueueManager.register('get_D2BQueue', callable=D2BQueue_getter)
 QueueManager.register('get_B2DQueue', callable=B2DQueue_getter)
 
-if __name__ == '__main__':
+
+def _get_parser():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Start a data loading server for Blender visualization.')
 
@@ -640,6 +684,12 @@ if __name__ == '__main__':
                         action='store',
                         help='Authentication key to connect to the data loading server',
                         default='STEPSBlender')
+
+    return parser
+
+
+if __name__ == '__main__':
+    parser = _get_parser()
 
     args = parser.parse_args()
 

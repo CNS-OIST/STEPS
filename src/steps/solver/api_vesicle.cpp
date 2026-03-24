@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -57,12 +57,15 @@ void API::setCompVesicleCount(std::string const& c, std::string const& v, uint n
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vesicle_individual_id API::addCompVesicle(std::string const& c, std::string const& v) {
+vesicle_individual_id API::addCompVesicle(std::string const& c,
+                                          std::string const& v,
+                                          double diam,
+                                          double dcst) {
     // the following may throw exceptions if strings are unknown
     comp_global_id cidx = pStatedef->getCompIdx(c);
     vesicle_global_id vidx = pStatedef->getVesicleIdx(v);
 
-    return _addCompVesicle(cidx, vidx);
+    return _addCompVesicle(cidx, vidx, diam, dcst);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -160,6 +163,16 @@ std::vector<double> API::getSingleVesiclePos(std::string const& v,
 
 ////////////////////////////////////////////////////////////////////////////////
 
+std::pair<std::string, std::vector<double>> API::getSingleVesicleOnPath(
+    std::string const& v,
+    vesicle_individual_id ves_unique_index) const {
+    // the following may throw exceptions if strings are unknown
+    vesicle_global_id vidx = pStatedef->getVesicleIdx(v);
+    return _getSingleVesicleOnPath(vidx, ves_unique_index);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void API::setSingleVesiclePos(std::string const& v,
                               vesicle_individual_id ves_unique_index,
                               const std::vector<double>& pos,
@@ -174,6 +187,33 @@ void API::setSingleVesiclePos(std::string const& v,
     vesicle_global_id vidx = pStatedef->getVesicleIdx(v);
 
     _setSingleVesiclePos(vidx, ves_unique_index, pos, force);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getSingleVesicleDcst(std::string const& v,
+                                 vesicle_individual_id ves_unique_index) const {
+    // the following may throw exceptions if strings are unknown
+    vesicle_global_id vidx = pStatedef->getVesicleIdx(v);
+
+    return _getSingleVesicleDcst(vidx, ves_unique_index);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::setSingleVesicleDcst(std::string const& v,
+                               vesicle_individual_id ves_unique_index,
+                               double dcst) {
+    if (dcst < 0) {
+        std::ostringstream os;
+        os << "Diffusion constant must be positive";
+        throw steps::ArgErr(os.str());
+    }
+
+    // the following may throw exceptions if strings are unknown
+    vesicle_global_id vidx = pStatedef->getVesicleIdx(v);
+
+    _setSingleVesicleDcst(vidx, ves_unique_index, dcst);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -385,6 +425,16 @@ vesicle_individual_id API::getSingleLinkSpecVes(linkspec_individual_id ls_unique
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void API::setSingleVesicleImmobility(std::string const& v,
+                                     vesicle_individual_id ves_unique_index,
+                                     uint immob) const {
+    // the following may throw exceptions if strings are unknown
+    vesicle_global_id vidx = pStatedef->getVesicleIdx(v);
+
+    _setSingleVesicleImmobility(vidx, ves_unique_index, immob);
+}
+////////////////////////////////////////////////////////////////////////////////
+
 uint API::getSingleVesicleImmobility(std::string const& v,
                                      vesicle_individual_id ves_unique_index) const {
     // the following may throw exceptions if strings are unknown
@@ -406,11 +456,32 @@ std::vector<steps::tetrahedron_global_id> API::getSingleVesicleOverlapTets(
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::setTetVesicleDcst(tetrahedron_global_id tidx, std::string const& v, double dcst) {
+void API::setTetVesicleDcst(tetrahedron_global_id tidx,
+                            std::string const& v,
+                            double dcst,
+                            bool rel) {
     // the following may throw exceptions if strings are unknown
     vesicle_global_id vidx = pStatedef->getVesicleIdx(v);
 
-    _setTetVesicleDcst(tidx, vidx, dcst);
+    _setTetVesicleDcst(tidx, vidx, dcst, rel);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTetVesicleDcst(tetrahedron_global_id tidx, std::string const& v) const {
+    // the following may throw exceptions if strings are unknown
+    vesicle_global_id vidx = pStatedef->getVesicleIdx(v);
+
+    return _getTetVesicleDcst(tidx, vidx);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool API::getTetVesicleDcstRel(tetrahedron_global_id tidx, std::string const& v) const {
+    // the following may throw exceptions if strings are unknown
+    vesicle_global_id vidx = pStatedef->getVesicleIdx(v);
+
+    return _getTetVesicleDcstRel(tidx, vidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -525,7 +596,7 @@ void API::addVesicleDiffusionGroup(std::string const& v, const std::vector<std::
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void API::createPath(std::string const& /*id*/) {
+void API::createPath(std::string const& /*id*/, bool /*bind_to_start*/) {
     throw NotImplErr();
 }
 
@@ -534,6 +605,16 @@ void API::createPath(std::string const& /*id*/) {
 void API::addPathPoint(std::string const& /*path_name*/,
                        uint /*point_id*/,
                        const std::vector<double>& /*position*/) {
+    throw NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::addPathEdge(std::string const& /*path*/,
+                      uint /*sourcepoint_idx*/,
+                      uint /*destpoint_idx*/,
+                      double /*weight*/,
+                      bool /*allow_binding*/) {
     throw NotImplErr();
 }
 
@@ -635,6 +716,17 @@ void API::setSingleRaftSpecCount(std::string const& r,
     spec_global_id sidx = pStatedef->getSpecIdx(s);
 
     _setSingleRaftSpecCount(ridx, raft_unique_index, sidx, count);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::setSingleRaftImmobility(std::string const& r,
+                                  raft_individual_id raft_unique_index,
+                                  uint immob) const {
+    // the following may throw exceptions if strings are unknown
+    raft_global_id ridx = pStatedef->getRaftIdx(r);
+
+    return _setSingleRaftImmobility(ridx, raft_unique_index, immob);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -763,7 +855,12 @@ void API::addPathVesicle(std::string const& path_name,
                          std::string const& ves,
                          double speed,
                          const std::map<std::string, uint>& spec_deps,
-                         const std::vector<double>& stoch_stepsize) {
+                         const std::vector<double>& stoch_stepsize,
+                         double binding_rate,
+                         double min_binding_radius,
+                         double max_binding_radius,
+                         double unbinding_rate,
+                         bool allow_path_intersection) {
     if (stoch_stepsize.size() > 2) {
         std::ostringstream os;
         os << "Stochastic step size must be a single value or list of length 2 (if applying a "
@@ -786,7 +883,16 @@ void API::addPathVesicle(std::string const& path_name,
         spec_deps_gidx[pStatedef->getSpecIdx(spec)] = gid;
     }
 
-    _addPathVesicle(path_name, vidx, speed, spec_deps_gidx, stoch_stepsize);
+    _addPathVesicle(path_name,
+                    vidx,
+                    speed,
+                    spec_deps_gidx,
+                    stoch_stepsize,
+                    binding_rate,
+                    min_binding_radius,
+                    max_binding_radius,
+                    unbinding_rate,
+                    allow_path_intersection);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -914,7 +1020,10 @@ void API::_setCompVesicleCount(comp_global_id /*cidx*/, vesicle_global_id /*vidx
 
 ////////////////////////////////////////////////////////////////////////////////
 
-vesicle_individual_id API::_addCompVesicle(comp_global_id /*cidx*/, vesicle_global_id /*vidx*/) {
+vesicle_individual_id API::_addCompVesicle(comp_global_id /*cidx*/,
+                                           vesicle_global_id /*vidx*/,
+                                           double /*diam*/,
+                                           double /*dcst*/) {
     throw NotImplErr();
 }
 
@@ -986,10 +1095,33 @@ std::vector<double> API::_getSingleVesiclePos(vesicle_global_id /*vidx*/,
 
 ////////////////////////////////////////////////////////////////////////////////
 
+std::pair<std::string, std::vector<double>> API::_getSingleVesicleOnPath(
+    solver::vesicle_global_id /*vidx*/,
+    solver::vesicle_individual_id /*ves_unique_index*/) const {
+    throw NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void API::_setSingleVesiclePos(vesicle_global_id /*vidx*/,
                                vesicle_individual_id /*ves_unique_index*/,
                                const std::vector<double>& /*pos*/,
                                bool /*force*/) {
+    throw NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getSingleVesicleDcst(vesicle_global_id /*vidx*/,
+                                  vesicle_individual_id /*ves_unique_index*/) const {
+    throw NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setSingleVesicleDcst(vesicle_global_id /*vidx*/,
+                                vesicle_individual_id /*ves_unique_index*/,
+                                double /*dcst*/) {
     throw NotImplErr();
 }
 
@@ -1135,6 +1267,14 @@ vesicle_individual_id API::_getSingleLinkSpecVes(linkspec_individual_id /*ls_uni
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void API::_setSingleVesicleImmobility(vesicle_global_id /*vidx*/,
+                                      vesicle_individual_id /*ves_unique_index*/,
+                                      uint /*immob*/) const {
+    throw NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 uint API::_getSingleVesicleImmobility(vesicle_global_id /*vidx*/,
                                       vesicle_individual_id /*ves_unique_index*/) const {
     throw NotImplErr();
@@ -1152,7 +1292,20 @@ std::vector<steps::tetrahedron_global_id> API::_getSingleVesicleOverlapTets(
 
 void API::_setTetVesicleDcst(tetrahedron_global_id /*tidx*/,
                              vesicle_global_id /*vidx*/,
-                             double /*dcst*/) {
+                             double /*dcst*/,
+                             bool /*rel*/) {
+    throw NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTetVesicleDcst(tetrahedron_global_id /*tidx*/, vesicle_global_id /*vidx*/) const {
+    throw NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool API::_getTetVesicleDcstRel(tetrahedron_global_id /*tidx*/, vesicle_global_id /*vidx*/) const {
     throw NotImplErr();
 }
 
@@ -1226,7 +1379,12 @@ void API::_addPathVesicle(std::string const& /*path_name*/,
                           vesicle_global_id /*vidx*/,
                           double /*speed*/,
                           const std::map<spec_global_id, uint>& /*spec_deps*/,
-                          const std::vector<double>& /*stoch_stepsize*/) {
+                          const std::vector<double>& /*stoch_stepsize*/,
+                          double /*binding_rate*/,
+                          double /*min_binding_radius*/,
+                          double /*max_binding_radius*/,
+                          double /*unbinding_rate*/,
+                          bool /*allow_path_intersection*/) {
     throw NotImplErr();
 }
 
@@ -1279,6 +1437,14 @@ void API::_setSingleRaftSpecCount(raft_global_id /*ridx*/,
                                   raft_individual_id /*raft_unique_index*/,
                                   spec_global_id /*sidx*/,
                                   uint /*c*/) {
+    throw NotImplErr();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void API::_setSingleRaftImmobility(raft_global_id /*ridx*/,
+                                   raft_individual_id /*raft_unique_index*/,
+                                   uint /*immob*/) const {
     throw NotImplErr();
 }
 

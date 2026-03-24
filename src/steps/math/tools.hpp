@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -62,6 +62,13 @@ inline bool isSmallerEps(double r) {
     if (std::abs(r) <= static_cast<double>(IEEE_EPSILON64))
         return true;
     return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Simple double comparison with some relative tolerance
+inline bool tolerable(double ref, double test, double tol) {
+    return std::abs(ref - test) <= std::abs(ref * tol);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -181,6 +188,17 @@ inline void cross_product(double a1,
 
 inline double dot_product(double a1, double a2, double a3, double b1, double b2, double b3) {
     return a1 * b1 + a2 * b2 + a3 * b3;
+}
+
+// Return the squared cosine of the angle between two vectors. Maintain sign (will go below 0 for
+// angles above pi/2).
+inline double cos2_signed(double a1, double a2, double a3, double b1, double b2, double b3) {
+    auto dot_p = dot_product(a1, a2, a3, b1, b2, b3);
+    auto mag2 = (a1 * a1 + a2 * a2 + a3 * a3) * (b1 * b1 + b2 * b2 + b3 * b3);
+    if (dot_p > 0.0) {
+        return dot_p * dot_p / mag2;
+    }
+    return -dot_p * dot_p / mag2;
 }
 
 }  // namespace steps::math

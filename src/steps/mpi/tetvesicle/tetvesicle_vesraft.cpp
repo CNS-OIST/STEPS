@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -32,6 +32,8 @@
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
+#include <utility>
 #include <vector>
 
 #include <mpi.h>
@@ -60,6 +62,7 @@
 #include "solver/compdef.hpp"
 #include "solver/diffdef.hpp"
 #include "solver/exocytosisdef.hpp"
+#include "solver/fwd.hpp"
 #include "solver/ghkcurrdef.hpp"
 #include "solver/linkspecdef.hpp"
 #include "solver/ohmiccurrdef.hpp"
@@ -99,17 +102,30 @@ using math::point3d;
 TetVesicleVesRaft::TetVesicleVesRaft(model::Model* m,
                                      wm::Geom* g,
                                      const rng::RNGptr& r,
-                                     int /*calcMembPot*/)
+                                     int /*calcMembPot*/,
+                                     bool /*calcMembPot_lenient*/,
+                                     double vesSDiffTol,
+                                     std::vector<int> const& tet_hosts,
+                                     const std::map<triangle_global_id, int>& tri_hosts,
+                                     std::vector<int> const& /*wm_hosts*/)
     : API(*m, *g, r)
     , pMesh(nullptr)
     , pRequireVesicleCommunication(false)
-    , pQtablesize_spec(1000)
-    , pQtablesize_linkspec(1000) {
+    , pQtablesize(1000) {
     if (rng() == nullptr) {
         std::ostringstream os;
         os << "No RNG provided to solver initializer function";
         ArgErrLog(os.str());
     }
+
+    if (vesSDiffTol < 0.0) {
+        CLOG(WARNING, "general_log")
+            << "Ignoring negative vesicle surface diffusion tolerance. Using default 1%.\n";
+        pQtabletolerance = 0.01;
+    } else {
+        pQtabletolerance = vesSDiffTol;
+    }
+
 
     // All initialization code now in _setup() to allow EField solver to be
     // derived and create EField local objects within the constructor
@@ -125,7 +141,23 @@ TetVesicleVesRaft::TetVesicleVesRaft(model::Model* m,
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank_World);
     MPI_Comm_size(MPI_COMM_WORLD, &nHosts_World);
 
-    _partition();
+    if (myRank_World != 0) {
+        ProgErr("A TetVesicleVesRaft solver is created in a VesRDEF rank.");
+    } else {
+        vesraftRank_World = 0;
+        RDEFmasterRank_World = 1;
+        MPI_Comm single_node_comm;
+        MPI_Comm_split(MPI_COMM_WORLD, 0, 0, &single_node_comm);
+    }
+
+    if (tet_hosts.empty()) {
+        _partition();
+    } else {
+        for (uint t = 0; t < tet_hosts.size(); t++) {
+            tetHosts.emplace(tetrahedron_global_id(t), tet_hosts[t]);
+        }
+        triHosts = tri_hosts;
+    }
     MPI_Barrier(MPI_COMM_WORLD);
     dataTypeUtil.commitAllDataTypes();
     _setup();
@@ -152,24 +184,6 @@ TetVesicleVesRaft::~TetVesicleVesRaft() {
     }
     for (auto t: pTris) {
         delete t;
-    }
-
-    for (auto& qtit: pQtables_spec) {
-        for (auto& q: qtit.second) {
-            if (q != nullptr) {
-                delete q;
-            }
-        }
-        qtit.second.container().clear();
-    }
-
-    for (auto& qtit: pQtables_linkspec) {
-        for (auto& q: qtit.second) {
-            if (q != nullptr) {
-                delete q;
-            }
-        }
-        qtit.second.container().clear();
     }
 
     for (auto lsp: pLinkSpecPairs) {
@@ -200,10 +214,19 @@ void TetVesicleVesRaft::checkpoint(std::string const& file_name) {
     util::checkpoint(cp_file, maxWalkDistSqFact);
     util::checkpoint(cp_file, minNbTetVisited);
     util::checkpoint(cp_file, pNextLinkSpecUniqueID);
-    util::checkpoint(cp_file, pVesSpecD);
     util::checkpoint(cp_file, pVesLinkSpecD);
+    util::checkpoint(cp_file, pQtabletolerance);
 
     statedef().checkpoint(cp_file);
+
+    std::vector<double> qt_taus;
+    for (auto const& qt_it: pQtables) {
+        qt_taus.emplace_back(qt_it.first);
+    }
+    util::checkpoint(cp_file, qt_taus);
+
+    util::checkpoint(cp_file, pPathsNames);
+    util::checkpoint(cp_file, pPaths);
 
     for (auto const& c: pComps) {
         c->checkpoint(cp_file);
@@ -231,46 +254,15 @@ void TetVesicleVesRaft::checkpoint(std::string const& file_name) {
         lsp->checkpoint(cp_file);
     }
 
-    // Note: Don't need to do anything for pVesicles and pRafts because Comp and Patch own them
-
-    for (auto const& ves_to_qt: pQtables_spec) {
-        std::map<solver::spec_global_id, double> spec_tau;
-        for (auto spec_gidx: solver::spec_global_id::range(ves_to_qt.second.size())) {
-            auto qt = ves_to_qt.second[spec_gidx];
-            if (qt != nullptr) {
-                spec_tau[spec_gidx] = qt->getTau();
-            }
-        }
-        util::checkpoint(cp_file, spec_tau);
-    }
-
-    for (auto const& ves_to_qt: pQtables_linkspec) {
-        std::map<solver::linkspec_global_id, double> linkspec_tau;
-        for (auto linkspec_gidx: solver::linkspec_global_id::range(ves_to_qt.second.size())) {
-            auto qt = ves_to_qt.second[linkspec_gidx];
-            if (qt != nullptr) {
-                linkspec_tau[linkspec_gidx] = qt->getTau();
-            }
-        }
-        util::checkpoint(cp_file, linkspec_tau);
-    }
-
-    std::vector<std::string> path_ids;
-    for (auto const& path: pPaths) {
-        path_ids.emplace_back(path.first);
-    }
-    util::checkpoint(cp_file, path_ids);
-
-    for (auto const& path: pPaths) {
-        path.second->checkpoint(cp_file);
-    }
-
     cp_file.close();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 void TetVesicleVesRaft::restore(std::string const& file_name) {
+    // First reset the solver
+    reset();
+
     std::fstream cp_file;
 
     cp_file.open(file_name.c_str(), std::fstream::in | std::fstream::binary);
@@ -290,10 +282,21 @@ void TetVesicleVesRaft::restore(std::string const& file_name) {
     util::restore(cp_file, maxWalkDistSqFact);
     util::restore(cp_file, minNbTetVisited);
     util::restore(cp_file, pNextLinkSpecUniqueID);
-    util::restore(cp_file, pVesSpecD);
     util::restore(cp_file, pVesLinkSpecD);
+    util::restore(cp_file, pQtabletolerance);
 
     statedef().restore(cp_file);
+
+    // Qtables must be restored before compartment because comp restores vesicles, which read
+    // Qtables from solver during restore
+    std::vector<double> qt_taus;
+    util::restore(cp_file, qt_taus);
+    for (auto const& tau: qt_taus) {
+        pQtables[tau] = std::make_shared<Qtable>(pQtablesize, tau, rng());
+    }
+
+    util::restore(cp_file, pPathsNames);
+    util::restore(cp_file, pPaths);
 
     for (auto const& c: pComps) {
         c->restore(cp_file);
@@ -321,31 +324,6 @@ void TetVesicleVesRaft::restore(std::string const& file_name) {
     for (uint i = 0; i < lsp_size; ++i) {
         auto linkspecpair = new LinkSpecPair(cp_file, this);  // constructor does the restore
         pLinkSpecPairs.insert(linkspecpair);
-    }
-
-    for (auto ves_gidx: solver::vesicle_global_id::range(statedef().countVesicles())) {
-        std::map<solver::spec_global_id, double> spec_tau;
-        util::restore(cp_file, spec_tau);
-        for (auto const& st: spec_tau) {
-            pQtables_spec[ves_gidx][st.first] = new Qtable(pQtablesize_spec, st.second, rng());
-        }
-    }
-
-    for (auto ves_gidx: solver::vesicle_global_id::range(statedef().countVesicles())) {
-        std::map<solver::linkspec_global_id, double> linkspec_tau;
-        util::restore(cp_file, linkspec_tau);
-        for (auto const& lst: linkspec_tau) {
-            pQtables_linkspec[ves_gidx][lst.first] =
-                new Qtable(pQtablesize_linkspec, lst.second, rng());
-        }
-    }
-
-    std::vector<std::string> path_ids;
-    util::restore(cp_file, path_ids);
-    for (auto const& path_id: path_ids) {
-        Path* path = new Path(path_id);
-        pPaths[path_id] = path;
-        path->restore(cp_file);
     }
 
     cp_file.close();
@@ -384,15 +362,6 @@ std::string TetVesicleVesRaft::getSolverEmail() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void TetVesicleVesRaft::_partition() {
-    if (myRank_World != 0) {
-        ProgErr("A TetVesicleVesRaft solver is created in a VesRDEF rank.");
-    } else {
-        vesraftRank_World = 0;
-        RDEFmasterRank_World = 1;
-        MPI_Comm single_node_comm;
-        MPI_Comm_split(MPI_COMM_WORLD, 0, 0, &single_node_comm);
-    }
-
     uint n_tets_tris[2];
     std::vector<tetrahedron_global_id> tet_ids;
     std::vector<int> tet_hosts;
@@ -611,32 +580,6 @@ void TetVesicleVesRaft::_setup() {
             // All compartments can hold all types of vesicle??
             localcomp->setupVesicles();
 
-            // for Qtables.
-            uint nSpecs_global = statedef().countSpecs();
-            uint nLinkSpecs_global = statedef().countLinkSpecs();
-
-            for (auto const& ves: statedef().vesicles()) {
-                solver::vesicle_global_id vidx = ves->gidx();
-
-                // Set up the surface diffusion stuff
-                pQtables_spec[vidx] = std::vector<Qtable*>(nSpecs_global, nullptr);
-                pVesSpecD[vidx] = std::vector<double>(nSpecs_global, 0.0);
-
-                pQtables_linkspec[vidx] = std::vector<Qtable*>(nLinkSpecs_global, nullptr);
-                pVesLinkSpecD[vidx] = std::vector<double>(nLinkSpecs_global, 0.0);
-
-                for (auto vsd_idx: solver::vessdiff_local_id::range(ves->countVesSurfDiffs())) {
-                    const auto& vsddef = ves->vessurfdiffdef(vsd_idx);
-                    setVesicleSpecDiffD_(vidx, vsddef.lig(), vsddef.dcst());
-                }
-
-                for (auto const& bs: statedef().linkspecs()) {
-                    double dcst = bs->dcst();
-                    if (dcst > 0.0) {
-                        _setVesicleSurfaceLinkSpecSDiffD(vidx, bs->gidx(), dcst);
-                    }
-                }
-            }
         } else {
             ProgErrLog("Well-mixed compartments not supported for vesicle simulations.");
         }
@@ -1074,6 +1017,11 @@ void TetVesicleVesRaft::reset() {
     }
     pLinkSpecPairs.clear();
 
+    /* As an optimisation, for now, keep added Qtables even if solver is reset since we can assume
+    simulation conditions will be similar
+    pQtables.clear();
+    */
+
     pVesicles_count = 0;
     pRafts_count = 0;
 
@@ -1117,7 +1065,6 @@ void TetVesicleVesRaft::run(double endtime) {
             // info
             _useVesR2V();
             _useRaftR2V();
-
             _syncPools(RDEF_TO_VESRAFT);  // _syncPools take care of clearing vectors
 
             _runVesicle(vesicle_dt);  // May add to tetPoolCountSyncs_Vec
@@ -1219,6 +1166,7 @@ void TetVesicleVesRaft::_runVesicle(double dt) {
                         }
                     }
                 }
+
                 if (selectedUnbind == nullptr) {
                     // If the vesunbind reaction was not selected among (A,B) reactions
                     AssertLog(it2 != pLinkSpecPair2VesUnbinds.end());
@@ -1255,11 +1203,13 @@ void TetVesicleVesRaft::_runVesicle(double dt) {
             }
         }
     }
+
     // Delete the linkspecpairs that need deleting.
     for (auto const& lspit: linkspecpair_del) {
         delete *lspit;
         pLinkSpecPairs.erase(lspit);
     }
+
     // Finally, do the vesicle diffusion
     for (auto const& comp: pComps) {
         comp->runVesicle(dt);
@@ -1406,14 +1356,27 @@ void TetVesicleVesRaft::_setCompSpecConc(solver::comp_global_id cidx,
 
 bool TetVesicleVesRaft::_getCompSpecClamped(solver::comp_global_id cidx,
                                             solver::spec_global_id sidx) const {
-    return MPI_ConditionalReduce<bool>(true, MPI_C_BOOL, MPI_LAND, syncOutput, outputRank);
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(statedef().countComps() == pComps.size());
+    CompVesRaft* comp = getComp_(cidx);
+    AssertLog(comp != nullptr);
+    solver::spec_local_id lsidx = _specG2L_or_throw(comp, sidx);
+
+    return comp->def()->clamped(lsidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void TetVesicleVesRaft::_setCompSpecClamped(solver::comp_global_id /*cidx*/,
-                                            solver::spec_global_id /*sidx*/,
-                                            bool /*b*/) { /* empty function */
+void TetVesicleVesRaft::_setCompSpecClamped(solver::comp_global_id cidx,
+                                            solver::spec_global_id sidx,
+                                            bool b) {
+    AssertLog(cidx < statedef().countComps());
+    AssertLog(statedef().countComps() == pComps.size());
+    CompVesRaft* comp = getComp_(cidx);
+    AssertLog(comp != nullptr);
+    solver::spec_local_id lsidx = _specG2L_or_throw(comp, sidx);
+
+    comp->def()->setClamped(lsidx, b);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1532,16 +1495,41 @@ uint TetVesicleVesRaft::_getCompVesicleCount(solver::comp_global_id cidx,
 
 void TetVesicleVesRaft::_setTetVesicleDcst(tetrahedron_global_id tidx,
                                            solver::vesicle_global_id vidx,
-                                           double dcst) {
+                                           double dcst,
+                                           bool rel) {
     auto* comp = _getTet(tidx)->getCompVesRaft();
 
-    comp->setVesicleTetDcst(vidx, tidx, dcst);
+    comp->setVesicleTetDcst(vidx, tidx, dcst, rel);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleVesRaft::_getTetVesicleDcst(tetrahedron_global_id tidx,
+                                             solver::vesicle_global_id vidx) const {
+    auto* comp = _getTet(tidx)->getCompVesRaft();
+    double tetdcst = comp->getVesicleTetDcst(vidx, tidx);
+
+    return MPI_ConditionalBcast<double>(
+        tetdcst, MPI_DOUBLE, vesraftRank_World, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool TetVesicleVesRaft::_getTetVesicleDcstRel(tetrahedron_global_id tidx,
+                                              solver::vesicle_global_id vidx) const {
+    auto* comp = _getTet(tidx)->getCompVesRaft();
+    bool tetdcstrel = comp->getVesicleTetDcstRel(vidx, tidx);
+
+    return MPI_ConditionalBcast<bool>(
+        tetdcstrel, MPI_C_BOOL, vesraftRank_World, myRank_World, syncOutput, outputRank);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 solver::vesicle_individual_id TetVesicleVesRaft::_addCompVesicle(solver::comp_global_id cidx,
-                                                                 solver::vesicle_global_id vidx) {
+                                                                 solver::vesicle_global_id vidx,
+                                                                 double diam,
+                                                                 double dcst) {
     CompVesRaft* comp = getComp_(cidx);
 
     // This is done in this layer due to behavior of the comp::addVesicle
@@ -1559,7 +1547,7 @@ solver::vesicle_individual_id TetVesicleVesRaft::_addCompVesicle(solver::comp_gl
         }
 
         tetrahedron_global_id tet_gidx = comp->getRandPosByTetStaticVols(&pos);
-        added_vesicle = comp->addVesicle(&vesdef, pos, tet_gidx);
+        added_vesicle = comp->addVesicle(&vesdef, pos, tet_gidx, diam, dcst);
     }
 
     pRequireVesicleCommunication = true;
@@ -1935,6 +1923,74 @@ std::vector<double> TetVesicleVesRaft::_getSingleVesiclePos(
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void TetVesicleVesRaft::_setSingleVesicleDcst(solver::vesicle_global_id vidx,
+                                              solver::vesicle_individual_id ves_unique_index,
+                                              double dcst) {
+    auto const& vesicle_it = pVesicles.find(ves_unique_index);
+    ProgErrLogIf(vesicle_it == pVesicles.end(), "Vesicle unique id unknown.\n");
+    ProgErrLogIf(vesicle_it->second->idx() != vidx, "Incorrect vesicle type.\n ");
+    vesicle_it->second->setDcst(dcst);
+
+    pRequireVesicleCommunication = true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleVesRaft::_getSingleVesicleDcst(
+    solver::vesicle_global_id vidx,
+    solver::vesicle_individual_id ves_unique_index) const {
+    auto const& vesicle_it = pVesicles.find(ves_unique_index);
+    ProgErrLogIf(vesicle_it == pVesicles.end(), "Vesicle unique id unknown.\n");
+    ProgErrLogIf(vesicle_it->second->idx() != vidx, "Incorrect vesicle type.\n ");
+
+    return MPI_ConditionalBcast<double>(vesicle_it->second->getDcst(),
+                                        MPI_DOUBLE,
+                                        vesraftRank_World,
+                                        myRank_World,
+                                        syncOutput,
+                                        outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::pair<std::string, std::vector<double>> TetVesicleVesRaft::_getSingleVesicleOnPath(
+    solver::vesicle_global_id vidx,
+    solver::vesicle_individual_id ves_unique_index) const {
+    auto const& vesicle_it = pVesicles.find(ves_unique_index);
+    ProgErrLogIf(vesicle_it == pVesicles.end(), "Vesicle unique id unknown.\n");
+    ProgErrLogIf(vesicle_it->second->idx() != vidx, "Incorrect vesicle type.\n ");
+    auto [path, pos] = vesicle_it->second->getCurrentPathPosition();
+    std::string return_path;
+    std::vector<double> pos_vec;
+    if (path != nullptr) {
+        pos_vec = {pos[0], pos[1], pos[2]};
+        return_path = path->getName();
+    }
+
+    auto nchars = MPI_ConditionalBcast<std::size_t>(return_path.size(),
+                                                    MPI_STD_SIZE_T,
+                                                    vesraftRank_World,
+                                                    myRank_World,
+                                                    syncOutput,
+                                                    outputRank);
+    MPI_ConditionalBcast<char>(return_path.data(),
+                               nchars,
+                               MPI_CHAR,
+                               vesraftRank_World,
+                               myRank_World,
+                               syncOutput,
+                               outputRank);
+
+    auto nentries = MPI_ConditionalBcast<std::size_t>(
+        pos_vec.size(), MPI_STD_SIZE_T, vesraftRank_World, myRank_World, syncOutput, outputRank);
+    MPI_ConditionalBcast<double>(
+        pos_vec, nentries, MPI_DOUBLE, vesraftRank_World, myRank_World, syncOutput, outputRank);
+
+    return {return_path, pos_vec};
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 std::vector<std::vector<double>> TetVesicleVesRaft::_getSingleVesicleSurfaceLinkSpecPos(
     solver::vesicle_global_id vidx,
     solver::vesicle_individual_id ves_unique_index,
@@ -2089,6 +2145,18 @@ void TetVesicleVesRaft::_setSingleVesicleSurfaceSpecPosSpherical(
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void TetVesicleVesRaft::_setSingleVesicleImmobility(solver::vesicle_global_id vidx,
+                                                    solver::vesicle_individual_id ves_unique_index,
+                                                    uint immob) const {
+    auto const& vesicle_it = pVesicles.find(ves_unique_index);
+    ProgErrLogIf(vesicle_it == pVesicles.end(), "Vesicle unique id unknown.\n");
+    ProgErrLogIf(vesicle_it->second->idx() != vidx, "Incorrect vesicle type.\n ");
+
+    vesicle_it->second->setImmobility(immob);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 uint TetVesicleVesRaft::_getSingleVesicleImmobility(
     solver::vesicle_global_id vidx,
     solver::vesicle_individual_id ves_unique_index) const {
@@ -2169,15 +2237,27 @@ void TetVesicleVesRaft::_setPatchSpecAmount(solver::patch_global_id pidx,
 
 bool TetVesicleVesRaft::_getPatchSpecClamped(solver::patch_global_id pidx,
                                              solver::spec_global_id sidx) const {
-    return MPI_ConditionalReduce<bool>(true, MPI_C_BOOL, MPI_LAND, syncOutput, outputRank);
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(statedef().countPatches() == pPatches.size());
+    PatchVesRaft* patch = getPatch_(pidx);
+    AssertLog(patch != nullptr);
+    solver::spec_local_id lsidx = _specG2L_or_throw(patch, sidx);
+
+    return patch->def()->clamped(lsidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void TetVesicleVesRaft::_setPatchSpecClamped(solver::patch_global_id /*pidx*/,
-                                             solver::spec_global_id /*sidx*/,
-                                             bool /*buf*/) {
-    /* empty function */
+void TetVesicleVesRaft::_setPatchSpecClamped(solver::patch_global_id pidx,
+                                             solver::spec_global_id sidx,
+                                             bool buf) {
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(statedef().countPatches() == pPatches.size());
+    PatchVesRaft* patch = getPatch_(pidx);
+    AssertLog(patch != nullptr);
+    solver::spec_local_id lsidx = _specG2L_or_throw(patch, sidx);
+
+    patch->def()->setClamped(lsidx, buf);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2316,6 +2396,18 @@ uint TetVesicleVesRaft::_getPatchRaftCount(solver::patch_global_id pidx,
                                       myRank_World,
                                       syncOutput,
                                       outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void TetVesicleVesRaft::_setSingleRaftImmobility(solver::raft_global_id ridx,
+                                                 solver::raft_individual_id raft_unique_index,
+                                                 uint immob) const {
+    auto const& raft_it = pRafts.find(raft_unique_index);
+    ProgErrLogIf(raft_it == pRafts.end(), "Raft unique id unknown.\n");
+    ProgErrLogIf(raft_it->second->idx() != ridx, "Incorrect Raft type.\n ");
+
+    raft_it->second->setImmobility(immob);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2604,9 +2696,119 @@ unsigned long long TetVesicleVesRaft::_getPatchSReacExtent(solver::patch_global_
 
 ////////////////////////////////////////////////////////////////////////////////
 
+unsigned long long TetVesicleVesRaft::_getPatchVDepSReacExtent(
+    solver::patch_global_id pidx,
+    solver::vdepsreac_global_id vsridx) const {
+    return MPI_ConditionalReduce<unsigned long long>(
+        0L, MPI_UNSIGNED_LONG_LONG, MPI_SUM, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void TetVesicleVesRaft::_resetPatchSReacExtent(solver::patch_global_id /*pidx*/,
                                                solver::sreac_global_id /*ridx*/) {
     /* empty function */
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleVesRaft::_getTetA(tetrahedron_global_id tetid) const {
+    int host_rank = _getTetHost(tetid);
+    return MPI_ConditionalBcast<double>(
+        0.0, MPI_DOUBLE, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint TetVesicleVesRaft::_getTetExtent(tetrahedron_global_id tetid) const {
+    int host_rank = _getTetHost(tetid);
+    return MPI_ConditionalBcast<uint>(
+        0, MPI_UNSIGNED, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint TetVesicleVesRaft::_getTriExtent(triangle_global_id triid) const {
+    int host_rank = _getTriHost(triid);
+    return MPI_ConditionalBcast<uint>(
+        0, MPI_UNSIGNED, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint TetVesicleVesRaft::_getTetWeightedExtent(tetrahedron_global_id tetid) const {
+    int host_rank = _getTetHost(tetid);
+    return MPI_ConditionalBcast<uint>(
+        0, MPI_UNSIGNED, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleVesRaft::_getTriA(triangle_global_id triid) const {
+    int host_rank = _getTriHost(triid);
+    return MPI_ConditionalBcast<double>(
+        0.0, MPI_DOUBLE, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<double> TetVesicleVesRaft::getBatchTetA(std::vector<index_t> tetids) const {
+    std::vector<double> input_vec(tetids.size());
+    std::vector<double> output_vec(tetids.size());
+    MPI_ConditionalReduce<double>(
+        input_vec, output_vec, MPI_DOUBLE, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetVesicleVesRaft::getBatchTetExtent(std::vector<index_t> tetids) const {
+    std::vector<uint> input_vec(tetids.size());
+    std::vector<uint> output_vec(tetids.size());
+    MPI_ConditionalReduce<uint>(
+        input_vec, output_vec, MPI_UNSIGNED, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetVesicleVesRaft::getBatchTetWeightedExtent(std::vector<index_t> tetids) const {
+    std::vector<uint> local_vec(tetids.size());
+    std::vector<uint> output_vec(tetids.size());
+    MPI_ConditionalReduce<uint>(
+        local_vec, output_vec, MPI_UNSIGNED, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<double> TetVesicleVesRaft::getBatchTriA(std::vector<index_t> triids) const {
+    std::vector<double> input_vec(triids.size());
+    std::vector<double> output_vec(triids.size());
+    MPI_ConditionalReduce<double>(
+        input_vec, output_vec, MPI_DOUBLE, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetVesicleVesRaft::getBatchTriExtent(std::vector<index_t> triids) const {
+    std::vector<uint> input_vec(triids.size());
+    std::vector<uint> output_vec(triids.size());
+    MPI_ConditionalReduce<uint>(
+        input_vec, output_vec, MPI_UNSIGNED, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetVesicleVesRaft::getBatchTriWeightedExtent(std::vector<index_t> triids) const {
+    std::vector<uint> input_vec(triids.size());
+    std::vector<uint> output_vec(triids.size());
+    MPI_ConditionalReduce<uint>(
+        input_vec, output_vec, MPI_UNSIGNED, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3199,7 +3401,41 @@ double TetVesicleVesRaft::_getTriGHKI(triangle_global_id tidx) const {
 ////////////////////////////////////////////////////////////////////////////////
 
 double TetVesicleVesRaft::_getTriGHKI(triangle_global_id tidx,
-                                      solver::ghkcurr_global_id ghkidx) const {
+                                      solver::ghkcurr_global_id /*ghkidx*/) const {
+    int host = _getTriHost(tidx);
+    return MPI_ConditionalBcast<double>(
+        0.0, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleVesRaft::_getTriSReacI(triangle_global_id tidx) const {
+    int host = _getTriHost(tidx);
+    return MPI_ConditionalBcast<double>(
+        0.0, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleVesRaft::_getTriSReacI(triangle_global_id tidx,
+                                        solver::sreac_global_id /*sridx*/) const {
+    int host = _getTriHost(tidx);
+    return MPI_ConditionalBcast<double>(
+        0.0, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleVesRaft::_getTriVDepSReacI(triangle_global_id tidx) const {
+    int host = _getTriHost(tidx);
+    return MPI_ConditionalBcast<double>(
+        0.0, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleVesRaft::_getTriVDepSReacI(triangle_global_id tidx,
+                                            solver::vdepsreac_global_id /*vdsridx*/) const {
     int host = _getTriHost(tidx);
     return MPI_ConditionalBcast<double>(
         0.0, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
@@ -3208,7 +3444,7 @@ double TetVesicleVesRaft::_getTriGHKI(triangle_global_id tidx,
 ////////////////////////////////////////////////////////////////////////////////
 
 double TetVesicleVesRaft::_getTriI(triangle_global_id tidx) const {
-    return _getTriGHKI(tidx) + _getTriOhmicI(tidx);
+    return _getTriGHKI(tidx) + _getTriOhmicI(tidx) + _getTriSReacI(tidx) + _getTriVDepSReacI(tidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3333,39 +3569,38 @@ void TetVesicleVesRaft::_runRaft(double dt) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void TetVesicleVesRaft::setVesicleSpecDiffD_(solver::vesicle_global_id vidx,
-                                             solver::spec_global_id spec_gidx,
-                                             double d) {
-    // This should be at this level- stored by the comp object. Then
-    // Whenever the vesicles need to add their qtables they check
-    // whether the diff d has been defined in this comp or not.
+std::shared_ptr<Qtable> TetVesicleVesRaft::getQtable_(double tau) {
+    std::map<double, std::shared_ptr<Qtable>>::iterator itlow = pQtables.lower_bound(tau);
 
-    AssertLog(pVesSpecD.count(vidx) == 1);
-    AssertLog(pVesSpecD[vidx].size() > spec_gidx.get());
+    if (itlow != pQtables.end()) {
+        // check tolerance, if OK point to the Qtable we already have.
+        if (steps::math::tolerable(itlow->first, tau, pQtabletolerance)) {
+            return pQtables[itlow->first];
+        }
+    }
+    if (itlow != pQtables.begin()) {
+        itlow--;
+        // check tolerance, if OK point to the Qtable we already have.
+        if (steps::math::tolerable(itlow->first, tau, pQtabletolerance)) {
+            return pQtables[itlow->first];
+        }
+    }
+    // if not OK create a new Qtable and point to that, outside this test so itlow==pQtables.last is
+    // included.
+    pQtables[tau] = std::make_shared<Qtable>(pQtablesize, tau, rng());
 
-    pVesSpecD[vidx][spec_gidx] = d;
-
-    _recalcQtable_spec(vidx, spec_gidx, d);
+    return pQtables[tau];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void TetVesicleVesRaft::_recalcQtable_spec(solver::vesicle_global_id vidx,
-                                           solver::spec_global_id spec_gidx,
-                                           double d) {
-    if (d <= 0.0) {
-        delete pQtables_spec[vidx][spec_gidx];
-        pQtables_spec[vidx][spec_gidx] = nullptr;
-        return;
-    }
-
-    double radius = statedef().vesicledef(vidx).diameter() / 2.0;
-    double tau = (2.0 * d * pVesicledt) / (radius * radius);
-
-    if (pQtables_spec[vidx][spec_gidx] != nullptr) {
-        pQtables_spec[vidx][spec_gidx]->reinit(pQtablesize_spec, tau);
-    } else {
-        pQtables_spec[vidx][spec_gidx] = new Qtable(pQtablesize_spec, tau, rng());
+void TetVesicleVesRaft::_recalcQtables() {
+    for (auto const& comp: pComps) {
+        for (auto& ves_map: comp->getAllVesicles()) {
+            for (auto const& ves: ves_map.second) {
+                ves->recalcQtables_();
+            }
+        }
     }
 }
 
@@ -3374,78 +3609,31 @@ void TetVesicleVesRaft::_recalcQtable_spec(solver::vesicle_global_id vidx,
 void TetVesicleVesRaft::_setVesicleSurfaceLinkSpecSDiffD(solver::vesicle_global_id vidx,
                                                          solver::linkspec_global_id linkspec_gidx,
                                                          double d) {
-    // This should be at this level- stored by the comp object. Then
-    // Whenever the vesicles need to add their qtables they check
-    // whether the diff d has been defined in this comp or not.
-    AssertLog(pVesLinkSpecD.count(vidx) == 1);
-    AssertLog(pVesLinkSpecD[vidx].size() > linkspec_gidx.get());
-
     pVesLinkSpecD[vidx][linkspec_gidx] = d;
 
-    _recalcQtable_linkspec(vidx, linkspec_gidx, d);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void TetVesicleVesRaft::_recalcQtable_linkspec(solver::vesicle_global_id vidx,
-                                               solver::linkspec_global_id linkspec_gidx,
-                                               double d) {
-    if (d <= 0.0) {
-        delete pQtables_linkspec[vidx][linkspec_gidx];
-        pQtables_linkspec[vidx][linkspec_gidx] = nullptr;
-        return;
-    }
-
-    double radius = statedef().vesicledef(vidx).diameter() / 2.0;
-    double tau = (2.0 * d * pVesicledt) / (radius * radius);
-
-    if (pQtables_linkspec[vidx][linkspec_gidx] != nullptr) {
-        pQtables_linkspec[vidx][linkspec_gidx]->reinit(pQtablesize_spec, tau);
-    } else {
-        pQtables_linkspec[vidx][linkspec_gidx] = new Qtable(pQtablesize_linkspec, tau, rng());
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void TetVesicleVesRaft::_recalcQtables() {
-    for (auto const& ves_to_qt: pQtables_spec) {
-        solver::vesicle_global_id vidx = ves_to_qt.first;  // for clarity
-        for (auto spec_gidx: solver::spec_global_id::range(ves_to_qt.second.size())) {
-            double d = pVesSpecD[vidx][spec_gidx];
-            _recalcQtable_spec(vidx, spec_gidx, d);
-        }
-    }
-
-    for (auto const& ves_to_qt: pQtables_linkspec) {
-        solver::vesicle_global_id vidx = ves_to_qt.first;  // for clarity
-        for (auto linkspec_gidx: solver::linkspec_global_id::range(ves_to_qt.second.size())) {
-            double d = pVesLinkSpecD[vidx][linkspec_gidx];
-            _recalcQtable_linkspec(vidx, linkspec_gidx, d);
+    for (auto const& comp: pComps) {
+        auto it = comp->getAllVesicles().find(vidx);
+        if (it != comp->getAllVesicles().end()) {
+            for (auto const& ves: it->second) {
+                ves->_recalcQtable_linkspec(linkspec_gidx);
+            }
         }
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-double TetVesicleVesRaft::getQPhiSpec_(solver::vesicle_global_id ves_gidx,
-                                       solver::spec_global_id spec_gidx) {
-    if (pQtables_spec[ves_gidx][spec_gidx] == nullptr) {
-        return 0.0;
-    } else {
-        return pQtables_spec[ves_gidx][spec_gidx]->getPhi();
+double TetVesicleVesRaft::getVesicleSurfaceLinkSpecSDiffD_(
+    solver::vesicle_global_id vidx,
+    solver::linkspec_global_id linkspec_gidx) const {
+    auto ves_it = pVesLinkSpecD.find(vidx);
+    if (ves_it != pVesLinkSpecD.end()) {
+        auto ls_it = ves_it->second.find(linkspec_gidx);
+        if (ls_it != ves_it->second.end()) {
+            return ls_it->second;
+        }
     }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-double TetVesicleVesRaft::getQPhiLinkspec_(solver::vesicle_global_id ves_gidx,
-                                           solver::linkspec_global_id linkspec_gidx) {
-    if (pQtables_linkspec[ves_gidx][linkspec_gidx] == nullptr) {
-        return 0.0;
-    } else {
-        return pQtables_linkspec[ves_gidx][linkspec_gidx]->getPhi();
-    }
+    return statedef().linkspecdef(linkspec_gidx).dcst();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3486,15 +3674,15 @@ LinkSpec* TetVesicleVesRaft::getLinkSpec_(solver::linkspec_individual_id linkspe
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void TetVesicleVesRaft::createPath(std::string const& id) {
+void TetVesicleVesRaft::createPath(std::string const& name, bool bind_to_start) {
     // Check id first
-    if (pPaths.find(id) != pPaths.end()) {
+    if (pPathsNames.find(name) != pPathsNames.end()) {
         ArgErrLog("Path already exists with this ID.");
     }
 
-    Path* path = new Path(id);
-
-    pPaths[id] = path;
+    solver::path_global_id pathId{pPaths.size()};
+    pPathsNames[name] = pathId;
+    pPaths.container().emplace_back(std::make_shared<Path>(pathId, name, bind_to_start));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3502,11 +3690,27 @@ void TetVesicleVesRaft::createPath(std::string const& id) {
 void TetVesicleVesRaft::addPathPoint(std::string const& path_name,
                                      uint point_id,
                                      const std::vector<double>& position) {
-    if (pPaths.find(path_name) == pPaths.end()) {
+    auto it = pPathsNames.find(path_name);
+    if (it == pPathsNames.end()) {
         ArgErrLog("Path ID unknown.");
     }
 
-    pPaths[path_name]->addPoint(point_id, {position[0], position[1], position[2]});
+    pPaths[it->second]->addPoint(point_id, {position[0], position[1], position[2]});
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void TetVesicleVesRaft::addPathEdge(std::string const& path,
+                                    uint sourcepoint_idx,
+                                    uint destpoint_idx,
+                                    double weight,
+                                    bool allow_binding) {
+    auto it = pPathsNames.find(path);
+    if (it == pPathsNames.end()) {
+        ArgErrLog("Path ID unknown.");
+    }
+
+    pPaths[it->second]->addEdge(sourcepoint_idx, destpoint_idx, weight, allow_binding);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3514,7 +3718,8 @@ void TetVesicleVesRaft::addPathPoint(std::string const& path_name,
 void TetVesicleVesRaft::addPathBranch(std::string const& path_name,
                                       uint point_id,
                                       const std::map<uint, double>& dest_points) {
-    if (pPaths.find(path_name) == pPaths.end()) {
+    auto it = pPathsNames.find(path_name);
+    if (it == pPathsNames.end()) {
         ArgErrLog("Path ID unknown.");
     }
 
@@ -3522,7 +3727,9 @@ void TetVesicleVesRaft::addPathBranch(std::string const& path_name,
         ArgErrLog("There must be at least one terminal point.");
     }
 
-    pPaths[path_name]->addBranch(point_id, dest_points);
+    for (const auto& [dest, weight]: dest_points) {
+        pPaths[it->second]->addEdge(point_id, dest, weight, false);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3532,8 +3739,8 @@ TetVesicleVesRaft::getAllPaths() const {
     std::map<std::string, std::map<uint, std::pair<std::vector<double>, std::map<uint, double>>>>
         ret;
 
-    for (const auto& p: pPaths) {
-        ret.emplace(p.first, p.second->getPathMap());
+    for (const auto& p: pPathsNames) {
+        ret.emplace(p.first, pPaths[p.second]->getPathMap());
     }
 
     return ret;
@@ -3545,8 +3752,14 @@ void TetVesicleVesRaft::_addPathVesicle(std::string const& path_name,
                                         solver::vesicle_global_id ves_idx,
                                         double speed,
                                         const std::map<solver::spec_global_id, uint>& spec_deps,
-                                        const std::vector<double>& stoch_stepsize) {
-    if (pPaths.find(path_name) == pPaths.end()) {
+                                        const std::vector<double>& stoch_stepsize,
+                                        double binding_rate,
+                                        double min_binding_radius,
+                                        double max_binding_radius,
+                                        double unbinding_rate,
+                                        bool allow_path_intersection) {
+    auto it = pPathsNames.find(path_name);
+    if (it == pPathsNames.end()) {
         ArgErrLog("Path ID unknown.");
     }
 
@@ -3554,7 +3767,33 @@ void TetVesicleVesRaft::_addPathVesicle(std::string const& path_name,
         ArgErrLog("Speed must be non-zero and positive.");
     }
 
-    pPaths[path_name]->addVesicle(ves_idx, speed, spec_deps, stoch_stepsize);
+    ArgErrLogIf(
+        min_binding_radius > 0 and max_binding_radius > 0 and
+            min_binding_radius >= max_binding_radius,
+        "Minimum absolute binding radius is larger or equal to maximum absolute binding radius.");
+    ArgErrLogIf(
+        min_binding_radius < 0 and max_binding_radius < 0 and
+            min_binding_radius <= max_binding_radius,
+        "Minimum relative binding radius is larger or equal to maximum relative binding radius.");
+    auto ves_rad = statedef().vesicledef(ves_idx).diameter() / 2.0;
+    ArgErrLogIf(min_binding_radius < 0 and max_binding_radius >= 0 and
+                    -min_binding_radius * ves_rad >= max_binding_radius,
+                "With the default vesicle diameter, the relative minimum binding radius is larger "
+                "or equal to the absolute maximum binding radius.");
+    ArgErrLogIf(min_binding_radius >= 0 and max_binding_radius < 0 and
+                    min_binding_radius >= -max_binding_radius * ves_rad,
+                "With the default vesicle diameter, the absolute minimum binding radius is larger "
+                "or equal to the relative maximum binding radius.");
+
+    pPaths[it->second]->addVesicle(ves_idx,
+                                   speed,
+                                   spec_deps,
+                                   stoch_stepsize,
+                                   binding_rate,
+                                   min_binding_radius,
+                                   max_binding_radius,
+                                   unbinding_rate,
+                                   allow_path_intersection);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3567,22 +3806,6 @@ void TetVesicleVesRaft::removeLinkSpecPair_(const LinkSpecPair* lsp) {
     ProgErrLogIf(it == pLinkSpecPairs.end(), "Link spec pair could not be removed");
     delete lsp;
     pLinkSpecPairs.erase(it);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-std::vector<Path*> TetVesicleVesRaft::vesicleCrossedPaths_(const math::position_abs& ves_pos,
-                                                           solver::vesicle_global_id ves_gidx,
-                                                           double ves_rad) {
-    std::vector<Path*> crossed_paths;
-    for (auto const& path: pPaths) {
-        if (path.second->crossedPath(ves_pos, ves_gidx, ves_rad)) {
-            uint random_idx = rng()->get() % (crossed_paths.size() + 1);
-            crossed_paths.emplace(crossed_paths.begin() + random_idx, path.second);
-        }
-    }
-
-    return crossed_paths;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4366,6 +4589,7 @@ void TetVesicleVesRaft::_constructVesV2R() {
             ves_proxy_v2r.vesicle_individual_index = ves_uniqueidx;
             ves_proxy_v2r.contains_link = ves->containsLink();
             ves_proxy_v2r.vesicle_central_position = ves_pos;
+            ves_proxy_v2r.diam = ves->getDiam();
 
             vesProxyV2R_Vec.emplace_back(ves_proxy_v2r);
 

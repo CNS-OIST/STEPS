@@ -287,6 +287,7 @@ cdef extern from "solver/api.hpp" namespace "steps::solver":
         double getPatchSReacH(std.string, std.string) except +
         double getPatchSReacA(std.string, std.string) except +
         unsigned long long getPatchSReacExtent(std.string, std.string) except +
+        unsigned long long getPatchVDepSReacExtent(std.string, std.string) except +
         void resetPatchSReacExtent(std.string, std.string) except +
         unsigned long long getPatchComplexSReacExtent(std.string, std.string) except +
         bool getPatchVDepSReacActive(std.string, std.string) except +
@@ -327,6 +328,10 @@ cdef extern from "solver/api.hpp" namespace "steps::solver":
         double getTriOhmicI(steps.triangle_global_id, std.string) except +
         double getTriGHKI(steps.triangle_global_id) except +
         double getTriGHKI(steps.triangle_global_id, std.string) except +
+        double getTriSReacI(steps.triangle_global_id) except +
+        double getTriSReacI(steps.triangle_global_id, std.string) except +
+        double getTriVDepSReacI(steps.triangle_global_id) except +
+        double getTriVDepSReacI(steps.triangle_global_id, std.string) except +
         double getTriI(steps.triangle_global_id) except +
         double getTriIClamp(steps.triangle_global_id) except +
         void setTriIClamp(steps.triangle_global_id, double) except +

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,6 +34,7 @@
 // STEPS headers.
 #include "math/constants.hpp"
 #include "math/point.hpp"
+#include "math/tools.hpp"
 #include "mpi/tetvesicle/linkspecpair.hpp"
 #include "mpi/tetvesicle/vesicle.hpp"
 #include "solver/linkspecdef.hpp"
@@ -111,11 +112,13 @@ class LinkSpec {
 
     double getLength() const;
 
-    bool movePosAllowed(const math::point3d& move_vector) const;
+    bool movePosAllowed(const math::point3d& ves_move_vector = math::point3d(0.0, 0.0, 0.0)) const;
 
     void updatePos(double theta, double phi);
 
-    bool withinBounds() const;
+    double getMinCos2() const noexcept {
+        return def()->getMinCos2();
+    }
 
     ////////////////////////////////////////////////////////////////////////
 

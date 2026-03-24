@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,11 +28,12 @@
 
 #include <string>
 
+#include "complexevents.hpp"
 #include "fwd.hpp"
 
 namespace steps::model {
 
-/// GHK current.
+/// GHK current base class.
 /// Current through a channel based on the GHK flux equation.
 /// The GHK flux equation contains a term for the channel permeability, not
 /// conductance (since this is not constant with changes in concentrations),
@@ -51,31 +52,29 @@ namespace steps::model {
 
 /// \warning Methods start with an underscore are not exposed to Python.
 
-class GHKcurr {
+class GHKcurrBase {
   public:
     ////////////////////////////////////////////////////////////////////////
     // OBJECT CONSTRUCTION & DESTRUCTION
     ////////////////////////////////////////////////////////////////////////
     /// Constructor
     ///
-    /// \param id ID of the ohmic current reaction.
+    /// \param id ID of the GHK current reaction.
     /// \param surfsys Reference to the parent surface system.
     /// \param ion The ion species which carries the current.
-    /// \param g Single channel conductance (in siemens).
+    /// \param computeflux Whether the current should lead to species fluxes.
+    /// \param virtual_oconc Virtual outside concentration of the ion.
+    /// \param vshift Shift in membrane potential for the computation of GHK current.
     ///
-    GHKcurr(std::string const& id,
-            Surfsys& surfsys,
-            ChanState& chanstate,
-            Spec& ion,
-            bool computeflux = true,
-            double virtual_oconc = -1.0,
-            double vshift = 0.0);
+    GHKcurrBase(std::string const& id,
+                Surfsys& surfsys,
+                Spec& ion,
+                bool computeflux = true,
+                double virtual_oconc = -1.0,
+                double vshift = 0.0);
 
-    GHKcurr(const GHKcurr&) = delete;
-    GHKcurr& operator=(const GHKcurr&) = delete;
-
-    /// Destructor
-    ~GHKcurr();
+    GHKcurrBase(const GHKcurrBase&) = delete;
+    GHKcurrBase& operator=(const GHKcurrBase&) = delete;
 
     ////////////////////////////////////////////////////////////////////////
     // GHK CURRENT PROPERTIES
@@ -107,18 +106,6 @@ class GHKcurr {
         return pModel;
     }
 
-    /// Return a reference to the associated channel state.
-    ///
-    /// \return Reference to the channel state.
-    ChanState& getChanState() const noexcept {
-        return *pChanState;
-    }
-
-    /// Change the channel state.
-    ///
-    /// \param chanstate Channel state of the open state.
-    void setChanState(ChanState& chanstate);
-
     /// Return a reference to the ion.
     ///
     /// \return Reference to the ion.
@@ -147,15 +134,6 @@ class GHKcurr {
     double getP() {
         return _P();
     }
-
-    ////////////////////////////////////////////////////////////////////////
-    // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
-    ////////////////////////////////////////////////////////////////////////
-    /// Self delete.
-    ///
-    /// Called if Python object deleted, or from del method in parent object.
-    /// Will only be called once
-    void _handleSelfDelete();
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: CONDUCTANCE INFORMATION
@@ -189,13 +167,12 @@ class GHKcurr {
 
     ////////////////////////////////////////////////////////////////////////
 
-  private:
+  protected:
     ////////////////////////////////////////////////////////////////////////
 
     std::string pID;
     Model& pModel;
     Surfsys& pSurfsys;
-    ChanState* pChanState;
     Spec* pIon;
     bool pRealFlux;
 
@@ -230,6 +207,104 @@ class GHKcurr {
     // Allowing a 'voltage shift' for the calcuation as this is used in
     // some models
     double pVshift;
+};
+
+////////////////////////////////////////////////////////////////////////
+/// GHK current with a species-like channel state
+class GHKcurr: public GHKcurrBase {
+  public:
+    ////////////////////////////////////////////////////////////////////////
+    // OBJECT CONSTRUCTION & DESTRUCTION
+    ////////////////////////////////////////////////////////////////////////
+    /// Constructor
+    ///
+    /// \param id ID of the GHK current reaction.
+    /// \param surfsys Reference to the parent surface system.
+    /// \param chanstate The channel state in which current is conducted.
+    /// \param ion The ion species which carries the current.
+    /// \param computeflux Whether the current should lead to species fluxes.
+    /// \param virtual_oconc Virtual outside concentration of the ion.
+    /// \param vshift Shift in membrane potential for the computation of GHK current.
+    ///
+    GHKcurr(std::string const& id,
+            Surfsys& surfsys,
+            ChanState& chanstate,
+            Spec& ion,
+            bool computeflux = true,
+            double virtual_oconc = -1.0,
+            double vshift = 0.0);
+
+    /// Destructor
+    ~GHKcurr();
+
+    ////////////////////////////////////////////////////////////////////////
+    // GHK CURRENT PROPERTIES
+    ////////////////////////////////////////////////////////////////////////
+
+    /// Return a reference to the associated channel state.
+    ///
+    /// \return Reference to the channel state.
+    ChanState& getChanState() const noexcept {
+        return *pChanState;
+    }
+
+    /// Change the channel state.
+    ///
+    /// \param chanstate Channel state of the open state.
+    void setChanState(ChanState& chanstate);
+
+    ////////////////////////////////////////////////////////////////////////
+    // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
+    ////////////////////////////////////////////////////////////////////////
+    /// Self delete.
+    ///
+    /// Called if Python object deleted, or from del method in parent object.
+    /// Will only be called once
+    void _handleSelfDelete();
+
+  private:
+    ChanState* pChanState;
+};
+
+
+////////////////////////////////////////////////////////////////////////
+/// GHK current with a multi-state complex channel state
+class ComplexGHKcurr: public GHKcurrBase {
+  public:
+    ////////////////////////////////////////////////////////////////////////
+    // OBJECT CONSTRUCTION & DESTRUCTION
+    ////////////////////////////////////////////////////////////////////////
+    /// Constructor
+    ///
+    /// \param id ID of the ohmic current reaction.
+    /// \param surfsys Reference to the parent surface system.
+    /// \param cplx The name of the complex type involved in the current
+    /// \param filt The complex filter that determines the conducting states
+    /// \param ion The ion species which carries the current.
+    /// \param computeflux Whether the current should lead to species fluxes.
+    /// \param virtual_oconc Virtual outside concentration of the ion.
+    /// \param vshift Shift in membrane potential for the computation of GHK current.
+    ///
+    ComplexGHKcurr(std::string const& id,
+                   Surfsys& surfsys,
+                   std::string const& cplx,
+                   const std::vector<std::vector<SubunitStateFilter>>& filt,
+                   Spec& ion,
+                   bool computeflux = true,
+                   double virtual_oconc = -1.0,
+                   double vshift = 0.0);
+
+    /// Return a reference to the associated channel state.
+    ///
+    /// \return Reference to the channel state.
+    inline const ComplexFilterDescr& getChanState() const noexcept {
+        return pChanState;
+    }
+
+    ComplexUpdateEvent getUpdEvent() const noexcept;
+
+  private:
+    const ComplexFilterDescr pChanState;
 };
 
 }  // namespace steps::model

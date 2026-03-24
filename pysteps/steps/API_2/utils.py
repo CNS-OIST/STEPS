@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -31,6 +31,7 @@ import functools
 import inspect
 import itertools
 import linecache
+import math
 import numbers
 import numpy
 import os
@@ -526,6 +527,7 @@ class ParameterizedObject:
         :meta private:
         """
         def wrapper(func):
+            @functools.wraps(func)
             def newFunc(*args, **kwargs):
                 newArgs = []
                 for arg, unit in itertools.zip_longest(args, units):
@@ -547,7 +549,7 @@ class ParameterizedObject:
                     unit = kwunits.get(key, None)
                     if isinstance(arg, Parameter):
                         if unit is not None:
-                            newKwargs[key] = arg.valueIn(units)
+                            newKwargs[key] = arg.valueIn(unit)
                         elif arg._units is None or arg._units._isDimensionless():
                             newKwargs[key] = arg._value
                         else:
@@ -754,7 +756,7 @@ class Parameter:
                 units = value._units
                 value = value._value
 
-        self._value = value
+        self._value = self._checkValue(value)
         self._units = units
 
         self._kwargs = {}
@@ -825,6 +827,15 @@ class Parameter:
             return self.value
         else:
             raise Exception(f'Expected a nondimensional unit, got {unit} instead.')
+
+    @classmethod
+    def _checkValue(cls, val):
+        """Check that, if the value is a number, it is not NaN"""
+        if isinstance(val, (list, tuple)):
+            return val.__class__(cls._checkValue(v) for v in val)
+        elif isinstance(val, numbers.Number) and math.isnan(val):
+            raise ValueError('Got NaN (Not a Number) instead of a correct numeric value.')
+        return val
 
     def _valueInSI(self):
         """Return the value of the parameter in SI unit system
@@ -2026,7 +2037,15 @@ class NamedObject(SolverPathObject):
             raise AttributeError
         elif name in self.children:
             return self.children[name]
-        raise AttributeError(f'{self} does not have an attribute named {name}')
+        try:
+            raise AttributeError(f'{self} does not have an attribute named {name}')
+        except RecursionError:
+            # If the __repr__ method of the object also tries to access inexistant attribute,
+            # we could be stuck in an infinite loop of calls to __getattr_ and __repr__.
+            # In that case, we raise an AttributeError without the representation of the object:
+            raise AttributeError(
+                f'Object {id(self)} of type {type(self)} does not have an attribute named {name}'
+            )
 
     def _getReferenceObject(self):
         """
@@ -2610,6 +2629,9 @@ class ReadOnlyDictInterface:
     def keys(self):
         raise NotImplementedError()
 
+    def __len__(self):
+        return len(self.keys())
+
     def __iter__(self):
         for key in self.keys():
             yield key
@@ -2641,6 +2663,88 @@ class MutableDictInterface(ReadOnlyDictInterface):
     """
     def __setitem__(self, key, value):
         raise NotImplementedError()
+
+
+class RecursiveDefaultDict(collections.defaultdict):
+    def __init__(self):
+        super().__init__(RecursiveDefaultDict)
+
+
+def InterceptCallsTo(parent, callback, exclude_res=[], ducktype=False):
+    """Return a metaclass that will intercept all calls that would go through the parent class
+
+    When a call or an attribute access should pass through class `parent`, the `callback`
+    function will be called with the method being intercepted as first argument, and the unpacked
+    argument list and keyword arguments as remaining arguments:
+
+        callback(method, *args, **kwargs)
+
+    If `ducktype` is set to `True`, `parent` does not have to be an actual parent of the class,
+    the intercepted methods will still be taken from `parent` and added to the created class,
+    allowing it to behave like `parent` without actually inheriting from it.
+    """
+
+    class InterceptorMetaClass(type):
+        INTERCEPTOR_TAG = '__interceptor_init'
+
+        def __new__(metacls, name, bases, attrs):
+            cls = type(name, bases, attrs)
+            interceptor_tag = f"{metacls.INTERCEPTOR_TAG}_{name}"
+
+            if not ducktype and parent not in cls.__mro__:
+                raise ValueError(f'{parent} is not present in the parents of {name}.')
+            others = [c for c in cls.__mro__[1:] if c not in parent.__mro__]
+            exclude = set(name for c in others for name in dir(c))
+            exclude |= set(['__new__', '__init__', interceptor_tag])
+            include = set(name for c in parent.__mro__ for name in dir(c))
+            attributes = {}
+            # We only consider methods or attributes that are in parent and its parents
+            # but not in the other classes that cls might inherit from
+            exclude_res.append(metacls.INTERCEPTOR_TAG)
+            for name in include - exclude:
+                if any(re.match(exp, name) is not None for exp in exclude_res):
+                    continue
+                item = getattr(parent, name)
+                if callable(item) and not inspect.isclass(item):
+                    setattr(cls, name, metacls.wrap(cls, item, interceptor_tag))
+                else:
+                    attributes[name] = item
+
+            @functools.wraps(object.__getattribute__)
+            def _getattribute_(self, name):
+                try:
+                    init = object.__getattribute__(self, interceptor_tag)
+                    if init and name in attributes:
+                        return callback(object.__getattribute__, self, name)
+                except AttributeError:
+                    pass
+                return object.__getattribute__(self, name)
+            cls.__getattribute__ = _getattribute_
+
+            setattr(cls, interceptor_tag, False)
+
+            orig_init = cls.__init__
+            @functools.wraps(orig_init)
+            def _init_(self, *args, **kwargs):
+                orig_init(self, *args, **kwargs)
+                object.__setattr__(self, interceptor_tag, True)
+            cls.__init__ = _init_
+
+            return cls
+
+        @classmethod
+        def wrap(metacls, cls, method, interceptor_tag):
+            @functools.wraps(method)
+            def _wrap(*args, **kwargs):
+                # Only wrap methods, not class methods
+                if len(args) > 0 and isinstance(args[0], cls):
+                    self = args[0]
+                    if hasattr(self, interceptor_tag) and getattr(self, interceptor_tag):
+                        return callback(method, *args, **kwargs)
+                return method(*args, **kwargs)
+            return _wrap
+
+    return InterceptorMetaClass
 
 
 def limitReprLength(func):
@@ -2699,9 +2803,21 @@ def getSliceIds(s, sz):
 def nparray(data):
     """Return a numpy array with the appropriate dtype"""
     try:
-        return numpy.array(data)
+        arr = numpy.array(data)
     except ValueError:
         return numpy.array(data, dtype=object)
+    # If the array type inferred by numpy is str, we need to check that all values in the
+    # original array were indeed strings. If not, we want to return a dtype=object array instead.
+    # See https://numpy.org/doc/stable/reference/arrays.promotion.html
+    #     For some purposes NumPy will promote almost any other datatype to strings.
+    #     This applies to array creation or concatenation.
+    if (
+        numpy.issubdtype(arr.dtype, str)
+        and hasattr(data, '__iter__')
+        and any(not isinstance(v, str) for v in data)
+    ):
+        return numpy.array(data, dtype=object)
+    return arr
 
 
 def getValueIfAllIdentical(lst):

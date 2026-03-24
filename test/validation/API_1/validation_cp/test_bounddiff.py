@@ -251,6 +251,7 @@ class TestBDiff(unittest.TestCase):
             sim.restore('./validation_cp/cp/boundiff')
             rng.initialize(seed)
             seed += 1
+            sim.setCompSpecClamped('cyto', 'X', True)
             for i in range(ntpnts):
                 sim.run(tpnts[i])
                 for k in range(SAMPLE):

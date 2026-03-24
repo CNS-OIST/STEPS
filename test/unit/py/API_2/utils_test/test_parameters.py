@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -24,6 +24,7 @@
 
 """ Unit tests for the parameters system."""
 
+import math
 import unittest
 
 from steps import interface
@@ -994,6 +995,23 @@ class ParameterUsage(unittest.TestCase):
 
         self.assertTrue(bool(param6))
         self.assertFalse(bool(param7))
+
+    def testListTupleParameters(self):
+        param1 = Parameter([1, 2], 'km')
+        param2 = Parameter((3, 4), 'ms')
+
+        self.assertEqual(param1.convertTo('m').value, [1000, 2000])
+        self.assertEqual(param2.convertTo('s').value, (3e-3, 4e-3))
+
+    def testCheckValue(self):
+        with self.assertRaises(ValueError):
+            Parameter(math.nan, 'V')
+
+        with self.assertRaises(ValueError):
+            Parameter((1, math.nan), 'V')
+
+        with self.assertRaises(ValueError):
+            Parameter([1, math.nan], 'V')
 
 
 

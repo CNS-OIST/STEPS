@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -258,6 +258,11 @@ class Patchdef {
         return pSReacsN;
     }
 
+    /// Return the number of surface reactions that move charge.
+    inline uint countSReacCharges() const noexcept {
+        return pSReac_L2Charge.size();
+    }
+
     /// Return the local surface reaction index for global index argument.
     ///
     /// \param gidx Global index of the surface reaction.
@@ -270,6 +275,20 @@ class Patchdef {
     /// \param lidx Local index of the surface reaction.
     inline sreac_global_id sreacL2G(sreac_local_id lidx) const noexcept {
         return pSReac_L2G[lidx];
+    }
+
+    /// Return the charged surface reaction index for local sreac index argument.
+    ///
+    /// \param lidx Local index of the surface reaction.
+    inline sreac_charge_local_id sreacL2Charge(sreac_local_id lidx) const noexcept {
+        sreac_charge_local_id ret;
+
+        auto sr_it = pSReac_L2Charge.find(lidx);
+        if (sr_it != pSReac_L2Charge.end()) {
+            ret = sr_it->second;
+        }
+
+        return ret;
     }
 
     /// Return a reference to reaction definition object (type SReacdef)
@@ -622,6 +641,11 @@ class Patchdef {
         return pVDepSReacsN;
     }
 
+    /// Return the number of voltage-dependent reactions that move charge.
+    inline uint countVDepSReacCharges() const {
+        return pVDepSReac_L2Charge.size();
+    }
+
     /// Return the local voltage-dependent reaction index for global index
     /// argument.
     ///
@@ -636,6 +660,20 @@ class Patchdef {
     /// \param lidx Local index of the voltage-dependent reaction.
     inline vdepsreac_global_id vdepsreacL2G(vdepsreac_local_id lidx) const noexcept {
         return pVDepSReac_L2G[lidx];
+    }
+
+    /// Return the charged  reaction index for local vdepsreac index argument.
+    ///
+    /// \param lidx Local index of the reaction.
+    inline vdepsreac_charge_local_id vdepsreacL2Charge(vdepsreac_local_id lidx) const noexcept {
+        vdepsreac_charge_local_id ret;
+
+        auto sr_it = pVDepSReac_L2Charge.find(lidx);
+        if (sr_it != pVDepSReac_L2Charge.end()) {
+            ret = sr_it->second;
+        }
+
+        return ret;
     }
 
     /// Return a reference to reaction definition object (type VDepSReacdef)
@@ -835,6 +873,9 @@ class Patchdef {
     /// Table to resolve reaction rule indices (local -> global).
     util::strongid_vector<sreac_local_id, sreac_global_id> pSReac_L2G;
 
+    /// Table to resolve local sreac id to charge-carrying sreac id
+    std::map<sreac_local_id, sreac_charge_local_id> pSReac_L2Charge;
+
     // Table of the K-constants of the surface reac rules in this patch
     util::strongid_vector<sreac_local_id, double> pSReacKcst;
 
@@ -985,6 +1026,9 @@ class Patchdef {
 
     /// Table to resolve reaction rule indices (local -> global).
     util::strongid_vector<vdepsreac_local_id, vdepsreac_global_id> pVDepSReac_L2G;
+
+    /// Table to resolve local reac id to charge-carrying reac id
+    std::map<vdepsreac_local_id, vdepsreac_charge_local_id> pVDepSReac_L2Charge;
 
     inline uint _IDX_VDepSReac_I_Spec(vdepsreac_local_id vdsrlidx) const noexcept {
         return countSpecs_I() * vdsrlidx.get();

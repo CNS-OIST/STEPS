@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -45,7 +45,6 @@ class distIntersectTests(unittest.TestCase):
 
     def testIntersectDistributedLocal_n2(self):
         """ Test STEPS 4 intersect on distributed mesh """
-        # splitMesh = DistMesh(osp.join(MESH_DIR, "cube_split_2/cube"))
         splitMesh = DistMesh(osp.join(MESH_DIR, "3_tets.msh"))
         MPI_rank = mpi4py.MPI.COMM_WORLD.Get_rank()
         MPI_size = mpi4py.MPI.COMM_WORLD.Get_size()
@@ -74,6 +73,15 @@ class distIntersectTests(unittest.TestCase):
             pts = np.array([[0.2,0.1, -0.1],[-0.2, 0.1, 0.3]], dtype=float, order='C')
             ans = self.sort_and_round_intersections(splitMesh.intersect(pts))
             self.assertEqual(ans, [[(0, 0.25), (2, 0.5)]] if MPI_rank == 1 else [[(1, 0.25)]])
+
+    def testIntersectDistributedGlobal_n2(self):
+        """ Test STEPS 4 intersect on distributed mesh, global """
+        splitMesh = DistMesh(osp.join(MESH_DIR, "3_tets.msh"))
+        pts = np.array([[-0.1,0.1, 0.1],[0.1, 0.1, 0.1], [0.1, 0.1, -0.1], [-0.2,0.1, 0.1]], dtype=float, order='C')
+        ans = self.sort_and_round_intersections(splitMesh.intersect(pts))
+        self.assertEqual(ans, [[(0, 0.5), (2, 0.5)], [(0, 0.5), (1, 0.5)], [(1, 0.333), (2, 0.5)]] )
+        ans = self.sort_and_round_intersections(splitMesh.intersectIndependentSegments(pts))
+        self.assertEqual(ans, [[(0, 0.5), (2, 0.5)], [(1, 0.333), (2, 0.5)]] )
 
     def sort_and_round_intersections(self, intersec):
         """ Put the intersections in a standard form so they can be easily compared """
@@ -108,9 +116,9 @@ class distIntersectTests(unittest.TestCase):
             raw_intersect_distMesh = splitMesh.intersect(pts, raw=True)
             self.assertEqual(raw_intersect_distMesh, [[(tet.idx, rat) for tet, rat in seg] for seg in intersect_distMesh])
 
-            global_intersect_distMesh = splitMesh.intersect(pts, local=False)
-            self.assertTrue(all(all(not tet.isLocal() for tet, rat in seg) for seg in global_intersect_distMesh))
-            self.assertEqual(global_intersect_distMesh, [[(tet.toGlobal(), rat) for tet, rat in seg] for seg in intersect_distMesh])
+            intersect_distMesh = splitMesh.intersect(pts)
+            self.assertTrue(all(all(tet.isLocal() for tet, rat in seg) for seg in intersect_distMesh))
+            self.assertEqual(intersect_distMesh, [[(tet, rat) for tet, rat in seg] for seg in intersect_distMesh])
 
             # Test STEPS4, when start/end points are outside the mesh
             # check that they are passing through the same tets

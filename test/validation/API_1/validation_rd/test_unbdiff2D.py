@@ -122,7 +122,7 @@ class TestRDUnbdiff2D(unittest.TestCase):
             triareas[i] = mesh.getTriArea(patch_tris[i])
 
         sim = solvmod.Tetexact(mdl, mesh, rng)
-
+        
         tpnts = numpy.arange(0.0, INT, DT)
         ntpnts = tpnts.shape[0]
 
@@ -133,6 +133,8 @@ class TestRDUnbdiff2D(unittest.TestCase):
         for j in range(NITER):
             sim.reset()
             sim.setTriSpecCount(ctri_idx, 'X', NINJECT)
+            sim.setPatchSpecClamped('patch', 'X', True)
+
             for i in range(ntpnts):
                 sim.run(tpnts[i])
                 for k in range(patch_tris_n):

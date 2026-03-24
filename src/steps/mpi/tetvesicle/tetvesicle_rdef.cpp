@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -87,11 +87,20 @@
 
 namespace steps::mpi::tetvesicle {
 
-TetVesicleRDEF::TetVesicleRDEF(model::Model* m, wm::Geom* g, const rng::RNGptr& r, int calcMembPot)
+TetVesicleRDEF::TetVesicleRDEF(model::Model* m,
+                               wm::Geom* g,
+                               const rng::RNGptr& r,
+                               int calcMembPot,
+                               bool calcMembPot_lenient,
+                               double /*vesSDiffTol*/,
+                               std::vector<int> const& tet_hosts,
+                               const std::map<triangle_global_id, int>& tri_hosts,
+                               std::vector<int> const& /*wm_hosts*/)
     : API(*m, *g, r)
     , pMesh(nullptr)
     , pA0(0.0)
     , pEFoption(static_cast<EF_solver>(calcMembPot))
+    , pEField_lenient(calcMembPot_lenient)
     , pTemp(0.0)
     , pEField(nullptr)
     , pEFDT(1.0e-5)
@@ -120,7 +129,25 @@ TetVesicleRDEF::TetVesicleRDEF(model::Model* m, wm::Geom* g, const rng::RNGptr& 
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank_World);
     MPI_Comm_size(MPI_COMM_WORLD, &nHosts_World);
     nHosts_RDEF = nHosts_World - 1;
-    _partition();
+
+    if (myRank_World == 0) {
+        ProgErr("A TetVesicleRDEF solver is created in the VesRaft rank.");
+    } else {
+        vesraftRank_World = 0;
+        RDEFmasterRank_World = 1;
+        RDEFmasterRank_RDEF = 0;
+        myRank_RDEF = myRank_World - 1;
+        MPI_Comm_split(MPI_COMM_WORLD, 1, myRank_RDEF, &RDEFComm);
+    }
+
+    if (tet_hosts.empty()) {
+        _partition();
+    } else {
+        for (uint t = 0; t < tet_hosts.size(); t++) {
+            tetHosts.emplace(tetrahedron_global_id(t), tet_hosts[t]);
+        }
+        triHosts = tri_hosts;
+    }
     MPI_Barrier(MPI_COMM_WORLD);
     dataTypeUtil.commitAllDataTypes();
     _setup();
@@ -277,6 +304,9 @@ void TetVesicleRDEF::checkpoint(std::string const& file_name) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void TetVesicleRDEF::restore(std::string const& file_name) {
+    // First reset the solver
+    reset();
+
     std::fstream cp_file;
 
     cp_file.open(file_name.c_str(), std::fstream::in | std::fstream::binary);
@@ -455,16 +485,6 @@ std::string TetVesicleRDEF::getSolverEmail() const {
 ////////////////////////////////////////////////////////////////////////////////
 
 void TetVesicleRDEF::_partition() {
-    if (myRank_World == 0) {
-        ProgErr("A TetVesicleRDEF solver is created in the VesRaft rank.");
-    } else {
-        vesraftRank_World = 0;
-        RDEFmasterRank_World = 1;
-        RDEFmasterRank_RDEF = 0;
-        myRank_RDEF = myRank_World - 1;
-        MPI_Comm_split(MPI_COMM_WORLD, 1, myRank_RDEF, &RDEFComm);
-    }
-
     uint n_tets_tris[2];
     std::vector<tetrahedron_global_id> tet_ids;
     std::vector<int> tet_hosts;
@@ -1216,12 +1236,10 @@ void TetVesicleRDEF::_setupEField() {
                    MPI_STEPS_INDEX,
                    RDEFComm);
 
-    // pEField->initMesh(_nefverts(), EFVerts, _neftris(), pEFTris, _neftets(),
-    // pEFTets, memb->_getOpt_method(), memb->_getOpt_file_name(),
-    // memb->_getSearch_percent());
     pEField->initMesh(EFVerts,
                       EFTris,
                       EFTets,
+                      pEField_lenient,
                       memb->_getOpt_method(),
                       memb->_getOpt_file_name(),
                       memb->_getSearch_percent());
@@ -1476,14 +1494,14 @@ void TetVesicleRDEF::reset() {
     }
 
     for (auto const& tet: pTets) {
-        if (tet == nullptr or !tet->getInHost()) {
+        if (tet == nullptr) {
             continue;
         }
         tet->reset();
     }
 
     for (auto const& tri: pTris) {
-        if (tri == nullptr or !tri->getInHost()) {
+        if (tri == nullptr) {
             continue;
         }
         tri->reset();
@@ -2165,17 +2183,7 @@ bool TetVesicleRDEF::_getCompSpecClamped(solver::comp_global_id cidx,
 
     solver::spec_local_id lsidx = _specG2L_or_throw(comp, sidx);
 
-    bool local_clamped = true;
-    for (auto const& t: comp->tets()) {
-        if (!t->getInHost()) {
-            continue;
-        }
-        if (!t->clamped(lsidx)) {
-            local_clamped = false;
-        }
-    }
-
-    return MPI_ConditionalReduce<bool>(local_clamped, MPI_C_BOOL, MPI_LAND, syncOutput, outputRank);
+    return comp->def()->clamped(lsidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2189,21 +2197,8 @@ void TetVesicleRDEF::_setCompSpecClamped(solver::comp_global_id cidx,
     AssertLog(comp != nullptr);
     solver::spec_local_id lsidx = _specG2L_or_throw(comp, sidx);
 
-    // Set the flag in def object, though this may not be necessary
+    // Set the flag in def object
     comp->def()->setClamped(lsidx, b);
-
-    for (auto const& t: comp->tets()) {
-        if (!t->getInHost()) {
-            continue;
-        }
-        t->setClamped(lsidx, b);
-    }
-
-    for (auto const& t: boundaryTets) {
-        if (t->compdef() == comp->def()) {
-            t->setClamped(lsidx, b);
-        }
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2407,12 +2402,31 @@ uint TetVesicleRDEF::_getCompVesicleCount(solver::comp_global_id cidx,
 
 void TetVesicleRDEF::_setTetVesicleDcst(tetrahedron_global_id tidx,
                                         solver::vesicle_global_id vidx,
-                                        double dcst) {}
+                                        double dcst,
+                                        bool rel) {}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleRDEF::_getTetVesicleDcst(tetrahedron_global_id tidx,
+                                          solver::vesicle_global_id vidx) const {
+    return MPI_ConditionalBcast<double>(
+        0.0, MPI_DOUBLE, vesraftRank_World, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool TetVesicleRDEF::_getTetVesicleDcstRel(tetrahedron_global_id tidx,
+                                           solver::vesicle_global_id vidx) const {
+    return MPI_ConditionalBcast<bool>(
+        false, MPI_C_BOOL, vesraftRank_World, myRank_World, syncOutput, outputRank);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
 solver::vesicle_individual_id TetVesicleRDEF::_addCompVesicle(solver::comp_global_id cidx,
-                                                              solver::vesicle_global_id vidx) {
+                                                              solver::vesicle_global_id vidx,
+                                                              double diam,
+                                                              double dcst) {
     return solver::vesicle_individual_id(MPI_ConditionalBcast<index_t>(
         0, MPI_STEPS_INDEX, vesraftRank_World, myRank_World, syncOutput, outputRank));
 }
@@ -2616,6 +2630,49 @@ std::vector<double> TetVesicleRDEF::_getSingleVesiclePos(
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void TetVesicleRDEF::_setSingleVesicleDcst(solver::vesicle_global_id vidx,
+                                           solver::vesicle_individual_id ves_unique_index,
+                                           double dcst) {}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleRDEF::_getSingleVesicleDcst(solver::vesicle_global_id vidx,
+                                             solver::vesicle_individual_id ves_unique_index) const {
+    return MPI_ConditionalBcast<double>(
+        0, MPI_DOUBLE, vesraftRank_World, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::pair<std::string, std::vector<double>> TetVesicleRDEF::_getSingleVesicleOnPath(
+    solver::vesicle_global_id vidx,
+    solver::vesicle_individual_id ves_unique_index) const {
+    std::string return_path;
+    auto nchars = MPI_ConditionalBcast<std::size_t>(return_path.size(),
+                                                    MPI_STD_SIZE_T,
+                                                    vesraftRank_World,
+                                                    myRank_World,
+                                                    syncOutput,
+                                                    outputRank);
+    return_path.resize(nchars);
+    MPI_ConditionalBcast<char>(return_path.data(),
+                               nchars,
+                               MPI_CHAR,
+                               vesraftRank_World,
+                               myRank_World,
+                               syncOutput,
+                               outputRank);
+
+    std::vector<double> return_vec;
+    auto nentries = MPI_ConditionalBcast<std::size_t>(
+        return_vec.size(), MPI_STD_SIZE_T, vesraftRank_World, myRank_World, syncOutput, outputRank);
+    MPI_ConditionalBcast<double>(
+        return_vec, nentries, MPI_DOUBLE, vesraftRank_World, myRank_World, syncOutput, outputRank);
+    return {return_path, return_vec};
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 std::vector<std::vector<double>> TetVesicleRDEF::_getSingleVesicleSurfaceLinkSpecPos(
     solver::vesicle_global_id vidx,
     solver::vesicle_individual_id ves_unique_index,
@@ -2696,6 +2753,12 @@ uint TetVesicleRDEF::_getSingleVesicleImmobility(
     return MPI_ConditionalBcast<uint>(
         0u, MPI_UNSIGNED, vesraftRank_World, myRank_World, syncOutput, outputRank);
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void TetVesicleRDEF::_setSingleVesicleImmobility(solver::vesicle_global_id vidx,
+                                                 solver::vesicle_individual_id ves_unique_index,
+                                                 uint immob) const {}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2819,17 +2882,7 @@ bool TetVesicleRDEF::_getPatchSpecClamped(solver::patch_global_id pidx,
     AssertLog(patch != nullptr);
     solver::spec_local_id lsidx = _specG2L_or_throw(patch, sidx);
 
-    bool local_clamped = true;
-
-    for (auto const& t: patch->tris()) {
-        if (!t->getInHost()) {
-            continue;
-        }
-        if (t->clamped(lsidx) == false) {
-            local_clamped = false;
-        }
-    }
-    return MPI_ConditionalReduce<bool>(local_clamped, MPI_C_BOOL, MPI_LAND, syncOutput, outputRank);
+    return patch->def()->clamped(lsidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2843,23 +2896,8 @@ void TetVesicleRDEF::_setPatchSpecClamped(solver::patch_global_id pidx,
     AssertLog(patch != nullptr);
     solver::spec_local_id lsidx = _specG2L_or_throw(patch, sidx);
 
-    // Set the flag in def object for consistency, though this is not
-    // entirely necessary
+    // Set the flag in def object
     patch->def()->setClamped(lsidx, buf);
-
-
-    for (auto const& t: patch->tris()) {
-        if (!t->getInHost()) {
-            continue;
-        }
-        t->setClamped(lsidx, buf);
-    }
-
-    for (auto const& t: boundaryTris) {
-        if (t->patchdef() == patch->def()) {
-            t->setClamped(lsidx, buf);
-        }
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3373,6 +3411,12 @@ uint TetVesicleRDEF::_getPatchRaftCount(solver::patch_global_id pidx,
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void TetVesicleRDEF::_setSingleRaftImmobility(solver::raft_global_id ridx,
+                                              solver::raft_individual_id raft_individual_index,
+                                              uint immob) const {}
+
+////////////////////////////////////////////////////////////////////////////////
+
 uint TetVesicleRDEF::_getSingleRaftImmobility(
     solver::raft_global_id ridx,
     solver::raft_individual_id raft_individual_index) const {
@@ -3725,6 +3769,20 @@ void TetVesicleRDEF::_updateSpec(TriRDEF* tri, solver::spec_global_id spec_gidx)
         }
     }
 
+    auto upd_tet = [&](TetRDEF* tet) {
+        if (tet != nullptr) {
+            auto nkprocs = tet->countKProcs();
+            for (uint sk = 0; sk < nkprocs; sk++) {
+                if (tet->KProcDepSpecTri(sk, tri, spec_gidx)) {
+                    updset.insert(tet->getKProc(sk));
+                }
+            }
+        }
+    };
+
+    upd_tet(tri->iTet());
+    upd_tet(tri->oTet());
+
     /* TetOpSplit uses this- is it necessary?
     for (auto & kp : updset) {
         _updateElement(kp);
@@ -3933,6 +3991,41 @@ unsigned long long TetVesicleRDEF::_getPatchSReacExtent(solver::patch_global_id 
 
 ////////////////////////////////////////////////////////////////////////////////
 
+unsigned long long TetVesicleRDEF::_getPatchVDepSReacExtent(
+    solver::patch_global_id pidx,
+    solver::vdepsreac_global_id vsridx) const {
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(vsridx < statedef().countVDepSReacs());
+    const auto& patch = statedef().patchdef(pidx);
+    solver::vdepsreac_local_id lvsridx = patch.vdepsreacG2L(vsridx);
+    if (lvsridx.unknown()) {
+        std::ostringstream os;
+        os << "Voltage-dependent surface reaction undefined in patch.\n";
+        ArgErrLog(os.str());
+    }
+
+    // The 'local' Patch object has same index as solver::Patchdef object
+    PatchRDEF* lpatch = pPatches[pidx];
+    AssertLog(lpatch->def() == &patch);
+
+    if (lpatch->tris().empty()) {
+        return 0;
+    }
+
+    unsigned long long local_x = 0;
+    for (auto t: lpatch->tris()) {
+        if (!t->getInHost()) {
+            continue;
+        }
+        VDepSReac& sreac = t->vdepsreac(lvsridx);
+        local_x += sreac.getExtent();
+    }
+    return MPI_ConditionalReduce<unsigned long long>(
+        local_x, MPI_UNSIGNED_LONG_LONG, MPI_SUM, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void TetVesicleRDEF::_resetPatchSReacExtent(solver::patch_global_id pidx,
                                             solver::sreac_global_id ridx) {
     AssertLog(pidx < statedef().countPatches());
@@ -3959,6 +4052,189 @@ double TetVesicleRDEF::_getTetVol(tetrahedron_global_id tidx) const {
         ArgErrLog(os.str());
     }
     return pTets[tidx]->staticVol();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleRDEF::_getTetA(tetrahedron_global_id tetid) const {
+    int host_rank = _getTetHost(tetid);
+    double prop = 0.0;
+    if (host_rank == myRank_World) {
+        TetRDEF* tet = pTets[tetid];
+        prop = tet->getA();
+    }
+    return MPI_ConditionalBcast<double>(
+        prop, MPI_DOUBLE, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint TetVesicleRDEF::_getTetExtent(tetrahedron_global_id tetid) const {
+    int host_rank = _getTetHost(tetid);
+    uint ext = 0;
+    if (host_rank == myRank_World) {
+        TetRDEF* tet = pTets[tetid];
+        ext = tet->getExtent();
+    }
+    return MPI_ConditionalBcast<uint>(
+        ext, MPI_UNSIGNED, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint TetVesicleRDEF::_getTetWeightedExtent(tetrahedron_global_id tetid) const {
+    int host_rank = _getTetHost(tetid);
+    uint total_degree = 0;
+    if (host_rank == myRank_World) {
+        for (auto kp: pTets[tetid]->kprocs()) {
+            uint kp_degree = kp->getLocalUpdVec().size() + kp->getRemoteUpdVec().size();
+            uint extent = kp->getExtent();
+            total_degree += kp_degree * extent;
+        }
+    }
+    return MPI_ConditionalBcast<uint>(
+        total_degree, MPI_UNSIGNED, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleRDEF::_getTriA(triangle_global_id triid) const {
+    int host_rank = _getTriHost(triid);
+    double prop = 0.0;
+    if (host_rank == myRank_World) {
+        TriRDEF* tri = pTris[triid];
+        prop = tri->getA();
+    }
+    return MPI_ConditionalBcast<double>(
+        prop, MPI_DOUBLE, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint TetVesicleRDEF::_getTriExtent(triangle_global_id triid) const {
+    int host_rank = _getTriHost(triid);
+    uint ext = 0;
+    if (host_rank == myRank_World) {
+        TriRDEF* tri = pTris[triid];
+        ext = tri->getExtent();
+    }
+    return MPI_ConditionalBcast<uint>(
+        ext, MPI_UNSIGNED, host_rank, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<double> TetVesicleRDEF::getBatchTetA(std::vector<index_t> tetids) const {
+    std::vector<double> local_vec(tetids.size());
+    std::vector<double> output_vec(tetids.size(), 0);
+    for (int i = 0; i < tetids.size(); i++) {
+        auto tidx = tetids[i];
+        local_vec[i] = pTets[tetrahedron_global_id(tidx)]->getA();  // getA returns 0 if not in host
+    }
+    MPI_ConditionalReduce<double>(
+        local_vec, output_vec, MPI_DOUBLE, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetVesicleRDEF::getBatchTetExtent(std::vector<index_t> tetids) const {
+    std::vector<uint> local_vec(tetids.size());
+    std::vector<uint> output_vec(tetids.size(), 0);
+    for (int i = 0; i < tetids.size(); i++) {
+        auto tidx = tetids[i];
+        local_vec[i] = pTets[tetrahedron_global_id(tidx)]->getExtent();  // getExtent returns 0 if
+                                                                         // not in host
+    }
+    MPI_ConditionalReduce<uint>(
+        local_vec, output_vec, MPI_UNSIGNED, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetVesicleRDEF::getBatchTetWeightedExtent(std::vector<index_t> tetids) const {
+    std::vector<uint> local_vec(tetids.size());
+    std::vector<uint> output_vec(tetids.size());
+    for (int i = 0; i < tetids.size(); i++) {
+        auto tetid = tetids[i];
+        int host_rank = _getTetHost(tetrahedron_global_id(tetid));
+        uint total_degree = 0;
+        if (host_rank == myRank_World) {
+            for (auto kp: pTets[tetrahedron_global_id(tetid)]->kprocs()) {
+                uint kp_degree = kp->getLocalUpdVec().size() + kp->getRemoteUpdVec().size();
+                uint extent = kp->getExtent();
+                total_degree += kp_degree * extent;
+            }
+        }
+        local_vec[i] = total_degree;
+    }
+    MPI_ConditionalReduce<uint>(
+        local_vec, output_vec, MPI_UNSIGNED, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<double> TetVesicleRDEF::getBatchTriA(std::vector<index_t> triids) const {
+    std::vector<double> local_vec(triids.size());
+    std::vector<double> output_vec(triids.size(), 0);
+    for (int i = 0; i < triids.size(); i++) {
+        auto tidx = triids[i];
+        auto host_result = triHosts.find(triangle_global_id(tidx));
+        if (host_result == triHosts.end() || host_result->second != myRank_World) {
+            local_vec[i] = 0.0;
+        } else {
+            local_vec[i] = pTris[triangle_global_id(tidx)]->getA();
+        }
+    }
+    MPI_ConditionalReduce<double>(
+        local_vec, output_vec, MPI_DOUBLE, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetVesicleRDEF::getBatchTriExtent(std::vector<index_t> triids) const {
+    std::vector<uint> local_vec(triids.size());
+    std::vector<uint> output_vec(triids.size(), 0);
+    for (int i = 0; i < triids.size(); i++) {
+        auto tidx = triids[i];
+        auto host_result = triHosts.find(triangle_global_id(tidx));
+        if (host_result == triHosts.end() || host_result->second != myRank_World) {
+            local_vec[i] = 0;
+        } else {
+            local_vec[i] = pTris[triangle_global_id(tidx)]->getExtent();
+        }
+    }
+    MPI_ConditionalReduce<uint>(
+        local_vec, output_vec, MPI_UNSIGNED, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetVesicleRDEF::getBatchTriWeightedExtent(std::vector<index_t> triids) const {
+    std::vector<uint> local_vec(triids.size());
+    std::vector<uint> output_vec(triids.size());
+    for (int i = 0; i < triids.size(); i++) {
+        auto tidx = triids[i];
+        auto host_result = triHosts.find(triangle_global_id(tidx));
+        if (host_result == triHosts.end() || host_result->second != myRank_World) {
+            local_vec[i] = 0;
+        } else {
+            uint total_degree = 0;
+            for (auto kp: pTris[triangle_global_id(tidx)]->kprocs()) {
+                uint kp_degree = kp->getLocalUpdVec().size() + kp->getRemoteUpdVec().size();
+                uint extent = kp->getExtent();
+                total_degree += kp_degree * extent;
+            }
+            local_vec[i] = total_degree;
+        }
+    }
+    MPI_ConditionalReduce<uint>(
+        local_vec, output_vec, MPI_UNSIGNED, MPI_SUM, syncOutput, outputRank);
+    return output_vec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5402,7 +5678,7 @@ double TetVesicleRDEF::_getTriGHKI(triangle_global_id tidx) const {
 
     double cur = 0.0;
     if (host == myRank_World) {
-        cur = tri->getGHKI(getEfieldDT());
+        cur = tri->getGHKI();
     }
     return MPI_ConditionalBcast<double>(
         cur, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
@@ -5431,7 +5707,112 @@ double TetVesicleRDEF::_getTriGHKI(triangle_global_id tidx,
 
     double cur = 0.0;
     if (host == myRank_World) {
-        cur = tri->getGHKI(locidx, getEfieldDT());
+        cur = tri->getGHKI(locidx);
+    }
+    return MPI_ConditionalBcast<double>(
+        cur, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleRDEF::_getTriSReacI(triangle_global_id tidx) const {
+    if (!_efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in "
+              "simulation.";
+        ArgErrLog(os.str());
+    }
+
+    int host = _getTriHost(tidx);
+    TriRDEF* tri = _getTri(tidx);
+
+    double cur = 0.0;
+    if (host == myRank_World) {
+        cur = tri->getSReacI();
+    }
+    return MPI_ConditionalBcast<double>(
+        cur, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleRDEF::_getTriSReacI(triangle_global_id tidx, solver::sreac_global_id sridx) const {
+    if (!_efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in "
+              "simulation.";
+        ArgErrLog(os.str());
+    }
+
+    int host = _getTriHost(tidx);
+    TriRDEF* tri = _getTri(tidx);
+
+    solver::sreac_local_id locidx = tri->patchdef()->sreacG2L(sridx);
+    if (locidx.unknown()) {
+        std::ostringstream os;
+        os << "Surface reaction undefined in triangle.\n";
+        ArgErrLog(os.str());
+    }
+
+    double cur = 0.0;
+    if (host == myRank_World) {
+        solver::sreac_charge_local_id locchidx = tri->sreac(locidx).getChargeLidx();
+        if (locchidx.valid()) {
+            cur = tri->getSReacI(locchidx);
+        }
+    }
+    return MPI_ConditionalBcast<double>(
+        cur, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleRDEF::_getTriVDepSReacI(triangle_global_id tidx) const {
+    if (!_efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in "
+              "simulation.";
+        ArgErrLog(os.str());
+    }
+
+    int host = _getTriHost(tidx);
+    TriRDEF* tri = _getTri(tidx);
+
+    double cur = 0.0;
+    if (host == myRank_World) {
+        cur = tri->getVDepSReacI();
+    }
+    return MPI_ConditionalBcast<double>(
+        cur, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetVesicleRDEF::_getTriVDepSReacI(triangle_global_id tidx,
+                                         solver::vdepsreac_global_id vdsridx) const {
+    if (!_efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in "
+              "simulation.";
+        ArgErrLog(os.str());
+    }
+
+    int host = _getTriHost(tidx);
+    TriRDEF* tri = _getTri(tidx);
+
+    solver::vdepsreac_local_id locidx = tri->patchdef()->vdepsreacG2L(vdsridx);
+    if (locidx.unknown()) {
+        std::ostringstream os;
+        os << "Voltage-depndent surface reaction undefined in triangle.\n";
+        ArgErrLog(os.str());
+    }
+
+    double cur = 0.0;
+    if (host == myRank_World) {
+        solver::vdepsreac_charge_local_id locchidx = tri->vdepsreac(locidx).getChargeLidx();
+        if (locchidx.valid()) {
+            cur = tri->getVDepSReacI(locchidx);
+        }
     }
     return MPI_ConditionalBcast<double>(
         cur, MPI_DOUBLE, host, myRank_World, syncOutput, outputRank);
@@ -5440,7 +5821,7 @@ double TetVesicleRDEF::_getTriGHKI(triangle_global_id tidx,
 ////////////////////////////////////////////////////////////////////////////////
 
 double TetVesicleRDEF::_getTriI(triangle_global_id tidx) const {
-    return _getTriGHKI(tidx) + _getTriOhmicI(tidx);
+    return _getTriGHKI(tidx) + _getTriOhmicI(tidx) + _getTriSReacI(tidx) + _getTriVDepSReacI(tidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5707,7 +6088,7 @@ void TetVesicleRDEF::_setMembVolRes(solver::membrane_global_id midx, double ro) 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void TetVesicleRDEF::createPath(std::string const& /*path*/) {
+void TetVesicleRDEF::createPath(std::string const& /*path*/, bool /*bind_to_start*/) {
     /* empty function */
 }
 
@@ -5716,6 +6097,16 @@ void TetVesicleRDEF::createPath(std::string const& /*path*/) {
 void TetVesicleRDEF::addPathPoint(std::string const& /*path*/,
                                   uint /*point_idx*/,
                                   const std::vector<double>& /*position*/) {
+    /* empty function */
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void TetVesicleRDEF::addPathEdge(std::string const& /*path*/,
+                                 uint /*sourcepoint_idx*/,
+                                 uint /*destpoint_idx*/,
+                                 double /*weight*/,
+                                 bool /*allow_binding*/) {
     /* empty function */
 }
 
@@ -5733,7 +6124,12 @@ void TetVesicleRDEF::_addPathVesicle(std::string const& /*path_name*/,
                                      solver::vesicle_global_id /*vidx*/,
                                      double /*speed*/,
                                      const std::map<solver::spec_global_id, uint>& /*spec_deps*/,
-                                     const std::vector<double>& stoch_stepsize /*stoch_stepsize*/) {
+                                     const std::vector<double>& /*stoch_stepsize*/,
+                                     double /*binding_rate*/,
+                                     double /*min_binding_radius*/,
+                                     double /*max_binding_radius*/,
+                                     double /*unbinding_rate*/,
+                                     bool /*allow_path_intersection*/) {
     /* empty function */
 }
 
@@ -7931,7 +8327,6 @@ void TetVesicleRDEF::_remoteSyncAndUpdate(void* requests,
                 break;
             }
         }
-
 #ifdef MPI_PROFILING
         endtime = MPI_Wtime();
         idleTime += (endtime - starttime);
@@ -8014,7 +8409,6 @@ void TetVesicleRDEF::_remoteSyncAndUpdate(void* requests,
     compTime += (endtime - starttime);
 #endif
 }
-
 ////////////////////////////////////////////////////////////////////////////////
 
 void TetVesicleRDEF::setDiffApplyThreshold(int threshold) {
@@ -8171,7 +8565,7 @@ void TetVesicleRDEF::_syncPools(SyncDirection direction) {
             solver::spec_local_id lsidx(
                 tet->compdef()->specG2L(solver::spec_global_id(entry.spec_global_index)));
             AssertLog(entry.count > 0);
-            if (!tet->clamped(lsidx)) {
+            if (!tet->clamped(lsidx) && !tet->compdef()->clamped(lsidx)) {
                 tet->incCount(lsidx, entry.count, 0.0, true);
             }
         }
@@ -8182,7 +8576,7 @@ void TetVesicleRDEF::_syncPools(SyncDirection direction) {
             AssertLog(tri != nullptr);  // TODO remove after testing
             solver::spec_local_id lsidx(
                 tri->patchdef()->specG2L(solver::spec_global_id(entry.spec_global_index)));
-            if (!tri->clamped(lsidx)) {
+            if (!tri->clamped(lsidx) && !tri->patchdef()->clamped(lsidx)) {
                 tri->setCount(lsidx, entry.count);
             }
         }
@@ -8294,7 +8688,9 @@ void TetVesicleRDEF::_useVesV2R() {
                                    ves_proxy_v2r.vesicle_central_position[1],
                                    ves_proxy_v2r.vesicle_central_position[2]};
 
-        tet->createVesProxyref(&ves_def, ves_individual_id, ves_pos, contains_link);
+        double diam = ves_proxy_v2r.diam;
+
+        tet->createVesProxyref(&ves_def, ves_individual_id, ves_pos, contains_link, diam);
     }
 
     for (auto const& ves_surfspec_v2r: vesSurfSpecV2R_Vec) {

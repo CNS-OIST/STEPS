@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -64,7 +64,15 @@ class SDiffBoundary;
 
 class TetVesicleRDEF: public solver::API {
   public:
-    TetVesicleRDEF(model::Model* m, wm::Geom* g, const rng::RNGptr& r, int calcMembPot);
+    TetVesicleRDEF(model::Model* m,
+                   wm::Geom* g,
+                   const rng::RNGptr& r,
+                   int calcMembPot,
+                   bool calcMembPot_lenient,
+                   double vesSDiffTol,
+                   std::vector<int> const& tet_hosts = {},
+                   const std::map<triangle_global_id, int>& tri_hosts = {},
+                   std::vector<int> const& wm_hosts = {});
     ~TetVesicleRDEF();
 
     ////////////////////////////////////////////////////////////////////////
@@ -79,6 +87,19 @@ class TetVesicleRDEF: public solver::API {
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS: API FUNCTIONS
     ////////////////////////////////////////////////////////////////////////
+
+    double _getTetA(tetrahedron_global_id tetid) const;
+    uint _getTetExtent(tetrahedron_global_id tetid) const;
+    uint _getTetWeightedExtent(tetrahedron_global_id tetid) const;
+    double _getTriA(triangle_global_id triid) const;
+    uint _getTriExtent(triangle_global_id triid) const;
+    std::vector<double> getBatchTetA(std::vector<index_t> tetids) const;
+    std::vector<uint> getBatchTetExtent(std::vector<index_t> tetids) const;
+    std::vector<uint> getBatchTetWeightedExtent(std::vector<index_t> tetids) const;
+    std::vector<double> getBatchTriA(std::vector<index_t> triids) const;
+    std::vector<uint> getBatchTriExtent(std::vector<index_t> triids) const;
+    std::vector<uint> getBatchTriWeightedExtent(std::vector<index_t> triids) const;
+
 
     void reset() override;
 
@@ -120,11 +141,17 @@ class TetVesicleRDEF: public solver::API {
 
     // Vesicle Paths ///////////////////////////////////////////////////////////
 
-    void createPath(std::string const& id) override;
+    void createPath(std::string const& id, bool bind_to_start) override;
 
     void addPathPoint(std::string const& path_name,
                       uint point_id,
                       const std::vector<double>& position) override;
+
+    void addPathEdge(std::string const& path,
+                     uint sourcepoint_idx,
+                     uint destpoint_idx,
+                     double weight,
+                     bool allow_binding) override;
 
     void addPathBranch(std::string const& path_name,
                        uint point_id,
@@ -491,7 +518,9 @@ class TetVesicleRDEF: public solver::API {
                               uint n) override;
 
     solver::vesicle_individual_id _addCompVesicle(solver::comp_global_id cidx,
-                                                  solver::vesicle_global_id vidx) override;
+                                                  solver::vesicle_global_id vidx,
+                                                  double diam,
+                                                  double dcst) override;
     void _deleteSingleVesicle(solver::vesicle_global_id vidx,
                               solver::vesicle_individual_id ves_unique_index) override;
 
@@ -528,6 +557,17 @@ class TetVesicleRDEF: public solver::API {
                               solver::vesicle_individual_id ves_unique_index,
                               const std::vector<double>& pos,
                               bool force) override;
+
+    double _getSingleVesicleDcst(solver::vesicle_global_id vidx,
+                                 solver::vesicle_individual_id ves_unique_index) const override;
+
+    void _setSingleVesicleDcst(solver::vesicle_global_id vidx,
+                               solver::vesicle_individual_id ves_unique_index,
+                               double dcst) override;
+
+    std::pair<std::string, std::vector<double>> _getSingleVesicleOnPath(
+        solver::vesicle_global_id vidx,
+        solver::vesicle_individual_id ves_unique_index) const override;
 
     uint _getCompVesicleSurfaceSpecCount(solver::comp_global_id cidx,
                                          solver::vesicle_global_id vidx,
@@ -604,6 +644,10 @@ class TetVesicleRDEF: public solver::API {
     solver::vesicle_individual_id _getSingleLinkSpecVes(
         solver::linkspec_individual_id ls_unique_id) const override;
 
+    void _setSingleVesicleImmobility(solver::vesicle_global_id vidx,
+                                     solver::vesicle_individual_id ves_unique_index,
+                                     uint immob) const override;
+
     uint _getSingleVesicleImmobility(solver::vesicle_global_id vidx,
                                      solver::vesicle_individual_id ves_unique_index) const override;
 
@@ -613,7 +657,13 @@ class TetVesicleRDEF: public solver::API {
 
     void _setTetVesicleDcst(tetrahedron_global_id tidx,
                             solver::vesicle_global_id vidx,
-                            double dcst) override;
+                            double dcst,
+                            bool rel) override;
+
+    double _getTetVesicleDcst(tetrahedron_global_id tidx,
+                              solver::vesicle_global_id vidx) const override;
+    bool _getTetVesicleDcstRel(tetrahedron_global_id tidx,
+                               solver::vesicle_global_id vidx) const override;
 
     void _setVesicleSurfaceLinkSpecSDiffD(solver::vesicle_global_id vidx,
                                           solver::linkspec_global_id lsidx,
@@ -655,7 +705,12 @@ class TetVesicleRDEF: public solver::API {
                          solver::vesicle_global_id ves_idx,
                          double speed,
                          const std::map<solver::spec_global_id, uint>& spec_deps,
-                         const std::vector<double>& stoch_stepsize) override;
+                         const std::vector<double>& stoch_stepsize,
+                         double binding_rate,
+                         double min_binding_radius,
+                         double max_binding_radius,
+                         double unbinding_rate,
+                         bool allow_path_intersection) override;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER STATE ACCESS:
@@ -667,6 +722,10 @@ class TetVesicleRDEF: public solver::API {
                             uint n) override;
     uint _getPatchRaftCount(solver::patch_global_id pidx,
                             solver::raft_global_id ridx) const override;
+
+    void _setSingleRaftImmobility(solver::raft_global_id ridx,
+                                  solver::raft_individual_id raft_individual_index,
+                                  uint immob) const override;
 
     uint _getSingleRaftImmobility(solver::raft_global_id ridx,
                                   solver::raft_individual_id raft_individual_index) const override;
@@ -761,6 +820,8 @@ class TetVesicleRDEF: public solver::API {
 
     unsigned long long _getPatchSReacExtent(solver::patch_global_id pidx,
                                             solver::sreac_global_id ridx) const override;
+    unsigned long long _getPatchVDepSReacExtent(solver::patch_global_id pidx,
+                                                solver::vdepsreac_global_id vsridx) const override;
     void _resetPatchSReacExtent(solver::patch_global_id pidx,
                                 solver::sreac_global_id ridx) override;
 
@@ -959,15 +1020,22 @@ class TetVesicleRDEF: public solver::API {
     double _getTriGHKI(triangle_global_id tidx) const override;
     double _getTriGHKI(triangle_global_id tidx, solver::ghkcurr_global_id ghkidx) const override;
 
+    double _getTriSReacI(triangle_global_id tidx) const override;
+    double _getTriSReacI(triangle_global_id tidx, solver::sreac_global_id sridx) const override;
+
+    double _getTriVDepSReacI(triangle_global_id tidx) const override;
+    double _getTriVDepSReacI(triangle_global_id tidx,
+                             solver::vdepsreac_global_id vdsridx) const override;
+
     double _getTriI(triangle_global_id tidx) const override;
 
     double _getTriIClamp(triangle_global_id tidx) const override;
     void _setTriIClamp(triangle_global_id tidx, double cur) override;
 
     bool _getTriVDepSReacActive(triangle_global_id tidx,
-                                solver::vdepsreac_global_id) const override;
+                                solver::vdepsreac_global_id vdsridx) const override;
     void _setTriVDepSReacActive(triangle_global_id tidx,
-                                solver::vdepsreac_global_id,
+                                solver::vdepsreac_global_id vdsridx,
                                 bool act) override;
 
     void _setTriCapac(triangle_global_id tidx, double cap) override;
@@ -1247,6 +1315,9 @@ class TetVesicleRDEF: public solver::API {
     //
 
     EF_solver pEFoption;
+    // Leniency
+    bool pEField_lenient;
+
     double pTemp;
     // Pointer to the EField object
     std::unique_ptr<solver::efield::EField> pEField;

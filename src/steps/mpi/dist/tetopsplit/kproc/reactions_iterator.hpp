@@ -34,8 +34,16 @@ struct reaction_partial {
         return reactions_.getMolStateElementsUpdates(pos_);
     }
 
+    const std::vector<MolStateComplexElementID>& getComplexElementsUpdates() const noexcept {
+        return reactions_.getComplexElementsUpdates(pos_);
+    }
+
     const std::vector<MolStateElementID>& getPropensityDependency() const noexcept {
         return reactions_.getPropensityDependency(pos_);
+    }
+
+    const std::vector<MolStateComplexElementID>& getComplexPropensityDependency() const noexcept {
+        return reactions_.getComplexPropensityDependency(pos_);
     }
 
   private:

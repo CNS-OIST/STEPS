@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -35,31 +35,18 @@ namespace steps::model {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-OhmicCurr::OhmicCurr(std::string const& id,
-                     Surfsys& surfsys,
-                     ChanState& chanstate,
-                     double erev,
-                     double g)
+OhmicCurrBase::OhmicCurrBase(std::string const& id, Surfsys& surfsys, double erev, double g)
     : pID(id)
     , pModel(surfsys.getModel())
     , pSurfsys(surfsys)
-    , pChanState(&chanstate)
     , pERev(erev)
     , pG(g) {
     ArgErrLogIf(pG < 0.0, "Channel conductance can't be negative");
-
-    pSurfsys._handleOhmicCurrAdd(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-OhmicCurr::~OhmicCurr() {
-    _handleSelfDelete();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void OhmicCurr::setID(std::string const& id) {
+void OhmicCurrBase::setID(std::string const& id) {
     // The following might raise an exception, e.g. if the new ID is not
     // valid or not unique. If this happens, we don't catch but simply let
     // it pass by into the Python layer.
@@ -71,29 +58,62 @@ void OhmicCurr::setID(std::string const& id) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void OhmicCurr::setChanState(ChanState& chanstate) {
-    pChanState = &chanstate;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-void OhmicCurr::setERev(double erev) {
+void OhmicCurrBase::setERev(double erev) {
     pERev = erev;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void OhmicCurr::setG(double g) {
-    ArgErrLogIf(g < 0.0, "Conductance provided to OhmicCurr::setG function can't be negative");
+void OhmicCurrBase::setG(double g) {
+    ArgErrLogIf(g < 0.0, "Conductance provided to OhmicCurrBase::setG function can't be negative");
     pG = g;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+OhmicCurr::OhmicCurr(std::string const& id,
+                     Surfsys& surfsys,
+                     ChanState& chanstate,
+                     double erev,
+                     double g)
+    : OhmicCurrBase(id, surfsys, erev, g)
+    , pChanState(&chanstate) {
+    pSurfsys._handleOhmicCurrAdd(*this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+OhmicCurr::~OhmicCurr() {
+    _handleSelfDelete();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 void OhmicCurr::_handleSelfDelete() {
     pSurfsys._handleOhmicCurrDel(*this);
-    pG = 0.0;
-    pERev = 0;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+void OhmicCurr::setChanState(ChanState& chanstate) {
+    pChanState = &chanstate;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+ComplexOhmicCurr::ComplexOhmicCurr(std::string const& id,
+                                   Surfsys& surfsys,
+                                   std::string const& cplx,
+                                   const std::vector<std::vector<SubunitStateFilter>>& filt,
+                                   double erev,
+                                   double g)
+    : OhmicCurrBase(id, surfsys, erev, g)
+    , pChanState(cplx, filt) {
+    pSurfsys._handleComplexOhmicCurrAdd(*this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 }  // namespace steps::model

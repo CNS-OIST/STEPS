@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <mpi.h>
 #include <numeric>
+#include <petscsys.h>
 
 #include "util/petsc.hpp"
 
@@ -38,16 +39,20 @@ namespace steps::solver::efield {
 dVSolverPETSC::dVSolverPETSC(MPI_Comm petsc_comm) {
     PETSC_COMM_WORLD = petsc_comm;
     // Initialize PETSC (also MPI if not already done)
-    PetscInitialize(nullptr, nullptr, nullptr, nullptr);
+    auto err = PetscInitialize(nullptr, nullptr, nullptr, nullptr);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     // Create vectors for rhs and solution
-    VecCreate(PETSC_COMM_WORLD, &px);
+    err = VecCreate(PETSC_COMM_WORLD, &px);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     // Create matrix for lhs
-    MatCreate(PETSC_COMM_WORLD, &pA);
+    err = MatCreate(PETSC_COMM_WORLD, &pA);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     // Create Krylov solver
-    KSPCreate(PETSC_COMM_WORLD, &pKsp);
+    err = KSPCreate(PETSC_COMM_WORLD, &pKsp);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
     //    KSPSetComputeSingularValues(pKsp, PETSC_TRUE);
     //    KSPSetInitialGuessNonzero(pKsp,PETSC_TRUE);
     //    PetscViewerCreate(PETSC_COMM_WORLD, &viewer);
@@ -64,12 +69,17 @@ dVSolverPETSC::dVSolverPETSC(MPI_Comm petsc_comm) {
 dVSolverPETSC::~dVSolverPETSC() {
     //   PetscLogView(viewer);
     // Destroy all objects
-    VecDestroy(&px);
-    VecDestroy(&pb);
-    MatDestroy(&pA);
-    KSPDestroy(&pKsp);
+    auto err = VecDestroy(&px);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = VecDestroy(&pb);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = MatDestroy(&pA);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = KSPDestroy(&pKsp);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
     // Finalize PETSc
-    PetscFinalize();
+    err = PetscFinalize();
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 }
 
 /// Initialize mesh and sparsity pattern
@@ -81,15 +91,22 @@ void dVSolverPETSC::initMesh(TetMesh* mesh) {
     pIdxToVert.reserve(pNVerts);
 
     // Setup Vectors
-    VecSetSizes(px, PETSC_DECIDE, pNVerts);
-    VecSetType(px, VECMPI);
-    VecGetOwnershipRange(px, &prbegin, &prend);
-    VecDuplicate(px, &pb);
-    VecGetLocalSize(px, &pNlocal);
+    auto err = VecSetSizes(px, PETSC_DECIDE, pNVerts);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = VecSetType(px, VECMPI);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = VecGetOwnershipRange(px, &prbegin, &prend);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = VecDuplicate(px, &pb);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = VecGetLocalSize(px, &pNlocal);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     // Setup Matrix
-    MatSetSizes(pA, pNlocal, pNlocal, pNVerts, pNVerts);
-    MatSetType(pA, MATMPIAIJ);
+    err = MatSetSizes(pA, pNlocal, pNlocal, pNVerts, pNVerts);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = MatSetType(pA, MATMPIAIJ);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     PetscInt idx, jdx, n_con;
     std::vector<PetscInt> d_nnz(pNlocal,
@@ -118,8 +135,32 @@ void dVSolverPETSC::initMesh(TetMesh* mesh) {
         }
     }
 
-    MatMPIAIJSetPreallocation(pA, 0, d_nnz.data(), 0, o_nnz.data());
-    MatSetUp(pA);
+    err = MatMPIAIJSetPreallocation(pA, 0, d_nnz.data(), 0, o_nnz.data());
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = MatSetUp(pA);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+
+    // Fill the matrix and assemble it for the first time with all non-zero values present
+    // This is necessary because the first assembly can change the non-zero structure
+    for (PetscInt i = prbegin; i < prend; ++i) {
+        VertexElement* ve = pIdxToVert[i];
+        std::vector<PetscInt> idx_columns(ve->getNCon() + 1);
+        std::vector<PetscScalar> val_columns(ve->getNCon() + 1);
+        for (auto inbr = 0u; inbr < ve->getNCon(); ++inbr) {
+            int j = ve->nbrIdx(inbr);
+            idx_columns[inbr + 1] = j;
+            val_columns[inbr + 1] = -1;
+        }
+        idx_columns[0] = i;
+        val_columns[0] = ve->getNCon();
+        err = MatSetValues(
+            pA, 1, &i, idx_columns.size(), idx_columns.data(), val_columns.data(), INSERT_VALUES);
+        CHKERRABORT(PETSC_COMM_WORLD, err);
+    }
+    err = MatAssemblyBegin(pA, MAT_FINAL_ASSEMBLY);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = MatAssemblyEnd(pA, MAT_FINAL_ASSEMBLY);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     /// First, Allgather to get all the solution vector sizes
     /// FIx for the powerpc64 platform, which incorrectly converts PetscInt to int
@@ -171,7 +212,8 @@ void dVSolverPETSC::advance(double dt) {
 
     double oodt = 1.0 / dt;
 
-    MatZeroEntries(pA);
+    auto err = MatZeroEntries(pA);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
     //    VecSet(pb,0.0);
     //    VecSet(px,0.0);
 
@@ -185,7 +227,8 @@ void dVSolverPETSC::advance(double dt) {
         // case 1: vertex is on Clamp
         if (pVertexClamp[i] != 0) {
             values_rhs.at(i - prbegin) = 0.;
-            MatSetValue(pA, i, i, 1., INSERT_VALUES);
+            err = MatSetValue(pA, i, i, 1., INSERT_VALUES);
+            CHKERRABORT(PETSC_COMM_WORLD, err);
         }
         // case 2: no clamp, get all Current Contributions
         else {
@@ -205,47 +248,61 @@ void dVSolverPETSC::advance(double dt) {
             }
             idx_columns[0] = i;
             val_columns[0] = Aii;
-            MatSetValues(pA,
-                         1,
-                         &i,
-                         idx_columns.size(),
-                         idx_columns.data(),
-                         val_columns.data(),
-                         INSERT_VALUES);
+            err = MatSetValues(pA,
+                               1,
+                               &i,
+                               idx_columns.size(),
+                               idx_columns.data(),
+                               val_columns.data(),
+                               INSERT_VALUES);
+            CHKERRABORT(PETSC_COMM_WORLD, err);
             values_rhs.at(i - prbegin) = rhs;
         }
     }
 
     // set rhs all at once to optimize
-    VecSetValues(pb, pNlocal, idx_rhs.data(), values_rhs.data(), INSERT_VALUES);
+    err = VecSetValues(pb, pNlocal, idx_rhs.data(), values_rhs.data(), INSERT_VALUES);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     // Set inital guess (???)
     // VecSetValues(px, pNlocal, idx_rhs.data(), &deltaV[prbegin], INSERT_VALUES);
 
     // Assemble LHS, rhs, intial guess
-    MatAssemblyBegin(pA, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(pA, MAT_FINAL_ASSEMBLY);
-    VecAssemblyBegin(pb);
-    VecAssemblyEnd(pb);
-    VecAssemblyBegin(px);
-    VecAssemblyEnd(px);
+    err = MatAssemblyBegin(pA, MAT_FINAL_ASSEMBLY);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = MatAssemblyEnd(pA, MAT_FINAL_ASSEMBLY);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = VecAssemblyBegin(pb);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = VecAssemblyEnd(pb);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = VecAssemblyBegin(px);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = VecAssemblyEnd(px);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     // LHS used for preconditioning
-    KSPSetOperators(pKsp, pA, pA);
+    err = KSPSetOperators(pKsp, pA, pA);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
     // Solver: Conjugate Gradient
-    KSPSetType(pKsp, KSPPIPECG);
+    err = KSPSetType(pKsp, KSPPIPECG);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
     // Preconditioner
-    KSPGetPC(pKsp, &pPc);
-    PCSetType(pPc, PCPBJACOBI);
+    err = KSPGetPC(pKsp, &pPc);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
+    err = PCSetType(pPc, PCPBJACOBI);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     // Tolerances for iterative solver
     // KSPSetTolerances(pKsp, 1.e-1, 1.e-10, PETSC_DEFAULT, PETSC_DEFAULT);
 
     // Call solver and print statistics
-    KSPSolve(pKsp, pb, px);
+    err = KSPSolve(pKsp, pb, px);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     PetscScalar* larr;
-    VecGetArray(px, &larr);
+    err = VecGetArray(px, &larr);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     std::vector<PetscScalar> deltaV(pNVerts);
     MPI_Allgatherv(larr,
@@ -264,7 +321,8 @@ void dVSolverPETSC::advance(double dt) {
         }
     }
 
-    VecRestoreArray(px, &larr);
+    err = VecRestoreArray(px, &larr);
+    CHKERRABORT(PETSC_COMM_WORLD, err);
 
     // reset pTriCur for caller contributions
     std::fill(pTriCur.begin(), pTriCur.end(), 0.0);

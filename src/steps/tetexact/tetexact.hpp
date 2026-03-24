@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -68,7 +68,11 @@ extern void schedIDXSet_To_Vec(SchedIDXSet const& s, SchedIDXVec& v);
 
 class Tetexact: public solver::API {
   public:
-    Tetexact(model::Model* m, wm::Geom* g, const rng::RNGptr& r, int calcMembPot = EF_NONE);
+    Tetexact(model::Model* m,
+             wm::Geom* g,
+             const rng::RNGptr& r,
+             int calcMembPot = EF_NONE,
+             bool calcMembPot_lenient = false);
     ~Tetexact() override;
 
     ////////////////////////////////////////////////////////////////////////
@@ -326,6 +330,8 @@ class Tetexact: public solver::API {
 
     unsigned long long _getPatchSReacExtent(solver::patch_global_id pidx,
                                             solver::sreac_global_id sidx) const override;
+    unsigned long long _getPatchVDepSReacExtent(solver::patch_global_id pidx,
+                                                solver::vdepsreac_global_id vsridx) const override;
     void _resetPatchSReacExtent(solver::patch_global_id pidx,
                                 solver::sreac_global_id sidx) override;
 
@@ -500,6 +506,13 @@ class Tetexact: public solver::API {
 
     double _getTriGHKI(triangle_global_id tidx) const override;
     double _getTriGHKI(triangle_global_id tidx, solver::ghkcurr_global_id ghkidx) const override;
+
+    double _getTriSReacI(triangle_global_id tidx) const override;
+    double _getTriSReacI(triangle_global_id tidx, solver::sreac_global_id sridx) const override;
+
+    double _getTriVDepSReacI(triangle_global_id tidx) const override;
+    double _getTriVDepSReacI(triangle_global_id tidx,
+                             solver::vdepsreac_global_id vdsridx) const override;
 
     double _getTriI(triangle_global_id tidx) const override;
 
@@ -901,6 +914,9 @@ class Tetexact: public solver::API {
 
     // Pointer to the EField object
     std::unique_ptr<solver::efield::EField> pEField;
+
+    // Leniency
+    bool pEField_lenient;
 
     // The Efield time-step
     double pEFDT{1.0e-5};

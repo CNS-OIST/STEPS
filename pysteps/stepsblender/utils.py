@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -49,6 +49,7 @@ class Orders(enum.IntEnum):
     GET_RAFT_EVENTS = 13
     GET_VERTS_V = 14
     OK = 15
+    GET_VES_ON_PATH = 16
 
 
 class Loc(enum.Enum):
@@ -97,6 +98,18 @@ colorType = typing.Annotated[
          metavar='"(r, g, b, a)"'), ]
 alphaType = typing.Annotated[float, 'Alpha transparency level']
 emissionType = typing.Annotated[float, 'Emission strength']
+
+
+try:
+    import tqdm
+
+    def progress(it, desc):
+        return tqdm.tqdm(list(it), desc=desc, leave=False)
+except ImportError:
+    def progress(it, desc):
+        print(f'{desc}...')
+        return it
+
 
 ####################################################################################################
 
@@ -147,6 +160,63 @@ def zipNone(*args):
             res.append(elem)
         yield tuple(res)
 
+
+####################################################################################################
+
+
+def point_in_obj(pos, obj, eps=1e-6):
+    if (pos == 0).all():
+        direc = np.array([1, 0, 0])
+    else:
+        direc = - pos / np.linalg.norm(pos)
+    hit = True
+    cnt = 0
+    while hit:
+        hit, loc, *_ = obj.ray_cast(pos, direc)
+        if hit:
+            cnt += 1
+            pos = np.array(loc) + direc * eps
+    return cnt % 2 == 1
+
+
+def get_points_in_triangle(p0, p1, p2, cnt):
+    positions = []
+    for i in range(int(cnt)):
+        s, t = np.random.random(2)
+        u = s**0.5
+        v = u * t
+        positions.append((1 - u) * p0 + (u - v) * p1 + v * p2)
+    return positions
+
+
+def get_points_in_tetrahedron(p0, p1, p2, p3, cnt):
+    positions = []
+    for i in range(int(cnt)):
+        s, t, u = np.random.random(3)
+        if s + t > 1:
+            s = 1 - s
+            t = 1 - t
+        if t + u > 1:
+            tmp = u
+            u = 1 - s - t
+            t = 1 - tmp
+        elif s + t + u > 1:
+            tmp = u
+            u = s + t + u - 1
+            s = 1 - t - tmp
+        a = 1 - s - t - u
+        positions.append(a * p0 + s * p1 + t * p2 + u * p3)
+    return positions
+
+
+def get_points_in_sphere(pos, rad, cnt):
+    positions = []
+    for i in range(cnt):
+        relpos = (np.random.random(3) - 0.5) * 2
+        while np.linalg.norm(relpos) > 1:
+            relpos = (np.random.random(3) - 0.5) * 2
+        positions.append(pos + rad * relpos)
+    return positions
 
 ####################################################################################################
 
@@ -524,6 +594,10 @@ def AddBlenderDataSaving(sim, verbose=True, **kwargs):
     except nsim.SimPathInvalidPath:
         pass
     try:
+        selectors.append(rs.ALL(geom.Compartment).VESICLES().OnPath)
+    except nsim.SimPathInvalidPath:
+        pass
+    try:
         selectors.append(rs.ALL(geom.Compartment).VESICLES()('surf').POINTSPECS().PosSpherical)
     except nsim.SimPathInvalidPath:
         try:
@@ -560,8 +634,9 @@ def AddBlenderDataSaving(sim, verbose=True, **kwargs):
         pass
 
     if verbose and nsim.MPI._shouldWrite:
-        print('Result selectors added to the simulation:')
+        from steps.API_2.utils import _print
+        _print('Result selectors added to the simulation:', 1)
         for sel in selectors:
-            print('\t', sel)
+            _print(str(sel), 1, indent=1)
 
     sim.toSave(*selectors, **kwargs)

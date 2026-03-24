@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -66,12 +66,16 @@ class TetCurrentSaving(base_model.TetTestModelFramework):
     def init_API2_sim(self, sim):
         super().init_API2_sim(sim)
 
-        sim.ALL(Compartment, Patch).ALL(Species).Clamped = True
+        sim.TETS().ALL(Species).Clamped = True
+        for patch in sim.geom.ALL(Patch):
+            sim.TRIS(patch.tris).ALL(Species).Clamped = True
 
-        sim.ALL(Patch).Chan1[self.newMdl.chancl].Count = 0
+            sim.TRIS(patch.tris).Chan1[self.newMdl.chancl].Count = 0
+            sim.TRIS(patch.tris).Chan1[self.newMdl.chancl].Clamped = True
+            sim.TRIS(patch.tris).Chan1[self.newMdl.chanop1].Clamped = True
         sim.ALL(Patch).Chan1[self.newMdl.chanop1].Count = self.initChan1Cl
-        sim.ALL(Patch).Chan1[self.newMdl.chancl].Clamped = True
-        sim.ALL(Patch).Chan1[self.newMdl.chanop1].Clamped = True
+        for memb in sim.geom.ALL(Membrane):
+            sim.TRIS(memb.tris).VClamped = True
 
 
     def testSmallCurrentRecording(self):

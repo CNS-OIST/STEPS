@@ -2,21 +2,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -236,6 +236,9 @@ cdef class _py_DistMesh(_py_Geom):
             return self.ptrx().num_verts()
         else:
             return self.ptrx().total_num_verts()
+
+    def redistributed(self):
+        return self.ptrx().redistributed()
 
     @property
     def num_elems(self):
@@ -1103,7 +1106,7 @@ cdef class _py_DistMesh(_py_Geom):
         else:
             return self.ptrx().total_measure(compartment_id(to_std_string('__MESH__')))
 
-    def intersect(self, double[:, :] points, int sampling=-1):
+    def intersect(self, double[:, :] points, int sampling=-1, bool local=True):
         """
         Computes the intersection of line segment(s) given the vertices with the current mesh
 
@@ -1111,6 +1114,7 @@ cdef class _py_DistMesh(_py_Geom):
             points: A 2-D NumPy array (/memview) of points in the 3D space, 
                     where each element contains the 3 point coordinates
             int sampling: any value --> deterministic method (montecarlo not implemented for STEPS4)
+            bool local
 
         Returns:
             A list of lists of tuples representing the intersected tetrahedrons, one element per line segment.
@@ -1118,10 +1122,13 @@ cdef class _py_DistMesh(_py_Geom):
         """
         if (points.strides[0] != 24 or points.strides[1] != 8):
             raise Exception("Wrong memory layout for points, np array should be [pts,3] and row major")
-        data = self.ptrx().intersect(&points[0][0], points.shape[0], sampling)
-        return [[(t.first.get(), t.second) for t in row] for row in data]
+        if local:
+            return [[(t.first.get(), t.second) for t in row] for row in self.ptrx().localIntersect(&points[0][0], points.shape[0], sampling)]
+        else:
+            return [[(t.first.get(), t.second) for t in row] for row in self.ptrx().intersect(&points[0][0], points.shape[0], sampling)]
+        
 
-    def intersectIndependentSegments(self, double[:, :] points, int sampling=-1):
+    def intersectIndependentSegments(self, double[:, :] points, int sampling=-1, bool local=True):
         """
         Similar to the intersect method but here we deal with independent segments, i.e.
         every two points we have a segment not related to previous or following ones.
@@ -1131,6 +1138,7 @@ cdef class _py_DistMesh(_py_Geom):
             points: A 2-D NumPy array (/memview) of points in the 3D space, 
                     where each element contains the 3 point coordinates
             int sampling: any value --> deterministic method (montecarlo not implemented for STEPS4)
+            bool local
 
         Returns:
             A list of lists of tuples representing the intersected tetrahedrons, one element per line segment.
@@ -1138,8 +1146,10 @@ cdef class _py_DistMesh(_py_Geom):
         """
         if (points.strides[0] != 24 or points.strides[1] != 8):
             raise Exception("Wrong memory layout for points, np array should be [pts,3] and row major")
-        data = self.ptrx().intersectIndependentSegments(&points[0][0], points.shape[0], sampling)
-        return [[(t.first.get(), t.second) for t in row] for row in data]
+        if local:
+            return [[(t.first.get(), t.second) for t in row] for row in self.ptrx().localIntersectIndependentSegments(&points[0][0], points.shape[0], sampling)]
+        else:
+            return [[(t.first.get(), t.second) for t in row] for row in self.ptrx().intersectIndependentSegments(&points[0][0], points.shape[0], sampling)]
 
 # ----------------------------------------------------------------------------------------------------------------------
 cdef class _py_DistComp(_py_Comp):
@@ -1556,15 +1566,21 @@ cdef class _py_DistMemb(_py_Memb):
         return self.ptrx().setCapacitance(capacitance)
 
 cimport steps_dist_solver
-from steps_dist_solver cimport TetOpSplitBase, TetOpSplit
+from steps_dist_solver cimport Simulation
 
 cdef class _py_SSAMethod:
     SSA = 0
     RSSA = 1
+    RLEAPING = 2
 
 cdef class _py_SearchMethod:
     DIRECT = 0
     GIBSON_BRUCK = 1
+    RLEAPING = 2
+
+cdef class _py_DiffMethod:
+    CONSTANT_DT = 0
+    TAU_LEAPING_DT = 1
 
 cdef class _py_DistributionMethod:
     UNIFORM = 0
@@ -1575,11 +1591,13 @@ cdef class _py_DistTetOpSplitP(_py__base):
     """Bindings for MPI DistTetOpSplitP"""
 # ----------------------------------------------------------------------------------------------------------------------
 
-    cdef TetOpSplitBase *ptrx(self):
-        return <TetOpSplitBase*> self._ptr
+    cdef unique_ptr[Simulation] _uniqueptr
+
+    cdef Simulation *ptrx(self):
+        return <Simulation*> self._ptr
 
     def __init__(self, _py_Model model, _py_DistMesh mesh, _py_RNG rng, SSAMethod=_py_SSAMethod.SSA,
-            searchMethod=_py_SearchMethod.GIBSON_BRUCK, bool indepKProcs=False, bool isEfield=True):
+            searchMethod=_py_SearchMethod.GIBSON_BRUCK, diffMethod=_py_DiffMethod.CONSTANT_DT, bool indepKProcs=False, bool isEfield=True):
         """
         Construction::
 
@@ -1588,6 +1606,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         Create a distributed spatial stochastic solver based on operator splitting, that is that reaction events are
         partitioned and diffusion is approximated. Keyword parameters SSAMethod and searchMethod respectively set the
         SSA method (SSA or RSSA) and the next event search method (DIRECT or GIBSON_BRUCK).
+        Keyword parameter diffMethod sets the diffusion method.
 
         Arguments:
         steps.model.Model model
@@ -1595,6 +1614,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         steps.rng.RNG rng
         steps.sim.SSAMethod SSAMethod
         steps.sim.NextEventSearchMethod searchMethod
+        steps.sim.DiffusionMethod diffMethod
         bool indepKProcs
         bool isEfield
 
@@ -1606,31 +1626,25 @@ cdef class _py_DistTetOpSplitP(_py__base):
         if rng == None:
             raise TypeError('The RNG object is empty.')
 
-        # TODO Remove this after direct method and RSSA have been properly tested
-        if SSAMethod != _py_SSAMethod.SSA or searchMethod != _py_SearchMethod.GIBSON_BRUCK:
-            raise ValueError('Currently, the only supported options are SSAMethod=SSA with searchMethod=GIBSON_BRUCK')
-        # End TODO
+        self._uniqueptr = GetSimulation(deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), SSAMethod, searchMethod, diffMethod, indepKProcs, isEfield)
+        self._ptr = self._uniqueptr.get()
 
-        if SSAMethod==_py_SSAMethod.RSSA and searchMethod==_py_SearchMethod.GIBSON_BRUCK:
-            raise ValueError('RSSA cannot be used in conjunction with Gibson Bruck')
+    def getSolverName(self):
+        """
+        Returns a string of the solver's name.
 
-        if SSAMethod == _py_SSAMethod.SSA:
-            if searchMethod == _py_SearchMethod.DIRECT:
-                self._ptr = new TetOpSplit[steps_dist_solver.SSAMethod_SSA, steps_dist_solver.NextEventSearchMethod_Direct](
-                    deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), indepKProcs, isEfield
-                )
-            elif searchMethod == _py_SearchMethod.GIBSON_BRUCK:
-                self._ptr = new TetOpSplit[steps_dist_solver.SSAMethod_SSA, steps_dist_solver.NextEventSearchMethod_GibsonBruck](
-                    deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), indepKProcs, isEfield
-                )
-            else:
-                raise ValueError(f'Unknown next event search method: {searchMethod}')
-        elif SSAMethod == _py_SSAMethod.RSSA:
-            self._ptr = new TetOpSplit[steps_dist_solver.SSAMethod_RSSA, steps_dist_solver.NextEventSearchMethod_Direct](
-                deref(model.ptr()), deref(mesh.ptrx()), rng.ptr(), indepKProcs, isEfield
-            )
-        else:
-            raise ValueError(f'Unknown SSA method: {SSAMethod}')
+        Syntax::
+
+            getSolverName()
+
+        Arguments:
+        None
+
+        Return:
+        string
+
+        """
+        return from_std_string(self.ptrx().getSolverName())
 
     def getReacExtent(self, bool local=False):
         """
@@ -1676,6 +1690,114 @@ cdef class _py_DistTetOpSplitP(_py__base):
         """
         return self.ptrx().getDiffExtent(local)
 
+    def getEFieldTime(self, ):
+        """
+        Return the accumulated EField run time of the process.
+
+        Syntax::
+
+            getEFieldTime()
+
+        Arguments:
+        None
+
+        Return:
+        float
+        """
+        return self.ptrx().getEFieldTime()
+
+    def getRDTime(self, ):
+        """
+        Return the accumulated reaction-diffusion run time of the process.
+
+        Syntax::
+
+            getRDTime()
+
+        Arguments:
+        None
+
+        Return:
+        float
+        """
+        return self.ptrx().getRDTime()
+
+    def getDiffusionTime(self, ):
+        """
+        Return the accumulated diffusion run time of the process.
+
+        Syntax::
+
+            getDiffusionTime()
+
+        Arguments:
+        None
+
+        Return:
+        float
+        """
+        return self.ptrx().getDiffusionTime()
+
+    def getReactionTime(self, ):
+        """
+        Return the accumulated reaction run time of the process.
+
+        Syntax::
+
+            getReactionTime()
+
+        Arguments:
+        None
+
+        Return:
+        float
+        """
+        return self.ptrx().getReactionTime()
+
+    def getReactionDebugInfo(self, bool local=False):
+        """
+        Return debug information for the reaction operator
+
+        If all processes call this function, it will return the accumulated
+        result across all processes. It can also be called in individual process with
+        the local argument set to true, in which case it returns the local result of this process.
+
+        By default it is called globally and returns the accumulated result.
+
+        Syntax::
+
+            getReactionDebugInfo(local)
+
+        Arguments:
+        bool local (default = False)
+
+        Return:
+        Dict[str, float]
+        """
+        return {from_std_string(pair.first): pair.second for pair in self.ptrx().getReactionDebugInfo(local)}
+
+    def getDiffusionDebugInfo(self, bool local=False):
+        """
+        Return debug information for the diffusion operator
+
+        If all processes call this function, it will return the accumulated
+        result across all processes. It can also be called in individual process with
+        the local argument set to true, in which case it returns the local result of this process.
+
+        By default it is called globally and returns the accumulated result.
+
+        Syntax::
+
+            getDiffusionDebugInfo(local)
+
+        Arguments:
+        bool local (default = False)
+
+        Return:
+        Dict[str, float]
+        """
+        return {from_std_string(pair.first): pair.second for pair in self.ptrx().getDiffusionDebugInfo(local)}
+
     def getCompSpecCount(self, str comp, str spec):
         """
         Returns the number of molecules of a species with identifier string spec 
@@ -1696,7 +1818,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getCompSpecCount(to_std_string(comp), to_std_string(spec))
+        return self.ptrx().getCompSpecCount(compartment_id(to_std_string(comp)), species_name(to_std_string(spec)))
 
     def getCompSpecConc(self, str comp, str spec):
         """
@@ -1719,7 +1841,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getCompSpecConc(to_std_string(comp), to_std_string(spec))
+        return self.ptrx().getCompSpecConc(compartment_id(to_std_string(comp)), species_name(to_std_string(spec)))
 
     def setCompSpecCount(self, str comp, str spec, double n, distributionMethod=_py_DistributionMethod.UNIFORM):
         """
@@ -1752,7 +1874,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setCompSpecCount(to_std_string(comp), to_std_string(spec), n, distributionMethod)
+        self.ptrx().setCompSpecCount(compartment_id(to_std_string(comp)), species_name(to_std_string(spec)), n, distributionMethod)
 
     def setCompSpecConc(self, str comp, str spec, double conc, distributionMethod=_py_DistributionMethod.UNIFORM):
         """
@@ -1787,7 +1909,323 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setCompSpecConc(to_std_string(comp), to_std_string(spec), conc, distributionMethod)
+        self.ptrx().setCompSpecConc(compartment_id(to_std_string(comp)), species_name(to_std_string(spec)), conc, distributionMethod)
+
+    def getCompSpecClamped(self, str comp, str spec):
+        """
+        Returns whether species with identifier string spec is clamped
+        in the compartment with identifier string comp.
+
+        Syntax::
+
+            getCompSpecClamped(comp, spec)
+
+        Arguments:
+        string comp
+        string spec
+
+        Return:
+        bool
+
+        """
+        return self.ptrx().getCompSpecClamped(compartment_id(to_std_string(comp)), species_name(to_std_string(spec)))
+
+    def setCompSpecClamped(self, str comp, str spec, bool clamped):
+        """
+        Sets whether species with identifier string spec is clamped
+        in the compartment with identifier string comp.
+
+        Syntax::
+
+            setCompSpecClamped(comp, spec, clamped)
+
+        Arguments:
+        string comp
+        string spec
+        bool clamped
+
+        Return:
+        None
+
+        """
+        self.ptrx().setCompSpecClamped(compartment_id(to_std_string(comp)), species_name(to_std_string(spec)), clamped)
+
+    def getCompComplexCount(self, str c, str complex, f):
+        """
+        Returns the number of molecules of a complex with identifier string complex
+        matching filter filt in compartment with identifier string comp.
+
+        In a mesh-based simulation this is the combined count from 
+        all tetrahedral elements in the compartment.
+
+        Syntax::
+            
+            getCompComplexCount(comp, complex, filt)
+            
+        Arguments:
+        string comp
+        string complex
+        list[uint[:]] filt
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getCompComplexCount(compartment_id(to_std_string(c)), complex_name(to_std_string(complex)), _get_filters(f))
+
+    def setCompComplexCount(self, str c, str complex, i, double n, distributionMethod=_py_DistributionMethod.UNIFORM):
+        """
+        Set the number of molecules of a complex with identifier string complex
+        in state init in compartment with identifier string comp.
+
+        In a mesh-based simulation this is the combined count from 
+        all tetrahedral elements in the compartment.
+
+        Syntax::
+            
+            setCompComplexCount(comp, complex, init, nspec)
+            
+        Arguments:
+        string comp
+        string complex
+        uint[:] init
+        int nspec
+
+        Return:
+        None
+
+        """
+        self.ptrx().setCompComplexCount(compartment_id(to_std_string(c)), complex_name(to_std_string(complex)), _get_filters(i), n, distributionMethod)
+
+    def getCompComplexSUSCount(self, str c, str complex, f, uint m):
+        """
+        Returns the number of subunits in state m of a complex with identifier string complex
+        matching filter filt in compartment with identifier string comp.
+
+        In a mesh-based simulation this is the combined count from 
+        all tetrahedral elements in the compartment.
+
+        Syntax::
+            
+            getCompComplexSUSCount(comp, complex, filt, m)
+            
+        Arguments:
+        string comp
+        string complex
+        list[uint[:]] filt
+        uint m
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getCompComplexSUSCount(compartment_id(to_std_string(c)), complex_name(to_std_string(complex)), _get_filters(f), complex_substate_id(m))
+
+    def getCompReacK(self, str comp, str reac):
+        """
+        Gets the macroscopic reaction constant of volume reaction with identifier 
+        string reac in compartment with identifier string comp to kf. The unit of the reaction 
+        constant depends on the order of the reaction. 
+
+        Note: This method gets the currently set value for the patch,
+        individual triangles in the patch might have different values.
+
+        Syntax::
+
+            getCompReacK(comp, reac)
+
+        Arguments:
+        string comp
+        string reac
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getCompReacK(compartment_id(to_std_string(comp)), reaction_id(to_std_string(reac)))
+
+    def setCompReacK(self, str comp, str reac, double kf):
+        """
+        Sets the macroscopic reaction constant of volume reaction with identifier 
+        string reac in compartment with identifier string comp to kf. The unit of the reaction 
+        constant depends on the order of the reaction. 
+
+        Note: This method sets the surface reaction constant in all triangular elements of the patch to kf.
+
+        Note: The default value still comes from the model description, so calling 
+        reset() will return the surface reaction constant to that value.
+
+        Syntax::
+
+            setCompReacK(comp, reac, kf)
+
+        Arguments:
+        string comp
+        string reac
+        float kf
+
+        Return:
+        None
+
+        """
+        self.ptrx().setCompReacK(compartment_id(to_std_string(comp)), reaction_id(to_std_string(reac)), kf)
+
+    def getCompReacExtent(self, str comp, str reac):
+        """
+        Gets the extent of volume reaction with identifier string reac in compartment with identifier string comp.
+
+        Syntax::
+
+            getCompReacExtent(comp, reac)
+
+        Arguments:
+        string comp
+        string reac
+
+        Return:
+        uint
+
+        """
+        return self.ptrx().getCompReacExtent(compartment_id(to_std_string(comp)), reaction_id(to_std_string(reac)))
+
+    def getCompComplexReacExtent(self, str comp, str reac):
+        """
+        Gets the extent of complex volume reaction with identifier string reac in compartment with identifier string comp.
+
+        Syntax::
+
+            getCompComplexReacExtent(comp, reac)
+
+        Arguments:
+        string comp
+        string reac
+
+        Return:
+        uint
+
+        """
+        return self.ptrx().getCompComplexReacExtent(compartment_id(to_std_string(comp)), complex_reaction_id(to_std_string(reac)))
+
+    def getCompDiffD(self, str c, str d):
+        """
+        Returns the diffusion constant of diffusion rule with identifier string diff
+        in compartment with identifier string comp. This constant is in units m^2/s.
+
+        The value for the compartment is
+        returned, although individual or groups of tetrahedral elements may have different
+        values (set with setTetDiffD).
+
+        Syntax::
+
+            getCompDiffD(comp, diff)
+
+        Arguments:
+        string comp
+        string diff
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getCompDiffD(compartment_id(to_std_string(c)), diffusion_id(to_std_string(d)))
+
+    def setCompDiffD(self, str c, str d, double dcst):
+        """
+        Sets the diffusion constant of diffusion rule with identifier string diff
+        in compartment with identifier string comp to dcst (in m^2/s).
+
+        Note: This method will set the diffusion constant in all tetrahedral elements
+        in the compartment.
+
+        Note: The default value still comes from the steps.model description,
+        so calling reset() will return the diffusion constants to that value.
+
+        Syntax::
+
+            setCompDiffD(comp, diff, dcst)
+
+        Arguments:
+        string comp
+        string diff
+        float dcst
+
+        Return:
+            None
+
+        """
+        self.ptrx().setCompDiffD(compartment_id(to_std_string(c)), diffusion_id(to_std_string(d)), dcst)
+
+    def getPatchComplexCount(self, str c, str complex, f):
+        """
+        Returns the number of molecules of a complex with identifier string complex
+        matching filter filt in patch with identifier string patch.
+
+        In a mesh-based simulation this is the combined count from 
+        all triangles in the patch.
+
+        Syntax::
+            
+            getPatchComplexCount(patch, complex, filt)
+            
+        Arguments:
+        string patch
+        string complex
+        list[uint[:]] filt
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getPatchComplexCount(patch_id(to_std_string(c)), complex_name(to_std_string(complex)), _get_filters(f))
+
+    def setPatchComplexCount(self, str c, str complex, i, double n, distributionMethod=_py_DistributionMethod.UNIFORM):
+        """
+        Set the number of molecules of a complex with identifier string complex
+        in state init in patch with identifier string patch.
+
+        In a mesh-based simulation this is the combined count from 
+        all triangles in the patch.
+
+        Syntax::
+            
+            setPatchComplexCount(patch, complex, init, nspec)
+            
+        Arguments:
+        string patch
+        string complex
+        uint[:] init
+        int nspec
+
+        Return:
+        None
+
+        """
+        self.ptrx().setPatchComplexCount(patch_id(to_std_string(c)), complex_name(to_std_string(complex)), _get_filters(i), n, distributionMethod)
+
+    def getPatchComplexSUSCount(self, str c, str complex, f, uint m):
+        """
+        Returns the number of subunits in state m of a complex with identifier string complex
+        matching filter filt in patch with identifier string patch.
+
+        In a mesh-based simulation this is the combined count from 
+        all triangles in the patch.
+
+        Syntax::
+            
+            getPatchComplexSUSCount(patch, complex, filt, m)
+            
+        Arguments:
+        string patch
+        string complex
+        list[uint[:]] filt
+        uint m
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getPatchComplexSUSCount(patch_id(to_std_string(c)), complex_name(to_std_string(complex)), _get_filters(f), complex_substate_id(m))
+
 
     def getPatchSpecCount(self, str patch, str spec):
         """
@@ -1807,7 +2245,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getPatchSpecCount(to_std_string(patch), to_std_string(spec))
+        return self.ptrx().getPatchSpecCount(patch_id(to_std_string(patch)), species_name(to_std_string(spec)))
 
     def setPatchSpecCount(self, str patch, str spec, double n, distributionMethod=_py_DistributionMethod.UNIFORM):
         """
@@ -1837,7 +2275,46 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        self.ptrx().setPatchSpecCount(to_std_string(patch), to_std_string(spec), n, distributionMethod)
+        self.ptrx().setPatchSpecCount(patch_id(to_std_string(patch)), species_name(to_std_string(spec)), n, distributionMethod)
+
+    def getPatchSpecClamped(self, str patch, str spec):
+        """
+        Returns whether species with identifier string spec is clamped
+        in the patch with identifier string patch.
+
+        Syntax::
+
+            getPatchSpecClamped(patch, spec)
+
+        Arguments:
+        string patch
+        string spec
+
+        Return:
+        bool
+
+        """
+        return self.ptrx().getPatchSpecClamped(patch_id(to_std_string(patch)), species_name(to_std_string(spec)))
+
+    def setPatchSpecClamped(self, str patch, str spec, bool clamped):
+        """
+        Sets whether species with identifier string spec is clamped
+        in the patch with identifier string patch.
+
+        Syntax::
+
+            setPatchSpecClamped(patch, spec, clamped)
+
+        Arguments:
+        string patch
+        string spec
+        bool clamped
+
+        Return:
+        None
+
+        """
+        self.ptrx().setPatchSpecClamped(patch_id(to_std_string(patch)), species_name(to_std_string(spec)), clamped)
 
     if USE_PETSC:
 
@@ -1859,7 +2336,44 @@ cdef class _py_DistTetOpSplitP(_py__base):
             None
 
             """
-            self.ptrx().setMembPotential(to_std_string(memb), v)
+            self.ptrx().setMembPotential(membrane_id(to_std_string(memb)), v)
+
+        def setMembVolRes(self, str memb, double ro):
+            """
+            Set the bulk electrical resistivity of the section of the mesh
+            representing the volume conductor for the membrane with string identifier memb.
+
+            Syntax::
+
+                setMembVolRes(memb, ro)
+
+            Arguments:
+            string memb
+            float ro
+
+            Return:
+            None
+
+            """
+            self.ptrx().setMembVolRes(membrane_id(to_std_string(memb)), ro)
+
+        def setMembCapac(self, str memb, double capac):
+            """
+            Sets the surface capacitance (in F.m^-2) of the membrane with string identifier memb.
+
+            Syntax::
+
+                setMembCapac(memb, capac)
+
+            Arguments:
+            string memb
+            float capac
+
+            Return:
+            None
+
+            """
+            self.ptrx().setMembCapac(membrane_id(to_std_string(memb)), capac)
 
         def setMembRes(self, str memb, double ro, double vrev):
             """
@@ -1878,7 +2392,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
             None
 
             """
-            self.ptrx().setMembRes(to_std_string(memb), ro, vrev)
+            self.ptrx().setMembRes(membrane_id(to_std_string(memb)), ro, vrev)
 
         def getMembRes(self, str membrane):
             """
@@ -1896,8 +2410,26 @@ cdef class _py_DistTetOpSplitP(_py__base):
             pair: (double, double)
 
             """
-            cdef MembraneResistivity val = self.ptrx().getMembRes(to_std_string(membrane))
+            cdef MembraneResistivity val = self.ptrx().getMembRes(membrane_id(to_std_string(membrane)))
             return _py_MembraneResistivity(val.resistivity, val.reversal_potential)
+
+        def setMembIClamp(self, str memb, float current):
+            """
+            Set a current clamp on a membrane
+
+            Syntax::
+
+                setMembIClamp(memb, current)
+
+            Arguments:
+            str memb
+            float current
+
+            Return:
+            None
+
+            """
+            self.ptrx().setMembIClamp(membrane_id(to_std_string(memb)), current)
 
         def getTriCapac(self, GO idx, bool local=False):
             """
@@ -2014,6 +2546,41 @@ cdef class _py_DistTetOpSplitP(_py__base):
             """
             self.ptrx().setVertIClamp(idx, current, local)
 
+        def getVertVClamped(self, GO idx, bool local=False):
+            """
+            Gets voltage clamp in vertex.
+
+            Syntax::
+
+                getVertVClamped(idx)
+
+            Arguments:
+            GO idx
+            bool local
+
+            Return:
+            bool
+            """
+            return self.ptrx().getVertVClamped(idx, local)
+
+        def setVertVClamped(self, GO idx, bool clamped, bool local=False):
+            """
+            Sets voltage clamp in vertex.
+
+            Syntax::
+
+                setVertVClamped(idx, clamped)
+
+            Arguments:
+            GO idx
+            bool clamped
+            bool local
+
+            Return:
+            None
+            """
+            self.ptrx().setVertVClamped(idx, clamped, local)
+
         def getTriOhmicErev(self, GO idx, str ohmic_current, bool local=False):
             """
             Gets the ohmic current reversal potential of triangle in volts.
@@ -2026,13 +2593,81 @@ cdef class _py_DistTetOpSplitP(_py__base):
             Return:
                 double
             """
-            return self.ptrx().getTriOhmicErev(idx, to_std_string(ohmic_current), local)
+            return self.ptrx().getTriOhmicErev(idx, ohmic_current_id(to_std_string(ohmic_current)), local)
 
-        def getBatchTriOhmicErevsNP(self, GO[:] triangles, str ohmic_current, double[:] rv, bool local=False):
+        def getTriVClamped(self, GO idx, bool local=False):
             """
-            """
-            self.ptrx().getBatchTriOhmicErevsNP(&triangles[0], triangles.shape[0], to_std_string(ohmic_current), &rv[0], rv.shape[0], local)
+            Gets voltage clamp in triangle.
 
+            Syntax::
+
+                getTriVClamped(idx)
+
+            Arguments:
+            GO idx
+            bool local
+
+            Return:
+            bool
+            """
+            return self.ptrx().getTriVClamped(idx, local)
+
+        def setTriVClamped(self, GO idx, bool clamped, bool local=False):
+            """
+            Sets voltage clamp in triangle.
+
+            Syntax::
+
+                setTriVClamped(idx, clamped)
+
+            Arguments:
+            GO idx
+            bool clamped
+            bool local
+
+            Return:
+            None
+            """
+            self.ptrx().setTriVClamped(idx, clamped, local)
+
+        def getTriIClamp(self, GO idx, bool local=False):
+            """
+            Returns the current clamp on the triangle with index idx, in ampere.
+            NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
+
+            Syntax::
+
+                getTriIClamp(idx)
+
+            Arguments:
+            GO idx
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriIClamp(idx, local)
+
+        def setTriIClamp(self, GO idx, double current, bool local=False):
+            """
+            Set the current clamp on the triangle with index idx, in ampere.
+            NOTE: Convention is maintained that a positive current clamp is depolarizing, a negative current clamp is hyperpolarizing.
+
+            Syntax::
+
+                setTriIClamp(idx, current)
+
+            Arguments:
+            GO idx
+            float current
+            bool local
+
+            Return:
+            None
+
+            """
+            self.ptrx().setTriIClamp(idx, current, local)
 
         def setTriOhmicErev(self, GO idx, str ohmic_current, double reversal_potential, bool local=False):
             """
@@ -2044,7 +2679,33 @@ cdef class _py_DistTetOpSplitP(_py__base):
                 reversal_potential: value in volts to assign
                 local: whether the triangle index is local to the process or global to the mesh
             """
-            return self.ptrx().setTriOhmicErev(idx, to_std_string(ohmic_current), reversal_potential, local)
+            return self.ptrx().setTriOhmicErev(idx, ohmic_current_id(to_std_string(ohmic_current)), reversal_potential, local)
+
+        def getTriComplexOhmicErev(self, GO idx, str ohmic_current, bool local=False):
+            """
+            Gets the complex ohmic current reversal potential of triangle in volts.
+
+            Arguments:
+                idx: Index of the triangle
+                ohmic_current: name of the complex ohmic current
+                local: whether the triangle index is local to the process or global to the mesh
+
+            Return:
+                double
+            """
+            return self.ptrx().getTriComplexOhmicErev(idx, complex_ohmic_current_id(to_std_string(ohmic_current)), local)
+
+        def setTriComplexOhmicErev(self, GO idx, str ohmic_current, double reversal_potential, bool local=False):
+            """
+            Sets the complex ohmic current reversal potential of triangle in volts.
+
+            Arguments:
+                idx: Index of the triangle
+                ohmic_current: name of the complex ohmic current
+                reversal_potential: value in volts to assign
+                local: whether the triangle index is local to the process or global to the mesh
+            """
+            return self.ptrx().setTriComplexOhmicErev(idx, complex_ohmic_current_id(to_std_string(ohmic_current)), reversal_potential, local)
 
         def getVertV(self, GO idx, bool local=False):
             """
@@ -2082,6 +2743,69 @@ cdef class _py_DistTetOpSplitP(_py__base):
             """
             return self.ptrx().getTriV(idx, local)
 
+        def getTetV(self, GO idx, bool local=False):
+            """
+            Returns the potential (in volts) of tetrahdron element with index idx.
+
+            Syntax::
+
+                getTetV(idx)
+
+            Arguments:
+            GO idx
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTetV(idx, local)
+
+        def setVertV(self, GO idx, double v, bool local=False):
+            """
+            Sets the potential (in volts) of vertex element with index idx.
+
+            Syntax::
+
+                setVertV(idx, v)
+
+            Arguments:
+            GO idx
+            float v
+            bool local
+            """
+            return self.ptrx().setVertV(idx, v, local)
+
+        def setTriV(self, GO idx, double v, bool local=False):
+            """
+            Sets the potential (in volts) of triangle element with index idx.
+
+            Syntax::
+
+                setTetV(idx)
+
+            Arguments:
+            GO idx
+            float v
+            bool local
+            """
+            return self.ptrx().setTriV(idx, v, local)
+
+        def setTetV(self, GO idx, double v, bool local=False):
+            """
+            Sets the potential (in volts) of tetrahdron element with index idx.
+
+            Syntax::
+
+                setTetV(idx)
+
+            Arguments:
+            GO idx
+            float v
+            bool local
+            """
+            return self.ptrx().setTetV(idx, v, local)
+
         def getTriOhmicI(self, GO idx, str oc, bool local=False):
             """
             Returns the ohmic current of triangle element with index idx, in amps.
@@ -2099,26 +2823,150 @@ cdef class _py_DistTetOpSplitP(_py__base):
             float
 
             """
-            return self.ptrx().getTriOhmicI(idx, to_std_string(oc), local)
+            return self.ptrx().getTriOhmicI(idx, ohmic_current_id(to_std_string(oc)), local)
 
-        def getTriGHKI(self, GO idx, str ghk, bool local=False):
+        def getTriComplexOhmicI(self, GO idx, str oc, bool local=False):
             """
-            Returns the GHK current of triangle element with index idx, in amps.
-                        
+            Returns the complex ohmic current of triangle element with index idx, in amps.
+
             Syntax::
-                        
-                getTriGHKI(idx, ghk)
-                        
+
+                getTriComplexOhmicI(idx, oc)
+
             Arguments:
             GO idx
-            string ghk
+            string oc
             bool local
-                        
+
             Return:
             float
 
             """
-            return self.ptrx().getTriGHKI(idx, to_std_string(ghk), local)
+            return self.ptrx().getTriComplexOhmicI(idx, complex_ohmic_current_id(to_std_string(oc)), local)
+
+        def getTriGHKI(self, GO idx, str ghk, bool local=False):
+            """
+            Returns the GHK current of triangle element with index idx, in amps.
+
+            Syntax::
+
+                getTriGHKI(idx, ghk)
+
+            Arguments:
+            GO idx
+            string ghk
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriGHKI(idx, ghk_current_id(to_std_string(ghk)), local)
+
+        def getTriComplexGHKI(self, GO idx, str ghk, bool local=False):
+            """
+            Returns the complex GHK current of triangle element with index idx, in amps.
+
+            Syntax::
+
+                getTriComplexGHKI(idx, ghk)
+
+            Arguments:
+            GO idx
+            string ghk
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriComplexGHKI(idx, complex_ghk_current_id(to_std_string(ghk)), local)
+
+        def getTriSReacI(self, GO idx, str reac, bool local=False):
+            """
+            Syntax::
+
+                getTriSReacI(tri, reac)
+
+            Arguments:
+            GO idx
+            string reac
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriSReacI(idx, surface_reaction_id(to_std_string(reac)), local)
+
+        def getTriVDepSReacI(self, GO idx, str reac, bool local=False):
+            """
+            Syntax::
+
+                getTriVDepSReacI(tri, reac)
+
+            Arguments:
+            GO idx
+            string reac
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriVDepSReacI(idx, vdep_surface_reaction_id(to_std_string(reac)), local)
+
+        def getTriComplexSReacI(self, GO idx, str reac, bool local=False):
+            """
+            Syntax::
+
+                getTriComplexSReacI(tri, reac)
+
+            Arguments:
+            GO idx
+            string reac
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriComplexSReacI(idx, complex_surface_reaction_id(to_std_string(reac)), local)
+
+        def getTriVDepComplexSReacI(self, GO idx, str reac, bool local=False):
+            """
+            Syntax::
+
+                getTriVDepComplexSReacI(tri, reac)
+
+            Arguments:
+            GO idx
+            string reac
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriVDepComplexSReacI(idx, vdep_complex_surface_reaction_id(to_std_string(reac)), local)
+
+        def getTriI(self, GO idx, bool local=False):
+            """
+            Returns the current of triangle element with index idx, in amps.
+
+            Syntax::
+
+                getTriI(idx)
+
+            Arguments:
+            GO idx
+            bool local
+
+            Return:
+            float
+
+            """
+            return self.ptrx().getTriI(idx, local)
 
         def getTetV(self, GO idx, bool local=False):
             """
@@ -2138,70 +2986,40 @@ cdef class _py_DistTetOpSplitP(_py__base):
             """
             return self.ptrx().getTetV(idx, local)
 
-    def getSolverName(self):
-        """
-        Returns a string of the solver's name.
+        def getTetVClamped(self, GO idx, bool local=False):
+            """
+            Gets voltage clamp in tetrahedron.
 
-        Syntax::
+            Syntax::
 
-            getSolverName()
+                getTetVClamped(idx)
 
-        Arguments:
-        None
+            Arguments:
+            GO idx
+            bool local
 
-        Return:
-        string
-        """
-        return from_std_string(self.ptrx().getSolverName())
+            Return:
+            bool
+            """
+            return self.ptrx().getTetVClamped(idx, local)
 
-    def getSolverDesc(self):
-        """
-        Returns a string giving a short description of the solver.
+        def setTetVClamped(self, GO idx, bool clamped, bool local=False):
+            """
+            Sets voltage clamp in tetrahedron.
 
-        Syntax::
+            Syntax::
 
-            getSolverDesc()
+                setTetVClamped(idx, clamped)
 
-        Arguments:
-        None
+            Arguments:
+            GO idx
+            bool clamped
+            bool local
 
-        Return:
-        string
-        """
-        return from_std_string(self.ptrx().getSolverDesc())
-
-    def getSolverAuthors(self):
-        """
-        Returns a string of the solver authors names.
-
-        Syntax::
-
-            getSolverAuthors()
-
-        Arguments:
-        None
-
-        Return:
-        string
-        """
-        return from_std_string(self.ptrx().getSolverAuthors())
-
-    def getSolverEmail(self):
-        """
-        Returns a string giving the author's email address.
-
-        Syntax::
-
-            getSolverEmail()
-
-        Arguments:
-        None
-
-        Return:
-        string
-
-        """
-        return from_std_string(self.ptrx().getSolverEmail())
+            Return:
+            None
+            """
+            self.ptrx().setTetVClamped(idx, clamped, local)
 
     def reset(self):
         """
@@ -2270,7 +3088,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         int
 
         """
-        return self.ptrx().getTetSpecCount(idx, to_std_string(spec), local)
+        return self.ptrx().getTetSpecCount(idx, species_name(to_std_string(spec)), local)
 
     def getTetSpecConc(self, GO idx, str spec, bool local=False):
         """
@@ -2290,7 +3108,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getTetSpecConc(idx, to_std_string(spec), local)
+        return self.ptrx().getTetSpecConc(idx, species_name(to_std_string(spec)), local)
 
     def setTetSpecCount(self, GO idx, str spec, double n, bool local=False):
         """
@@ -2311,7 +3129,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setTetSpecCount(idx, to_std_string(spec), n, local)
+        self.ptrx().setTetSpecCount(idx, species_name(to_std_string(spec)), n, local)
 
     def setTetSpecConc(self, GO idx, str spec, double c, bool local=False):
         """
@@ -2336,7 +3154,48 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setTetSpecConc(idx, to_std_string(spec), c, local)
+        self.ptrx().setTetSpecConc(idx, species_name(to_std_string(spec)), c, local)
+
+    def getTetSpecClamped(self, GO idx, str spec, bool local=False):
+        """
+        Returns whether species with identifier string spec is clamped
+        in the tetrahedral element with index idx.
+
+        Syntax::
+
+            getTetSpecClamped(idx, spec)
+
+        Arguments:
+        GO idx
+        string spec
+        bool local
+
+        Return:
+        bool
+
+        """
+        return self.ptrx().getTetSpecClamped(idx, species_name(to_std_string(spec)), local)
+
+    def setTetSpecClamped(self, GO idx, str spec, bool clamped, bool local=False):
+        """
+        Sets whether species with identifier string spec is clamped
+        in the tetrahedral element with index idx.
+
+        Syntax::
+ 
+            setTetSpecClamped(idx, spec, clamped)
+
+        Arguments:
+        GO idx
+        string spec
+        bool clamped
+        bool local
+
+        Return:
+        None
+
+        """
+        self.ptrx().setTetSpecClamped(idx, species_name(to_std_string(spec)), clamped, local)
 
     def getTriSpecCount(self, GO idx, str spec, bool local=False):
         """
@@ -2356,7 +3215,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         float
 
         """
-        return self.ptrx().getTriSpecCount(idx, to_std_string(spec), local)
+        return self.ptrx().getTriSpecCount(idx, species_name(to_std_string(spec)), local)
 
     def setTriSpecCount(self, GO idx, str spec, double n, bool local=False):
         """
@@ -2377,7 +3236,141 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setTriSpecCount(idx, to_std_string(spec), n, local)
+        self.ptrx().setTriSpecCount(idx, species_name(to_std_string(spec)), n, local)
+
+    def getTriSpecClamped(self, GO idx, str spec, bool local=False):
+        """
+        Returns whether species with identifier string spec is clamped
+        in the triangular element with index idx.
+
+        Syntax::
+
+            getTriSpecClamped(idx, spec)
+
+        Arguments:
+        GO idx
+        string spec
+        bool local
+
+        Return:
+        bool
+
+        """
+        return self.ptrx().getTriSpecClamped(idx, species_name(to_std_string(spec)), local)
+
+    def setTriSpecClamped(self, GO idx, str spec, bool clamped, bool local=False):
+        """
+        Sets whether species with identifier string spec is clamped
+        in the triangular element with index idx.
+
+        Syntax::
+ 
+            setTriSpecClamped(idx, spec, clamped)
+ 
+        Arguments:
+        GO idx
+        string spec
+        bool clamped
+        bool local
+
+        Return:
+        None
+
+        """
+        self.ptrx().setTriSpecClamped(idx, species_name(to_std_string(spec)), clamped, local)
+
+    def getTriSReacK(self, GO idx, str reac, bool local=False):
+        """
+        Syntax::
+
+            setTriSReacK(tri, reac)
+
+        Arguments:
+        GO idx
+        string reac
+        bool local
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getTriSReacK(idx, surface_reaction_id(to_std_string(reac)), local)
+
+    def setTriSReacK(self, GO idx, str reac, double kf, bool local=False):
+        """
+        Syntax::
+            
+            setTriSReacK(tri, reac, kf)
+            
+        Arguments:
+        GO idx
+        string reac
+        float kf
+        bool local
+
+        Return:
+        None
+
+        """
+        self.ptrx().setTriSReacK(idx, surface_reaction_id(to_std_string(reac)), kf, local)
+
+    def getTriComplexSReacK(self, GO idx, str reac, bool local=False):
+        """
+        Syntax::
+
+            setTriComplexSReacK(tri, reac)
+
+        Arguments:
+        GO idx
+        string reac
+        bool local
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getTriComplexSReacK(idx, complex_surface_reaction_id(to_std_string(reac)), local)
+
+    def setTriComplexSReacK(self, GO idx, str reac, double kf, bool local=False):
+        """
+        Syntax::
+            
+            setTriComplexSReacK(tri, reac, kf)
+            
+        Arguments:
+        GO idx
+        string reac
+        float kf
+        bool local
+
+        Return:
+        None
+
+        """
+        self.ptrx().setTriComplexSReacK(idx, complex_surface_reaction_id(to_std_string(reac)), kf, local)
+
+    def getPatchSReacK(self, str patch, str reac):
+        """
+        Gets the macroscopic reaction constant of surface reaction with identifier 
+        string sreac in patch with identifier string pat to kf. The unit of the reaction 
+        constant depends on the order of the reaction. 
+
+        Note: In a mesh-based simulation this method gets the currently set value for the patch,
+        individual triangles in the patch might have different values.
+
+        Syntax::
+
+            getPatchSReacK(patch, reac)
+
+        Arguments:
+        string patch
+        string reac
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getPatchSReacK(patch_id(to_std_string(patch)), surface_reaction_id(to_std_string(reac)))
 
     def setPatchSReacK(self, str patch, str reac, double kf):
         """
@@ -2404,124 +3397,79 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setPatchSReacK(to_std_string(patch), to_std_string(reac), kf)
+        self.ptrx().setPatchSReacK(patch_id(to_std_string(patch)), surface_reaction_id(to_std_string(reac)), kf)
 
-    def getBatchTetSpecCounts(self, std.vector[GO] tets, str spec, bool local=False):
+    def getPatchSReacExtent(self, str patch, str reac):
         """
-        Get the counts of a species s in a list of tetrahedrons.
+        Gets the extent of surface reaction with identifier string reac in patch with identifier string patch.
 
         Syntax::
 
-            getBatchTetSpecCounts(tets, spec)
+            getPatchSReacExtent(patch, reac)
 
         Arguments:
-        list<GO> tets
-        string spec
-        bool local
+        string patch
+        string reac
 
         Return:
-        list<double>
+        uint
 
         """
-        return self.ptrx().getBatchTetSpecCounts(tets, to_std_string(spec), local)
+        return self.ptrx().getPatchSReacExtent(patch_id(to_std_string(patch)), surface_reaction_id(to_std_string(reac)))
 
-    def setBatchTetSpecCounts(self, std.vector[GO] tets, str spec, std.vector[double] counts, bool local=False):
+    def getPatchComplexSReacExtent(self, str patch, str reac):
         """
-        Set the counts of a species s in a list of tetrahedrons individually.
+        Gets the extent of complex surface reaction with identifier string reac in patch with identifier string patch.
 
         Syntax::
 
-            setBatchTetSpecCounts(tets, spec, counts)
+            getPatchComplexSReacExtent(patch, reac)
 
         Arguments:
-        list<GO> tets
-        string spec
-        list<double> counts
-        bool local
+        string patch
+        string reac
 
         Return:
-        None
+        uint
 
         """
-        self.ptrx().setBatchTetSpecCounts(tets, to_std_string(spec), counts, local)
+        return self.ptrx().getPatchComplexSReacExtent(patch_id(to_std_string(patch)), complex_surface_reaction_id(to_std_string(reac)))
 
-    def getBatchTriSpecCounts(self, std.vector[GO] tris, str spec, bool local=False):
+    def getPatchVDepSReacExtent(self, str patch, str reac):
         """
-        Get the counts of a species s in a list of triangles.
+        Gets the extent of voltage-dependent surface reaction with identifier string reac in patch with identifier string patch.
 
         Syntax::
 
-            getBatchTriSpecCounts(tris, spec)
+            getPatchVDepSReacExtent(patch, reac)
 
         Arguments:
-        list<GO> tris
-        string spec
-        bool local
+        string patch
+        string reac
 
         Return:
-        list<double>
+        uint
 
         """
-        return self.ptrx().getBatchTriSpecCounts(tris, to_std_string(spec), local)
+        return self.ptrx().getPatchVDepSReacExtent(patch_id(to_std_string(patch)), vdep_surface_reaction_id(to_std_string(reac)))
 
-    def setBatchTriSpecCounts(self, std.vector[GO] tris, str spec, std.vector[double] counts, bool local=False):
+    def getPatchVDepComplexSReacExtent(self, str patch, str reac):
         """
-        Set the counts of a species s in a list of triangles.
+        Gets the extent of voltage-dependent complex surface reaction with identifier string reac in patch with identifier string patch.
 
         Syntax::
 
-            setBatchTriSpecCounts(tris, spec, counts)
+            getPatchVDepComplexSReacExtent(patch, reac)
 
         Arguments:
-        list<GO> tris
-        string spec
-        list<double> counts
-        bool local
+        string patch
+        string reac
 
         Return:
-        None
+        uint
 
         """
-        return self.ptrx().setBatchTriSpecCounts(tris, to_std_string(spec), counts, local)
-
-    def setBatchTetSpecConcs(self, std.vector[GO] tets, str spec, std.vector[double] concs, bool local=False):
-        """
-        Set the concentration of a species s in a list of tetrahedrons individually.
-
-        Syntax::
-
-            setBatchTetSpecConcs(tets, spec, concs)
-
-        Arguments:
-        list<GO> tets
-        string spec
-        list<double> concs
-        bool local
-
-        Return:
-        None
-
-        """
-        self.ptrx().setBatchTetSpecConcs(tets, to_std_string(spec), concs, local)
-
-    def getBatchTetSpecConcs(self, std.vector[GO] tets, str spec, bool local=False):
-        """
-        Get the individual concentration of a species s in a list of tetrahedrons.
-
-        Syntax::
-
-            getBatchTetSpecConcs(tets, spec)
-
-        Arguments:
-        list<GO> tets
-        string spec
-        bool local
-
-        Return:
-        list<double>
-
-        """
-        return self.ptrx().getBatchTetSpecConcs(tets, to_std_string(spec), local)
+        return self.ptrx().getPatchVDepComplexSReacExtent(patch_id(to_std_string(patch)), vdep_complex_surface_reaction_id(to_std_string(reac)))
 
     # # ---------------------------------------------------------------------------------
     # # NUMPY section - we accept numpy arrays and generically typed memory-views
@@ -2543,7 +3491,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().getBatchTetSpecCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0], counts.shape[0], local)
+        self.ptrx().getBatchTetSpecCountsNP(&indices[0], indices.shape[0], species_name(to_std_string(spec)), &counts[0], counts.shape[0], local)
 
     def setBatchTetSpecCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
         """
@@ -2562,7 +3510,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setBatchTetSpecCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0],
+        self.ptrx().setBatchTetSpecCountsNP(&indices[0], indices.shape[0], species_name(to_std_string(spec)), &counts[0],
                 counts.shape[0], local)
 
     def getBatchTetSpecConcsNP(self, GO[:] indices, str spec, double[:] concs, bool local=False):
@@ -2582,7 +3530,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().getBatchTetSpecConcsNP(&indices[0], indices.shape[0], to_std_string(spec), &concs[0], concs.shape[0], local)
+        self.ptrx().getBatchTetSpecConcsNP(&indices[0], indices.shape[0], species_name(to_std_string(spec)), &concs[0], concs.shape[0], local)
 
     def setBatchTetSpecConcsNP(self, GO[:] indices, str spec, double[:] concs, bool local=False):
         """
@@ -2601,7 +3549,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setBatchTetSpecConcsNP(&indices[0], indices.shape[0], to_std_string(spec), &concs[0],
+        self.ptrx().setBatchTetSpecConcsNP(&indices[0], indices.shape[0], species_name(to_std_string(spec)), &concs[0],
                 concs.shape[0], local)
 
     def getBatchTriSpecCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
@@ -2621,7 +3569,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
             None
 
         """
-        self.ptrx().getBatchTriSpecCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0], counts.shape[0], local)
+        self.ptrx().getBatchTriSpecCountsNP(&indices[0], indices.shape[0], species_name(to_std_string(spec)), &counts[0], counts.shape[0], local)
 
     def setBatchTriSpecCountsNP(self, GO[:] indices, str spec, double[:] counts, bool local=False):
         """
@@ -2640,10 +3588,11 @@ cdef class _py_DistTetOpSplitP(_py__base):
             None
 
         """
-        self.ptrx().setBatchTriSpecCountsNP(&indices[0], indices.shape[0], to_std_string(spec), &counts[0],
+        self.ptrx().setBatchTriSpecCountsNP(&indices[0], indices.shape[0], species_name(to_std_string(spec)), &counts[0],
                 counts.shape[0], local)
 
     if USE_PETSC:
+
         def getBatchVertVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
             """
             Get the potential in a list of vertices.
@@ -2667,7 +3616,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
             Get the potential in a list of triangles.
 
             Syntax::
-                getBatchTetVsNP(indices, voltages)
+                getBatchTriVsNP(indices, voltages)
 
             Arguments:
             numpy.array<GO> indices
@@ -2698,6 +3647,60 @@ cdef class _py_DistTetOpSplitP(_py__base):
             """
             self.ptrx().getBatchTetVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
 
+        def setBatchVertVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
+            """
+            set the potential in a list of vertices.
+
+            Syntax::
+                setBatchVertVsNP(indices, voltages)
+
+            Arguments:
+            numpy.array<GO> indices
+            numpy.array<double, length = len(indices)> voltages
+            bool local
+
+            Return:
+                None
+
+            """
+            self.ptrx().setBatchVertVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
+
+        def setBatchTriVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
+            """
+            set the potential in a list of triangles.
+
+            Syntax::
+                setBatchTetVsNP(indices, voltages)
+
+            Arguments:
+            numpy.array<GO> indices
+            numpy.array<double, length = len(indices)> voltages
+            bool local
+
+            Return:
+                None
+
+            """
+            self.ptrx().setBatchTriVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
+
+        def setBatchTetVsNP(self, GO[:] indices, double[:] voltages, bool local=False):
+            """
+            set the potential in a list of tetrahedra.
+
+            Syntax::
+                setBatchTetVsNP(indices, voltages)
+
+            Arguments:
+            numpy.array<GO> indices
+            numpy.array<double, length = len(indices)> voltages
+            bool local
+
+            Return:
+                None
+
+            """
+            self.ptrx().setBatchTetVsNP(&indices[0], indices.shape[0], &voltages[0], voltages.shape[0], local)
+
         def getBatchTriOhmicIsNP(self, GO[:] indices, str oc, double[:] currents, bool local=False):
             """
             Get the Ohmic currents in a list of triangles.
@@ -2715,7 +3718,26 @@ cdef class _py_DistTetOpSplitP(_py__base):
                 None
 
             """
-            self.ptrx().getBatchTriOhmicIsNP(&indices[0], indices.shape[0], to_std_string(oc), &currents[0], currents.shape[0], local)
+            self.ptrx().getBatchTriOhmicIsNP(&indices[0], indices.shape[0], ohmic_current_id(to_std_string(oc)), &currents[0], currents.shape[0], local)
+
+        def getBatchTriComplexOhmicIsNP(self, GO[:] indices, str oc, double[:] currents, bool local=False):
+            """
+            Get the complex Ohmic currents in a list of triangles.
+
+            Syntax::
+                getBatchTriComplexOhmicIsNP(indices, oc, currents)
+
+            Arguments:
+            numpy.array<GO> indices
+            string oc
+            numpy.array<double, length = len(indices)> currents
+            bool local
+
+            Return:
+                None
+
+            """
+            self.ptrx().getBatchTriComplexOhmicIsNP(&indices[0], indices.shape[0], complex_ohmic_current_id(to_std_string(oc)), &currents[0], currents.shape[0], local)
 
         def getBatchTriGHKIsNP(self, GO[:] indices, str ghk, double[:] currents, bool local=False):
             """
@@ -2734,7 +3756,165 @@ cdef class _py_DistTetOpSplitP(_py__base):
                 None
 
             """
-            self.ptrx().getBatchTriGHKIsNP(&indices[0], indices.shape[0], to_std_string(ghk), &currents[0], currents.shape[0], local)
+            self.ptrx().getBatchTriGHKIsNP(&indices[0], indices.shape[0], ghk_current_id(to_std_string(ghk)), &currents[0], currents.shape[0], local)
+
+        def getBatchTriComplexGHKIsNP(self, GO[:] indices, str ghk, double[:] currents, bool local=False):
+            """
+            Get the complex GHK currents in a list of triangles.
+
+            Syntax::
+                getBatchTriComplexGHKIsNP(indices, ghk, currents)
+
+            Arguments:
+            numpy.array<GO> indices
+            string ghk
+            numpy.array<double, length = len(indices)> currents
+            bool local
+
+            Return:
+                None
+
+            """
+            self.ptrx().getBatchTriComplexGHKIsNP(&indices[0], indices.shape[0], complex_ghk_current_id(to_std_string(ghk)), &currents[0], currents.shape[0], local)
+
+        def getBatchTriIsNP(self, GO[:] indices, double[:] currents, bool local=False):
+            """
+            Get the currents in a list of triangles.
+
+            Syntax::
+                getBatchTriIsNP(indices, currents)
+
+            Arguments:
+            numpy.array<GO> indices
+            numpy.array<double, length = len(indices)> currents
+            bool local
+
+            Return:
+                None
+
+            """
+            self.ptrx().getBatchTriIsNP(&indices[0], indices.shape[0], &currents[0], currents.shape[0], local)
+
+        def getBatchTriOhmicErevsNP(self, GO[:] triangles, str ohmic_current, double[:] rv, bool local=False):
+            """
+            """
+            self.ptrx().getBatchTriOhmicErevsNP(&triangles[0], triangles.shape[0], ohmic_current_id(to_std_string(ohmic_current)), &rv[0], rv.shape[0], local)
+
+        def getBatchTriComplexOhmicErevsNP(self, GO[:] triangles, str ohmic_current, double[:] rv, bool local=False):
+            """
+            """
+            self.ptrx().getBatchTriComplexOhmicErevsNP(&triangles[0], triangles.shape[0], complex_ohmic_current_id(to_std_string(ohmic_current)), &rv[0], rv.shape[0], local)
+
+    def getTetDiffD(self, GO idx, str diff, GO direction_tet=tetrahedron_global_id_t.unknown_value(), bool local=False):
+        """
+        Gets the diffusion constant of diffusion rule with identifier string diff in
+        tetrahedral element with index idx to dcst (in m^2/s). Specify direction_tet to get the constant only towards a given tetrahedron direction.
+        Syntax::
+
+            getTetDiffD(idx, diff, dcst, direction_tet)
+
+        Arguments:
+        GO idx
+        string diff
+        GO direction_tet
+        bool local
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getTetDiffD(idx, diffusion_id(to_std_string(diff)), direction_tet, local)
+
+    def setTetDiffD(self, GO idx, str diff, double dcst, GO direction_tet=tetrahedron_global_id_t.unknown_value(), bool local=False):
+        """
+        Sets the diffusion constant of diffusion rule with identifier string diff in
+        tetrahedral element with index idx to dcst (in m^2/s). Specify direction_tet to set the constant only towards a given tetrahedron direction.
+        Syntax::
+
+            setTetDiffD(idx, diff, dcst, direction_tet)
+
+        Arguments:
+        GO idx
+        string diff
+        float dcst
+        GO direction_tet
+        bool local
+
+        Return:
+        None
+
+        """
+        self.ptrx().setTetDiffD(idx, diffusion_id(to_std_string(diff)), dcst, direction_tet, local)
+
+    def getTetReacK(self, GO idx, str reac, bool local=False):
+        """
+        Syntax::
+
+            getTetReacK(idx, reac)
+
+        Arguments:
+        GO idx
+        string reac
+        bool local
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getTetReacK(idx, reaction_id(to_std_string(reac)), local)
+
+    def setTetReacK(self, GO idx, str reac, double kf, bool local=False):
+        """
+        Syntax::
+
+            setTetReacK(idx, reac, kf)
+
+        Arguments:
+        GO idx
+        string reac
+        float kf
+        bool local
+
+        Return:
+        None
+
+        """
+        self.ptrx().setTetReacK(idx, reaction_id(to_std_string(reac)), kf, local)
+
+    def getTetComplexReacK(self, GO idx, str reac, bool local=False):
+        """
+        Syntax::
+
+            getTetComplexReacK(idx, reac)
+
+        Arguments:
+        GO idx
+        string reac
+        bool local
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getTetComplexReacK(idx, complex_reaction_id(to_std_string(reac)), local)
+
+    def setTetComplexReacK(self, GO idx, str reac, double kf, bool local=False):
+        """
+        Syntax::
+
+            setTetComplexReacK(idx, reac, kf)
+
+        Arguments:
+        GO idx
+        string reac
+        float kf
+        bool local
+
+        Return:
+        None
+
+        """
+        self.ptrx().setTetComplexReacK(idx, complex_reaction_id(to_std_string(reac)), kf, local)
 
     def setDiffBoundarySpecDiffusionActive(self, str diffb, str spec, bool act):
         """
@@ -2753,7 +3933,7 @@ cdef class _py_DistTetOpSplitP(_py__base):
         None
 
         """
-        self.ptrx().setDiffBoundarySpecDiffusionActive(to_std_string(diffb), to_std_string(spec), act)
+        self.ptrx().setDiffBoundarySpecDiffusionActive(diffusion_boundary_name(to_std_string(diffb)), species_name(to_std_string(spec)), act)
 
     def getDiffBoundarySpecDiffusionActive(self, str diffb, str spec):
         """
@@ -2771,7 +3951,26 @@ cdef class _py_DistTetOpSplitP(_py__base):
         bool
 
         """
-        return self.ptrx().getDiffBoundarySpecDiffusionActive(to_std_string(diffb), to_std_string(spec))
+        return self.ptrx().getDiffBoundarySpecDiffusionActive(diffusion_boundary_name(to_std_string(diffb)), species_name(to_std_string(spec)))
+
+    def setDiffBoundarySpecDcst(self, str diffb, str spec, double dcst):
+        """
+        Set the diffusion constant for diffusion across a diffusion boundary for a species.
+
+        Syntax::
+
+            setDiffBoundaryDcst(diffb, spec, dcst)
+
+        Arguments:
+        string diffb
+        string spec
+        float dcst
+
+        Return:
+        None
+
+        """
+        self.ptrx().setDiffBoundarySpecDcst(diffusion_boundary_name(to_std_string(diffb)), species_name(to_std_string(spec)), dcst)
 
     def setDiffApplyThreshold(self, int threshold):
         """
@@ -2834,6 +4033,380 @@ cdef class _py_DistTetOpSplitP(_py__base):
         """
         return self.ptrx().getTemp()
 
+    def getDiffusionTolerance(self):
+        """
+        Get the diffusion tolerance if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            getDiffusionTolerance()
+
+        Arguments:
+        None
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getDiffusionTolerance()
+
+    def setDiffusionTolerance(self, double tol):
+        """
+        Set the diffusion tolerance if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            setDiffusionTolerance(tol)
+
+        Arguments:
+        float tol
+
+        Return:
+        None
+
+        """
+        self.ptrx().setDiffusionTolerance(tol)
+
+    def getDiffusionNormalApproximationThreshold(self):
+        """
+        Get the threshold for normal approximation to skellam distribution if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            getDiffusionNormalApproximationThreshold()
+
+        Arguments:
+        None
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getDiffusionNormalApproximationThreshold()
+
+    def setDiffusionNormalApproximationThreshold(self, double thresh):
+        """
+        Set the threshold for normal approximation to skellam distribution if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            setDiffusionNormalApproximationThreshold(thresh)
+
+        Arguments:
+        float thresh
+
+        Return:
+        None
+
+        """
+        self.ptrx().setDiffusionNormalApproximationThreshold(thresh)
+
+    def getDiffusionCrankNicolsonThreshold(self):
+        """
+        Get the threshold for using Crank-Nicolson scheme if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            getDiffusionCrankNicolsonThreshold()
+
+        Arguments:
+        None
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getDiffusionCrankNicolsonThreshold()
+
+    def setDiffusionCrankNicolsonThreshold(self, double thresh):
+        """
+        Set the threshold for using Crank-Nicolson scheme if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            setDiffusionCrankNicolsonThreshold(thresh)
+
+        Arguments:
+        float thresh
+
+        Return:
+        None
+
+        """
+        self.ptrx().setDiffusionCrankNicolsonThreshold(thresh)
+
+    def getDiffusionLeapThreshold(self):
+        """
+        Get the minimum number of species for leaping with TAU_LEAPING_DT diffusion
+
+        Syntax::
+
+            getDiffusionLeapThreshold()
+
+        Arguments:
+        None
+
+        Return:
+        int
+
+        """
+        return self.ptrx().getDiffusionLeapThreshold()
+
+    def setDiffusionLeapThreshold(self, int leap_thresh):
+        """
+        Set the minimum number of species for leaping with TAU_LEAPING_DT diffusion
+
+        Syntax::
+
+            setDiffusionLeapThreshold(leap_thresh)
+
+        Arguments:
+        int leap_thresh
+
+        Return:
+        None
+
+        """
+        self.ptrx().setDiffusionLeapThreshold(leap_thresh)
+
+    def getDiffusionMaxDtSkips(self):
+        """
+        Get the maximum number of dt skips if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            getDiffusionMaxDtSkips()
+
+        Arguments:
+        None
+
+        Return:
+        int
+
+        """
+        return self.ptrx().getDiffusionMaxDtSkips()
+
+    def setDiffusionMaxDtSkips(self, int skips):
+        """
+        Set the maximum number of dt skips if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            setDiffusionMaxDtSkips(skips)
+
+        Arguments:
+        int skips
+
+        Return:
+        None
+
+        """
+        self.ptrx().setDiffusionMaxDtSkips(skips)
+
+    def getDiffusionMinDtFactor(self):
+        """
+        Get the factor for computing the minimum diffusion dt if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            getDiffusionMinDtFactor()
+
+        Arguments:
+        None
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getDiffusionMinDtFactor()
+
+    def setDiffusionMinDtFactor(self, float factor):
+        """
+        Set the factor for computing the minimum diffusion dt if the simulation is using the TAU_LEAPING_DT diffusion method
+
+        Syntax::
+
+            setDiffusionMinDtFactor(factor)
+
+        Arguments:
+        float factor
+
+        Return:
+        None
+
+        """
+        self.ptrx().setDiffusionMinDtFactor(factor)
+
+    def getReactionSSAThreshold(self):
+        """
+        Get the minimum leap size for using R-leaping if the simulation is using the RLEAPING reaction operator
+
+        Syntax::
+
+            getReactionSSAThreshold()
+
+        Arguments:
+        None
+
+        Return:
+        int
+
+        """
+        return self.ptrx().getReactionSSAThreshold()
+
+    def setReactionSSAThreshold(self, int thresh):
+        """
+        Set the minimum leap size for using R-leaping if the simulation is using the RLEAPING reaction operator
+
+        Syntax::
+
+            setReactionSSAThreshold(thresh)
+
+        Arguments:
+        int thresh
+
+        Return:
+        None
+
+        """
+        self.ptrx().setReactionSSAThreshold(thresh)
+
+    def getReactionSSASteps(self):
+        """
+        Get the number of standard SSA steps to run in a row when the reaction leaps are below threshold, only available if using the RLEAPING reaction operator.
+
+        Syntax::
+
+            getReactionSSASteps()
+
+        Arguments:
+        None
+
+        Return:
+        int
+
+        """
+        return self.ptrx().getReactionSSASteps()
+
+    def setReactionSSASteps(self, int steps):
+        """
+        Set the number of standard SSA steps to run in a row when the reaction leaps are below threshold, only available if using the RLEAPING reaction operator.
+
+        Syntax::
+
+            setReactionSSASteps(steps)
+
+        Arguments:
+        int steps
+
+        Return:
+        None
+
+        """
+        self.ptrx().setReactionSSASteps(steps)
+
+    def getReactionLComputePeriod(self):
+        """
+        Get the period at which L is computed, only available if using the RLEAPING reaction operator.
+
+        Syntax::
+
+            getReactionLComputePeriod()
+
+        Arguments:
+        None
+
+        Return:
+        int
+
+        """
+        return self.ptrx().getReactionLComputePeriod()
+
+    def setReactionLComputePeriod(self, int period):
+        """
+        Set the period at which L is computed, only available if using the RLEAPING reaction operator.
+
+        Syntax::
+
+            setReactionLComputePeriod(period)
+
+        Arguments:
+        int period
+
+        Return:
+        None
+
+        """
+        self.ptrx().setReactionLComputePeriod(period)
+
+    def getReactionTolerance(self):
+        """
+        Get the reaction tolerance if the simulation is using the RLEAPING reaction operator
+
+        Syntax::
+
+            getReactionTolerance()
+
+        Arguments:
+        None
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getReactionTolerance()
+
+    def setReactionTolerance(self, double tol):
+        """
+        Set the reaction tolerance if the simulation is using the RLEAPING reaction operator
+
+        Syntax::
+
+            setReactionTolerance(tol)
+
+        Arguments:
+        float tol
+
+        Return:
+        None
+
+        """
+        self.ptrx().setReactionTolerance(tol)
+
+    def getReactionTheta(self):
+        """
+        Get the theta parameter if the simulation is using the RLEAPING reaction operator
+
+        Syntax::
+
+            getReactionTheta()
+
+        Arguments:
+        None
+
+        Return:
+        float
+
+        """
+        return self.ptrx().getReactionTheta()
+
+    def setReactionTheta(self, double theta):
+        """
+        Set the theta parameter if the simulation is using the RLEAPING reaction operator
+
+        Syntax::
+
+            setReactionTheta(theta)
+
+        Arguments:
+        float theta
+
+        Return:
+        None
+
+        """
+        self.ptrx().setReactionTheta(theta)
+
     if USE_PETSC:
 
         def setEfieldDT(self, double efdt):
@@ -2894,24 +4467,6 @@ cdef class _py_DistTetOpSplitP(_py__base):
 
             """
             self.ptrx().setPetscOptions(to_std_string(options))
-
-        def setMembIClamp(self, str memb, float current):
-            """
-            Set a current clamp on a membrane
-
-            Syntax::
-
-                setMembIClamp(memb, current)
-
-            Arguments:
-            str memb
-            float current
-
-            Return:
-            None
-
-            """
-            self.ptrx().setMembIClamp(to_std_string(memb), current)
 
     def dumpDepGraphToFile(self, str path):
         """

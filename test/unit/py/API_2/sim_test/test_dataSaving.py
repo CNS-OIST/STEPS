@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -331,8 +331,11 @@ class ResultSelectorTests(base_model.TestModelFramework):
     def _checkFeature(self, objStr, obj, tpe, version, firstAdded, noneok=False, exceptTpe=NotImplementedError):
         if version >= firstAdded:
             values = eval(objStr)
-            self.assertGreater(len(values), 0)
-            self.assertTrue(all(isinstance(v, tpe) or (v is None and noneok) for v in values))
+            if hasattr(values, '__iter__'):
+                self.assertGreater(len(values), 0)
+                self.assertTrue(all(isinstance(v, tpe) or (v is None and noneok) for v in values))
+            else:
+                self.assertTrue(isinstance(values, tpe))
         else:
             with self.assertRaises(exceptTpe):
                 eval(objStr)
@@ -357,6 +360,17 @@ class ResultSelectorTests(base_model.TestModelFramework):
         # Staticdata not implemented for SQLite db
         self._checkFeature("obj.staticData.keys()", group, str, version if fmt == 'h5' else (0, 0, 0), (5,0,0),
                            exceptTpe=(NotImplementedError, steps.saving.UnavailableDataError))
+        # Accessing a result selector by description is not implemented for SQLite db
+        # Descriptions were added in 5.0.1 so even though the loading from description was only
+        # added in 5.1.0, we can still test it with older files
+        descr = ('comp1.S1.Count, comp1.S2.Count, patch.ExS1S2.Count, comp1.CC.sus2.Count, '
+                 '(SUM(LIST(comp1, comp2).LIST(S1, S2).Count) / SUM(patch.ExS1S2.Count, patch.Ex.Count))')
+        self._checkFeature(
+            f"obj.results['{descr}']",
+            group, steps.saving._ReadOnlyResultSelector,
+            version if fmt == 'h5' else (0, 0, 0), (5,0,1),
+            exceptTpe=(NotImplementedError, TypeError)
+        )
 
         rs, *_ = group.results
         self._testLoadingResultSelector(rs, fmt, version)
@@ -429,11 +443,14 @@ class SimDataSaving(base_model.TestModelFramework):
         super().tearDown()
         for path in self.createdFiles:
             if os.path.isfile(path):
-                os.remove(path)
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
         for path in self.createdDirectories:
             # Delete directories, starting with the most nested
             if os.path.isdir(path):
-                shutil.rmtree(path)
+                shutil.rmtree(path, ignore_errors=True)
 
     def _get_API2_Sim(self, nmdl, ngeom):
         nrng = RNG('mt19937', 512, self.seed)
@@ -1010,6 +1027,11 @@ class SimDataSaving(base_model.TestModelFramework):
         self.assertEqual(list(saver12.metaData['test']), [1, 2, 3, 4, 5, 6])
         self.assertEqual(list(saver12.metaData['test2']), [None, None, None, None, 7, 8])
 
+        # Mixed type metadata
+        saver3 = rs.LIST('comp2', 'comp1').LIST('S1', 'S2').Count
+        saver3.metaData['test'] = [1, 2, 'str1', 'str2']
+        self.assertEqual(list(saver3.metaData['test']), [1, 2, 'str1', 'str2'])
+
         # Automatic metadata
         self.assertEqual(list(saver1.metaData['loc_type']), [Compartment._locStr] * 4)
         self.assertEqual(list(saver1.metaData['loc_id']), ['comp1', 'comp1', 'comp2', 'comp2'])
@@ -1252,13 +1274,13 @@ class SimDataSaving(base_model.TestModelFramework):
         nInner = functools.reduce(operator.mul, map(len, innerParams.values()), 1)
 
         dirPath = ''
-        if MPI._shouldWrite:
+        if MPI.rank == 0:
             dirPath = tempfile.mkdtemp(prefix=f'{self.__class__.__name__}testHDF5MultiReader')
             self.createdDirectories.add(dirPath)
         if MPI._usingMPI and MPI.nhosts > 1:
             import mpi4py.MPI
             dirPath = mpi4py.MPI.COMM_WORLD.bcast(dirPath, root=0)
-        if MPI._shouldWrite:
+        if MPI.rank == 0:
             emptyDir = tempfile.mkdtemp(prefix='empty', dir=dirPath)
 
         rs = ResultSelector(self.newSim)
@@ -1543,10 +1565,38 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         saver1 = rs.TETS().LIST(S1, S2).Count
         saver2 = rs.TETS().S1.Count + rs.TETS().S2.Count
         saver3 = rs.SUM(rs.TETS().S1.Count) << rs.SUM(2 * rs.TETS().S2.Count)
+        saver4 = rs.TETS().S1.Count << rs.TETS().S2.Count
 
-        self.newSim.toSave(saver1, saver2, saver3, dt=self.deltaT)
+        n = len(self.newSim.geom.tets)
+        # Check user-defined labels
+        labels1 = [f"{i // 2}.S{i % 2 + 1}" for i in range(2 * n)]
+        labels2 = [f"{i}.Stot" for i in range(n)]
+        labels3 = ['sum S1', 'sum S2']
+        labels4 = [f"{i % n}.S{i // n + 1}" for i in range(2 * n)]
+        saver1.labels = labels1
+        saver2.labels = labels2
+        saver3.labels = labels3
+        saver4.labels = labels4
 
-        vals1 = list(range(len(self.newSim.geom.tets)))
+        # Check user-defined metadata
+        metavals1 = [2 * i for i in range(2 * n)]
+        metavals2 = [5 + i for i in range(n)]
+        metavals3 = ['value1', 'value2']
+        metavals4 = [7 * i for i in range(2 * n)]
+        saver1.metaData['custom'] = metavals1
+        saver2.metaData['mycustom'] = metavals2
+        saver3.metaData['cstm'] = metavals3
+        saver4.metaData['custom'] = metavals4
+
+        # Check user-defined descriptions
+        saver1.description = 'saver1descr'
+        saver2.description = 'saver2descr'
+        saver3.description = 'saver3descr'
+        saver4.description = 'saver4descr'
+
+        self.newSim.toSave(saver1, saver2, saver3, saver4, dt=self.deltaT)
+
+        vals1 = list(range(n))
         vals2 = list(reversed(vals1))
         with XDMFHandler(dbPath) as dbh:
             self.newSim.toDB(dbh, dbUID, val1=1, val2=2)
@@ -1564,11 +1614,30 @@ class TetSimDataSaving(base_model.TetTestModelFramework, SimDataSaving):
         # Load data
         if MPI._shouldWrite:
             with XDMFHandler(dbPath) as dbh:
-                saver1, saver2, saver3 = dbh.get().results
+                saver1, saver2, saver3, saver4 = dbh.get().results
                 self.assertEqual(list(saver1.data[0,0,0::2]), vals1)
                 self.assertEqual(list(saver1.data[0,0,1::2]), vals2)
                 self.assertEqual(list(saver2.data[0,0,:]), list(np.array(vals1) + np.array(vals2)))
                 self.assertEqual(list(saver3.data[0,0,:]), [sum(vals1), 2 * sum(vals2)])
+                self.assertEqual(list(saver4.data[0,0,:]), vals1 + vals2)
+
+                self.assertEqual(saver1.labels, labels1)
+                self.assertEqual(saver2.labels, labels2)
+                self.assertEqual(saver3.labels, labels3)
+                self.assertEqual(saver4.labels, labels4)
+
+                self.assertEqual(saver1.metaData['custom'], metavals1)
+                self.assertEqual(saver2.metaData['mycustom'], metavals2)
+                self.assertEqual(saver3.metaData['cstm'], metavals3)
+                self.assertEqual(saver4.metaData['custom'], metavals4)
+
+                self.assertEqual(saver1.description, 'saver1descr')
+                self.assertEqual(saver2.description, 'saver2descr')
+                self.assertEqual(saver3.description, 'saver3descr')
+                self.assertEqual(saver4.description, 'saver4descr')
+
+                with self.assertRaises(KeyError):
+                    saver1.metaData['mycustom']
 
         if self.useDist:
             # Need an MPI barrier to prevent early removal of files

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,8 +33,10 @@
 #include "mpi/tetvesicle/comp_vesraft.hpp"
 #include "mpi/tetvesicle/linkspec.hpp"
 #include "mpi/tetvesicle/tetvesicle_vesraft.hpp"
+#include "solver/fwd.hpp"
 #include "solver/vesicledef.hpp"
 #include "util/checkpointing.hpp"
+#include "util/error.hpp"
 
 namespace steps::mpi::tetvesicle {
 
@@ -42,22 +44,40 @@ Vesicle::Vesicle(solver::Vesicledef* vesdef,
                  CompVesRaft* comp,
                  const math::position_abs& pos,
                  solver::vesicle_individual_id unique_index,
-                 const std::map<tetrahedron_global_id, double>& overlap)
+                 const std::map<tetrahedron_global_id, double>& overlap,
+                 const double diam,
+                 const double dcst)
     : pDef(vesdef)
     , pComp_central(comp)
     , pIndex(unique_index)
+    , pPos(pos)
+    , pDiam(diam)
+    , pDcst(dcst)
     , pImmobility(0)
     , pPath_curr_pos(pPathPositions.begin())
-    , pPath_next_pos_end(pPathPositions.begin())
-    , pOnPath(false) {
+    , pPath_next_pos_end(pPathPositions.begin()) {
     AssertLog(pDef != nullptr);
     AssertLog(comp != nullptr);
 
-    pComp_central->solverVesRaft()->recordVesicle_(pIndex, this);
+    const auto solver = pComp_central->solverVesRaft();
+    solver->recordVesicle_(pIndex, this);
 
     pPos = pos;
+    updatePathBindingRates();
 
     setOverlap(overlap);
+
+    for (auto vsd_idx: solver::vessdiff_local_id::range(def()->countVesSurfDiffs())) {
+        const auto& vsddef = def()->vessurfdiffdef(vsd_idx);
+        _recalcQtable_spec(vsddef.lig(), vsddef.dcst());
+    }
+
+    for (auto const& ls: solver->statedef().linkspecs()) {
+        double ldcst = ls->dcst();
+        if (ldcst > 0.0) {
+            _recalcQtable_linkspec(ls->gidx());
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,11 +96,15 @@ Vesicle::Vesicle(solver::Vesicledef* vesdef,
 
     util::compare(cp_file, pIndex);
     util::restore(cp_file, pPos);
+    util::restore(cp_file, pDiam);
+    util::restore(cp_file, pDcst);
     util::restore(cp_file, pCentral_tet);
     util::restore(cp_file, pTets_overlap_gidx);
     util::restore(cp_file, pTets_overlap_vec_gidx);
     util::restore(cp_file, pInnerSpecCount);
     util::restore(cp_file, pImmobility);
+    util::restore(cp_file, pPathBindingRates);
+    util::restore(cp_file, pTotalPathBindingRate);
     util::restore(cp_file, pPathPositions);
     uint path_ind;
     util::restore(cp_file, path_ind);
@@ -89,7 +113,15 @@ Vesicle::Vesicle(solver::Vesicledef* vesdef,
     pPath_next_pos_end = pPathPositions.begin() + path_ind;
     util::restore(cp_file, pTime_accum);
     util::restore(cp_file, pTime_accum_next);
-    util::restore(cp_file, pOnPath);
+    bool onPath;
+    util::restore(cp_file, onPath);
+    if (onPath) {
+        solver::path_global_id pathID;
+        util::restore(cp_file, pathID);
+        pOnPath = pComp_central->solverVesRaft()->getPath_(pathID);
+
+        util::restore(cp_file, pPath_starting_shift);
+    }
 
     std::map<solver::spec_global_id, uint> surfspecs;
     util::restore(cp_file, surfspecs);
@@ -108,6 +140,20 @@ Vesicle::Vesicle(solver::Vesicledef* vesdef,
         // Constructor does the restore
         auto ls = new LinkSpec(&lspecdef, this, cp_file);
         pLinkSpecs[ls->getUniqueID()] = ls;
+    }
+
+    std::map<solver::spec_global_id, double> qt_spec;
+    util::restore(cp_file, qt_spec);
+
+    for (auto const& qs: qt_spec) {
+        pQtables_spec[qs.first] = solver()->getQtable_(qs.second);
+    }
+
+    std::map<solver::linkspec_global_id, double> qt_linkspec;
+    util::restore(cp_file, qt_linkspec);
+
+    for (auto const& qls: qt_linkspec) {
+        pQtables_linkspec[qls.first] = solver()->getQtable_(qls.second);
     }
 }
 
@@ -135,7 +181,7 @@ Vesicle::~Vesicle() {
     }
     pLinkSpecs.clear();
 
-    comp()->solverVesRaft()->removeVesicle_(getUniqueIndex(), this);
+    solver()->removeVesicle_(getUniqueIndex(), this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -143,17 +189,25 @@ Vesicle::~Vesicle() {
 void Vesicle::checkpoint(std::fstream& cp_file) {
     util::checkpoint(cp_file, pIndex);
     util::checkpoint(cp_file, pPos);  // pPos will not be available at time of restore
+    util::checkpoint(cp_file, pDiam);
+    util::checkpoint(cp_file, pDcst);
     util::checkpoint(cp_file, pCentral_tet);
     util::checkpoint(cp_file, pTets_overlap_gidx);
     util::checkpoint(cp_file, pTets_overlap_vec_gidx);
     util::checkpoint(cp_file, pInnerSpecCount);
     util::checkpoint(cp_file, pImmobility);
+    util::checkpoint(cp_file, pPathBindingRates);
+    util::checkpoint(cp_file, pTotalPathBindingRate);
     util::checkpoint(cp_file, pPathPositions);
     util::checkpoint(cp_file, static_cast<uint>(pPath_curr_pos - pPathPositions.begin()));
     util::checkpoint(cp_file, static_cast<uint>(pPath_next_pos_end - pPathPositions.begin()));
     util::checkpoint(cp_file, pTime_accum);
     util::checkpoint(cp_file, pTime_accum_next);
-    util::checkpoint(cp_file, pOnPath);
+    util::checkpoint(cp_file, pOnPath != nullptr);
+    if (pOnPath != nullptr) {
+        util::checkpoint(cp_file, pOnPath->getID());
+        util::checkpoint(cp_file, pPath_starting_shift);
+    }
     // pAppliedExocytosis should be empty at point of checkpointing (cleared by clearExocytosis())
     AssertLog(pAppliedExocytosis.empty());
 
@@ -176,6 +230,18 @@ void Vesicle::checkpoint(std::fstream& cp_file) {
     for (auto const& ls: pLinkSpecs) {
         ls.second->checkpoint(cp_file);
     }
+
+    std::map<solver::spec_global_id, double> qt_spec;
+    for (auto const& qs: pQtables_spec) {
+        qt_spec[qs.first] = qs.second->getTau();
+    }
+    util::checkpoint(cp_file, qt_spec);
+
+    std::map<solver::linkspec_global_id, double> qt_linkspec;
+    for (auto const& qls: pQtables_linkspec) {
+        qt_linkspec[qls.first] = qls.second->getTau();
+    }
+    util::checkpoint(cp_file, qt_linkspec);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -270,19 +336,37 @@ bool Vesicle::setPosition(const overlap::Vector& new_pos,
         }
     }
 
+    // Update path binding rates
+    if (not onPath()) {
+        updatePathBindingRates();
+    }
+
     return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Vesicle::updImmobility(int mob_upd) {
-    if (pImmobility == 0 and mob_upd < 0) {
-        std::ostringstream os;
-        os << "Negative immobility is not possible for vesicle. Model error. ";
-        ProgErrLog(os.str());
+void Vesicle::updatePathBindingRates() {
+    pTotalPathBindingRate = 0;
+    const auto& allPaths = solver()->paths();
+    if (allPaths.size() > pPathBindingRates.size()) {
+        pPathBindingRates.container().resize(allPaths.size(), 0.0);
     }
+    for (const auto pid: allPaths.range()) {
+        double rate = allPaths[pid]->getBindingRate(*this);
+        pPathBindingRates[pid] = rate;
+        pTotalPathBindingRate += rate;
+    }
+}
 
-    pImmobility += mob_upd;
+////////////////////////////////////////////////////////////////////////////////
+
+void Vesicle::updImmobility(int mob_upd) {
+    if (mob_upd < 0 and static_cast<int>(pImmobility) < -mob_upd) {
+        pImmobility = 0;
+    } else {
+        pImmobility += mob_upd;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -313,11 +397,9 @@ tetrahedron_global_id Vesicle::getTetSpecOverlap(
 ////////////////////////////////////////////////////////////////////////////////
 
 void Vesicle::doSurfaceDiffusion() {
-    solver::vesicle_global_id ves_gidx = pDef->gidx();
-
     for (auto const& sit: pSurfSpecs) {
         for (auto const& psit: sit.second) {
-            double phi = solver()->getQPhiSpec_(ves_gidx, sit.first);
+            double phi = getQPhiSpec_(sit.first);
 
             // phi may be zero if species not defined to have surface diffusion rate
             if (phi != 0.0) {
@@ -370,12 +452,11 @@ void Vesicle::doSurfaceDiffusion() {
         }
     }
 
-
     for (auto const& link_spec: pLinkSpecs) {
         auto ls = link_spec.second;
         // Here need to do above but check if length is still within bounds first,
         // if not reject
-        double phi = solver()->getQPhiLinkspec_(ves_gidx, ls->getGidx());
+        double phi = getQPhiLinkspec_(ls->getGidx());
 
 
         // phi may be zero if species not defined to have surface diffusion rate
@@ -388,7 +469,8 @@ void Vesicle::doSurfaceDiffusion() {
 
             ls->updatePos(theta, phi);
 
-            if (not ls->withinBounds()) {
+            // Checking with default 0, 0, 0 vector checks current position
+            if (not ls->movePosAllowed()) {
                 ls->setPosCartesian_rel(pos_rel_orig);
                 continue;
             }
@@ -970,18 +1052,50 @@ bool Vesicle::linkSpecMoveAllowed(const math::point3d& move_vector) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Vesicle::setPathPositions(
-    const std::vector<std::pair<double, math::position_abs>>& path_positions) {
-    AssertLog(pPathPositions.empty());
-    AssertLog(!path_positions.empty());
-    AssertLog(!pOnPath);
+void Vesicle::checkPathBinding(double dt) {
+    // Check whether the vesicle bound to a path during dt
+    AssertLog(not onPath());
 
-    pPathPositions = path_positions;
-    pPath_curr_pos = pPathPositions.begin();
-    pPath_next_pos_end = pPathPositions.begin();
-    pTime_accum = 0.0;
-    pTime_accum_next = 0.0;
-    pOnPath = true;
+    if (pTotalPathBindingRate > 0) {
+        auto& rng = solver()->rng();
+        double event = rng->getExp(pTotalPathBindingRate);
+        if (event <= dt) {
+            double accum = 0.0;
+            double selector = rng->getUnfIE() * pTotalPathBindingRate;
+            for (const auto pid: pPathBindingRates.range()) {
+                accum += pPathBindingRates[pid];
+                if (accum > selector) {
+                    // Bind to path
+                    auto& path = solver()->paths()[pid];
+                    auto [route, starting_shift] = path->calculateRoute(*this, rng);
+                    AssertLog(not route.empty());
+
+                    pPathPositions = route;
+                    pPath_curr_pos = pPathPositions.begin();
+                    pPath_next_pos_end = pPathPositions.begin();
+                    pTime_accum = dt - event;  // Vesicle can start moving immediately after binding
+                    pTime_accum_next = 0.0;
+                    pOnPath = path;
+                    pPath_starting_shift = starting_shift;
+
+                    break;
+                }
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Vesicle::checkPathUnbinding(double dt) {
+    AssertLog(onPath());
+    double rate = pOnPath->getUnBindingRate(*this);
+    if (rate > 0) {
+        auto& rng = solver()->rng();
+        if (rng->getExp(rate) <= dt) {
+            removeFromPath();
+        }
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1026,6 +1140,16 @@ void Vesicle::updatePositionOnPath(
 
 ////////////////////////////////////////////////////////////////////////////////
 
+std::pair<std::shared_ptr<Path>, math::position_abs> Vesicle::getCurrentPathPosition() const {
+    if (pOnPath != nullptr) {
+        return {pOnPath, pPath_curr_pos->second + pPath_starting_shift};
+    } else {
+        return {nullptr, {}};
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void Vesicle::removeFromPath() {
     pPathPositions.clear();
     pPath_curr_pos = pPathPositions.begin();
@@ -1033,7 +1157,11 @@ void Vesicle::removeFromPath() {
 
     pTime_accum = 0.0;
     pTime_accum_next = 0.0;
-    pOnPath = false;
+    pOnPath = nullptr;
+
+    // Since binding rates are not updated while the vesicle is on path, update them when it
+    // gets removed from the path.
+    updatePathBindingRates();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1046,5 +1174,71 @@ solver::exocytosis_global_id Vesicle::appliedExocytosis() {
         return *pAppliedExocytosis.begin();
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Vesicle::getQPhiSpec_(solver::spec_global_id spec_gidx) const noexcept {
+    auto Qit = pQtables_spec.find(spec_gidx);
+    if (Qit == pQtables_spec.end()) {
+        return 0.0;
+    } else {
+        return Qit->second->getPhi();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Vesicle::getQPhiLinkspec_(solver::linkspec_global_id linkspec_gidx) const noexcept {
+    auto Qit = pQtables_linkspec.find(linkspec_gidx);
+    if (Qit == pQtables_linkspec.end()) {
+        return 0.0;
+    } else {
+        return Qit->second->getPhi();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Vesicle::_recalcQtable_spec(solver::spec_global_id spec_gidx, double d) {
+    if (d <= 0.0) {
+        pQtables_spec.erase(spec_gidx);
+        return;
+    }
+
+    double radius = getDiam() / 2.0;
+    double tau = (2.0 * d * solver()->getVesicleDT_()) / (radius * radius);
+
+    pQtables_spec[spec_gidx] = solver()->getQtable_(tau);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Vesicle::_recalcQtable_linkspec(solver::linkspec_global_id linkspec_gidx) {
+    double d = solver()->getVesicleSurfaceLinkSpecSDiffD_(idx(), linkspec_gidx);
+    if (d <= 0.0) {
+        pQtables_linkspec.erase(linkspec_gidx);
+        return;
+    }
+
+    double radius = getDiam() / 2.0;
+    double tau = (2.0 * d * solver()->getVesicleDT_()) / (radius * radius);
+
+    pQtables_linkspec[linkspec_gidx] = solver()->getQtable_(tau);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Vesicle::recalcQtables_() {
+    for (auto vsd_idx: solver::vessdiff_local_id::range(def()->countVesSurfDiffs())) {
+        const auto& vsddef = def()->vessurfdiffdef(vsd_idx);
+        _recalcQtable_spec(vsddef.lig(), vsddef.dcst());
+    }
+
+    for (auto const& ls: solver()->statedef().linkspecs()) {
+        _recalcQtable_linkspec(ls->gidx());
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 }  // namespace steps::mpi::tetvesicle

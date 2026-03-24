@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -35,23 +35,32 @@ class StateDependentVesicles(objects.BlenderVesicles, state.StateDependentSepara
     functions.
 
     The `state` parameter given to both functions is a dictionary that contains the following values: 
+
     +-----------------+---------------------------------+-----------------------------------------+
     | Name            | Example                         | Description                             |
     +=================+=================================+=========================================+
     | idx             | 45                              | Index of the specific vesicle           |
+    +-----------------+---------------------------------+-----------------------------------------+
     | position        | [x, y, z]                       | 3D position of the vesicle in cartesian |
     |                 |                                 | coordinates                             |
+    +-----------------+---------------------------------+-----------------------------------------+
     | name            | 'Ves1'                          | Name of the vesicle type in STEPS       |
+    +-----------------+---------------------------------+-----------------------------------------+
     | surface_species | {'S1':[                         | Dictionary of species name to list      |
     |                 |   (r1, theta1, phi1),           | of spherical coordinate positions       |
     |                 |   (r2, theta2, phi2),           | relative to the vesicle                 |
     |                 | ...], ...}                      |                                         |
+    +-----------------+---------------------------------+-----------------------------------------+
     | inside_species  | {'S1': 10, ...}                 | Dictionary of species name to count     |
+    +-----------------+---------------------------------+-----------------------------------------+
     | link_species    | {'L1':                          | Dictionary of link species name to      |
     |                 |   {123: {                       | dictionary of specific link species     |
     |                 |     'position': [r, theta, phi] | to 3D position in relative spherical    |
     |                 |     'link': 456},               | coordinates and corresponding link      |
     |                 |   ...}, ...}                    | species                                 |
+    +-----------------+---------------------------------+-----------------------------------------+
+    | on_path         | [x, y, z]                       | 3D position of the path point to which  |
+    |                 |                                 | the vesicle is bound. None if not bound |
     +-----------------+---------------------------------+-----------------------------------------+
 
     Example::
@@ -74,13 +83,14 @@ class StateDependentVesicles(objects.BlenderVesicles, state.StateDependentSepara
 
     def _signalUpdatedState(self, caller, scene, depg):
         if isinstance(caller, groups.VesicleGroup):
-            for idx, pos, specIn, specSurf in caller.getVesStateInfo(self._name):
+            for idx, pos, specIn, specSurf, pathPos in caller.getVesStateInfo(self._name):
                 dct = self._stateDict.setdefault(idx, self._getDefaultDict())
                 dct['idx'] = idx
                 dct['position'] = pos
                 dct['name'] = self._name
                 dct['inside_species'] = specIn
                 dct['surface_species'] = specSurf
+                dct['on_path'] = pathPos
         elif isinstance(caller, groups.LinkSpeciesGroup):
             for lspecTpe, lspecDct in caller.state.items():
                 for lsIdx, ((vesTpe, vesIdx), lsPos, lsLink) in lspecDct.items():
@@ -97,7 +107,8 @@ class StateDependentVesicles(objects.BlenderVesicles, state.StateDependentSepara
             'name': None,
             'surface_species': {},
             'inside_species': {},
-            'link_species': {}
+            'link_species': {},
+            'on_path': None,
         }
 
 
@@ -108,13 +119,17 @@ class StateDependentRafts(objects.BlenderRafts, state.StateDependentSeparateObje
     functions.
 
     The `state` parameter given to both functions is a dictionary that contains the following values: 
+
     +-----------------+------------------------+--------------------------------------+
     | Name            | Example                | Description                          |
     +=================+========================+======================================+
     | idx             | 45                     | Index of the specific raft           |
+    +-----------------+------------------------+--------------------------------------+
     | position        | [x, y, z]              | 3D position of the raft in cartesian |
     |                 |                        | coordinates                          |
+    +-----------------+------------------------+--------------------------------------+
     | name            | 'Raft1'                | Name of the raft type in STEPS       |
+    +-----------------+------------------------+--------------------------------------+
     | surface_species | {'S1': 0, 'S2':5, ...} | Dictionary of species name to counts |
     +-----------------+------------------------+--------------------------------------+
 

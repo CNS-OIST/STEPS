@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -39,6 +39,7 @@ ComplexSReacdef::ComplexSReacdef(Statedef& sd, complexsreac_global_id idx, model
     , pName(sr.getID())
     , pOrder(sr.getOrder())
     , pKcst(sr.getKcst())
+    , pCharge(sr.getCharge())
     , pIlhs(sr.getILHS())
     , pOlhs(sr.getOLHS())
     , pSlhs(sr.getSLHS())
@@ -48,8 +49,8 @@ ComplexSReacdef::ComplexSReacdef(Statedef& sd, complexsreac_global_id idx, model
     , pSurface_surface(sr.getSurfSurf()) {
     if (pOrder == 0) {
         std::ostringstream os;
-        os << "\nModel contains zero-order surface reaction, which are not "
-              "permitted. ";
+        os << "\nModel contains zero-order surface reaction: '" << pName
+           << "'. Zero-order surface reactions are not permitted.";
         os << " Zero-order volume reaction may be used instead\n.";
         ArgErrLog(os.str());
     }
@@ -310,7 +311,7 @@ int ComplexSReacdef::dep_O(spec_global_id gidx) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool ComplexSReacdef::complexdep(model::ComplexLocation loc,
+bool ComplexSReacdef::complexdep(model::Location loc,
                                  complex_global_id gidx,
                                  complex_substate_id sus) const {
     AssertLog(pSetupdone);
@@ -409,7 +410,7 @@ bool ComplexSReacdef::reqspec_O(spec_global_id gidx) const {
 
 static std::map<complex_global_id, std::set<complex_substate_id>> empty_map;
 const std::map<complex_global_id, std::set<complex_substate_id>>& ComplexSReacdef::complexUPDMAP(
-    model::ComplexLocation loc) const {
+    model::Location loc) const {
     const auto it = pComplex_UPDMAP.find(loc);
     if (it != pComplex_UPDMAP.end()) {
         return it->second;
@@ -422,7 +423,7 @@ const std::map<complex_global_id, std::set<complex_substate_id>>& ComplexSReacde
 
 static std::vector<std::shared_ptr<ComplexUpdateEventdef>> empty_upd;
 const std::vector<std::shared_ptr<ComplexUpdateEventdef>>& ComplexSReacdef::updEvents(
-    model::ComplexLocation loc) const {
+    model::Location loc) const {
     const auto it = pComplexUPDEvs.find(loc);
     if (it != pComplexUPDEvs.end()) {
         return it->second;
@@ -435,7 +436,7 @@ const std::vector<std::shared_ptr<ComplexUpdateEventdef>>& ComplexSReacdef::updE
 
 static std::vector<std::shared_ptr<ComplexDeleteEventdef>> empty_del;
 const std::vector<std::shared_ptr<ComplexDeleteEventdef>>& ComplexSReacdef::delEvents(
-    model::ComplexLocation loc) const {
+    model::Location loc) const {
     const auto it = pComplexDELEvs.find(loc);
     if (it != pComplexDELEvs.end()) {
         return it->second;
@@ -448,7 +449,7 @@ const std::vector<std::shared_ptr<ComplexDeleteEventdef>>& ComplexSReacdef::delE
 
 static std::vector<std::shared_ptr<ComplexCreateEventdef>> empty_cre;
 const std::vector<std::shared_ptr<ComplexCreateEventdef>>& ComplexSReacdef::creEvents(
-    model::ComplexLocation loc) const {
+    model::Location loc) const {
     const auto it = pComplexCREEvs.find(loc);
     if (it != pComplexCREEvs.end()) {
         return it->second;

@@ -2,58 +2,15 @@
 
 #include <set>
 
-#include "compdef.hpp"
+#include "model/complexreac.hpp"
+#include "model/reac.hpp"
+#include "model/spec.hpp"
+#include "solver/fwd.hpp"
 #include "statedef.hpp"
+#include "util/vocabulary.hpp"
 
 
 namespace steps::dist {
-
-Reacdef::Reacdef(const Compdef& compdef,
-                 container::kproc_id kproc,
-                 container::reaction_id reaction,
-                 const std::vector<container::species_id>& reactants,
-                 const std::vector<container::species_id>& products,
-                 osh::Real t_kcst)
-    : pCompdef(compdef)
-    , kproc_id(kproc)
-    , reaction_id(reaction)
-    , kcst(t_kcst)
-    , order(static_cast<osh::I64>(reactants.size())) {
-    auto num_species = compdef.getNSpecs();
-
-    poolChangeLHS.assign(static_cast<size_t>(num_species), 0);
-    poolChangeRHS.assign(static_cast<size_t>(num_species), 0);
-    poolChangeUPD.assign(static_cast<size_t>(num_species), 0);
-
-    for (const auto& species: reactants) {
-        poolChangeLHS[static_cast<size_t>(species.get())] -= 1;
-        poolChangeUPD[static_cast<size_t>(species.get())] -= 1;
-    }
-    for (const auto& species: products) {
-        poolChangeRHS[static_cast<size_t>(species.get())] += 1;
-        poolChangeUPD[static_cast<size_t>(species.get())] += 1;
-    }
-
-    for (container::species_id species(0); species < num_species; species++) {
-        if (poolChangeUPD[static_cast<size_t>(species.get())] != 0) {
-            updSpecModelIdxs.push_back(compdef.getSpecModelIdx(species));
-        }
-    }
-}
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wreturn-type"
-const Reacdef::pool_change_t& Reacdef::getPoolChangeArray(PoolChangeArrayType type) const noexcept {
-    switch (type) {
-    case PoolChangeArrayType::LHS:
-        return poolChangeLHS;
-    case PoolChangeArrayType::RHS:
-        return poolChangeRHS;
-    case PoolChangeArrayType::UPD:
-        return poolChangeUPD;
-    }
-}
-#pragma GCC diagnostic pop
 
 void report_molecule(std::stringstream& s,
                      const model::species_name& name,
@@ -74,20 +31,35 @@ void report_molecule(std::stringstream& s,
     }
 }
 
-void Reacdef::report(std::ostream& ostr, const mesh::tetrahedron_id_t tet_id) const {
-    ostr << "Type: Reaction, ID: " << reaction_id << '\n';
-
-    std::stringstream o_lhs, o_rhs;
-    const auto n_local_specs = pCompdef.getNSpecs();
-    for (osh::I32 s = 0; s < n_local_specs; ++s) {
-        const auto spec_model_idx = pCompdef.getSpecModelIdx(container::species_id(s));
-        const auto name = pCompdef.statedef().getSpecID(spec_model_idx);
-        report_molecule(o_lhs, name, -poolChangeLHS[s], tet_id);
-        report_molecule(o_rhs, name, poolChangeRHS[s], tet_id);
+ComplexReacdef::ComplexReacdef(const Compdef& compdef,
+                               container::kproc_id kproc,
+                               container::complex_reaction_id reaction,
+                               const steps::model::ComplexReac& reac)
+    : ReacdefBase<steps::model::ComplexReac>::ReacdefBase(compdef, kproc, reaction, reac) {
+    // Copy complex events
+    const auto& sd = compdef.statedef();
+    for (auto* ev: reac.getUPDEvents()) {
+        pComplexUPDEvs.push_back(std::make_shared<ComplexUpdateEventdef>(*ev, sd));
+    }
+    for (auto* ev: reac.getDELEvents()) {
+        pComplexDELEvs.push_back(std::make_shared<ComplexDeleteEventdef>(*ev, sd));
+    }
+    for (auto* ev: reac.getCREEvents()) {
+        pComplexCREEvs.push_back(std::make_shared<ComplexCreateEventdef>(*ev, sd));
     }
 
-    ostr << o_lhs.str() << " -> " << o_rhs.str();
-    ostr << " (kcst: " << kcst << ")\n";
+    // set up deps for complexes
+    for (const auto& upd: pComplexUPDEvs) {
+        pComplex_DEPMAP[upd->complexIdx()].merge(upd->getDepSet());
+        pComplex_UPDMAP[upd->complexIdx()].merge(upd->getUpdSet());
+    }
+    for (const auto& del: pComplexDELEvs) {
+        pComplex_DEPMAP[del->complexIdx()].merge(del->getDepSet());
+        pComplex_UPDMAP[del->complexIdx()].merge(del->getUpdSet());
+    }
+    for (const auto& cre: pComplexCREEvs) {
+        pComplex_UPDMAP[cre->complexIdx()].merge(cre->getUpdSet());
+    }
 }
 
 }  // namespace steps::dist

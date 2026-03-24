@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -409,6 +409,45 @@ double API::getTetDiffA(tetrahedron_global_id tidx, std::string const& d) const 
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double API::getTetA(tetrahedron_global_id tidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                    "Tetrahedron index out of range.");
+
+        return _getTetA(tidx);
+    } else {
+        NotImplErrLog("Method not available for this solver.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint API::getTetExtent(tetrahedron_global_id tidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                    "Tetrahedron index out of range.");
+
+        return _getTetExtent(tidx);
+    } else {
+        NotImplErrLog("Method not available for this solver.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint API::getTetWeightedExtent(tetrahedron_global_id tidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
+                    "Tetrahedron index out of range.");
+
+        return _getTetWeightedExtent(tidx);
+    } else {
+        NotImplErrLog("Method not available for this solver.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double API::getTetV(tetrahedron_global_id tidx) const {
     if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
         ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTets()),
@@ -601,6 +640,24 @@ double API::_getTetReacA(tetrahedron_global_id /*tidx*/, reac_global_id /*ridx*/
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::_getTetDiffA(tetrahedron_global_id /*tidx*/, diff_global_id /*didx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTetA(tetrahedron_global_id /*tidx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint API::_getTetExtent(tetrahedron_global_id /*tidx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint API::_getTetWeightedExtent(tetrahedron_global_id /*tidx*/) const {
     NotImplErrLog("");
 }
 

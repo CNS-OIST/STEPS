@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -91,12 +91,12 @@ class DistTetopsplitGHK(unittest.TestCase):
             comp_i = Compartment.Create(conductivity=1.0)
             comp_o = Compartment.Create(conductivity=1.0)
             patch = Patch.Create(comp_i, comp_o, self.ssys)
-            memb = Membrane.Create([patch], capacitance=0.0)
+            memb = Membrane.Create([patch], capacitance=0.5e-2)
 
     def setUpSimulation(self):
         """Instantiate main simulator object"""
         rng = RNG('mt19937', 512, 7233)
-        self.sim = Simulation('DistTetOpSplit', self.model, self.mesh, rng, isEfield=False)
+        self.sim = Simulation('DistTetOpSplit', self.model, self.mesh, rng, isEfield=True)
 
     def setUpInitialConditions(self):
         """Set initial conditions"""
@@ -111,7 +111,6 @@ class DistTetopsplitGHK(unittest.TestCase):
         self.sim.Temp = 273 + 30.0
 
     def test_tetopsplit_GHK_init_n1(self):
-
         """Test after ENDTIME that the counts match with the results of a previous run taken as reference"""
 
         NTESTS = 1000
@@ -123,6 +122,7 @@ class DistTetopsplitGHK(unittest.TestCase):
             print(f"test n: {i}/{NTESTS}")
             self.sim.newRun()
             self.sim.ALL(Membrane).Potential = self.eqV
+            self.sim.TRIS(self.mesh.patch.tris).VClamped = True
             self.setUpInitialConditions()
             self.sim.run(self.DT)
             res[i] = self.sim.TRIS(self.mesh.patch.tris).NaCurr.I
@@ -137,6 +137,7 @@ class DistTetopsplitGHK(unittest.TestCase):
             / (1.0 - acr)
         )
 
+        print(expected_init_current, res.mean())
         self.assertTrue(np.isclose(expected_init_current, res.mean(), rtol=0.01, atol=0))
 
     def test_tetopsplit_GHK_asymptotic_n1(self):
@@ -145,6 +146,7 @@ class DistTetopsplitGHK(unittest.TestCase):
         self.setUpInitialConditions()
         self.sim.newRun()
         self.sim.ALL(Membrane).Potential = self.eqV
+        self.sim.TRIS(self.mesh.patch.tris).VClamped = True
         self.setUpInitialConditions()
         self.sim.run(END_TIME)
 
@@ -152,7 +154,28 @@ class DistTetopsplitGHK(unittest.TestCase):
         conc_o_asym = self.sim.comp_o.SNa.Conc * 1e3
         acr = self.acr()
 
+        print(conc_i_asym, conc_o_asym * acr)
         self.assertTrue(np.isclose(conc_i_asym, conc_o_asym * acr, rtol=0.01, atol=0))
+
+
+class DistTetopsplitComplexGHK(DistTetopsplitGHK):
+
+    def setUpModel(self):
+        """Set up model with reactions and diffusions"""
+        self.model = Model()
+        r = ReactionManager()
+        with self.model:
+            SNa = Species.Create(valence=2)
+
+            state_0 = SubUnitState.Create()
+            NaChan = Channel.Create([state_0], statesAsSpecies=False)
+
+            ssys = SurfaceSystem.Create()
+
+            with ssys:
+                NaCurr = GHKCurr.Create(NaChan[state_0], SNa, 1.0e-14, computeflux=True)
+
+            self.ssys, self.NaCurr, self.SNa = ssys, NaCurr, SNa
 
 
 def suite():

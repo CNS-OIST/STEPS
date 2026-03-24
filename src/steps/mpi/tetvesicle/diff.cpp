@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -360,9 +360,6 @@ void Diff::setDcst(double dcst) {
         }
     }
 
-    // pConnectedTets.resize(1+pNdirections);
-    // pConnectedTets[0] = pTet;
-
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
@@ -427,9 +424,6 @@ void Diff::recalcDcst() {
         }
     }
 
-    // pConnectedTets.resize(1+pNdirections);
-    // pConnectedTets[0] = pTet;
-
     // Should not be negative!
     AssertLog(pScaledDcst >= 0);
 
@@ -475,20 +469,12 @@ int Diff::apply(const rng::RNGptr& rng) {
     // Apply local change.
     bool clamped = pTet->clamped(lidxTet);
 
-    // Remember pConnectedTets[0] = pTet, rest reset to nullptr
-    // std::fill (pConnectedTets.begin()+1, pConnectedTets.end(), nullptr);
-
     if (clamped == false) {
         auto local = pTet->pools()[lidxTet];
         if (local == 0) {
             return -2;
         }  // no molecule left, no diffusion
     }
-
-    // We should have a direction ergo pConnected tets size
-    // should be bigger than just 1, the source tet. Use
-    // pConnectedTets[1] below so do this assert here
-    // AssertLog(pConnectedTets.size() > 1);
 
     // Apply change in next voxel: select a direction.
     double sel = rng->getUnfEE();
@@ -508,14 +494,15 @@ int Diff::apply(const rng::RNGptr& rng) {
     AssertLog(nexttet != nullptr);
     AssertLog(pNeighbCompLidx[iSel].valid());
 
-    if (nexttet->clamped(pNeighbCompLidx[iSel]) == false) {
-        // For the vesicle kprocs, useful to know which tets were affected
-        // pConnectedTets[1] = nexttet; // TODO check set this only if moved
+    // Need to check comp clamp if to a different compartment (for both compartments)
+    if (!(nexttet->clamped(pNeighbCompLidx[iSel]) ||
+          (pDiffBndDirection[iSel] && nexttet->compdef()->clamped(pNeighbCompLidx[iSel])))) {
         nexttet->incCount(pNeighbCompLidx[iSel], 1);
     }
-    // else { pConnectedTets[1] = nullptr; }
 
-    if (clamped == false) {
+    // Don't lose the molecule from this tet if it's clamped in this compartment and another tet in
+    // this compartment didn't gain one
+    if (!(clamped || (pDiffBndDirection[iSel] && pTet->compdef()->clamped(lidxTet)))) {
         pTet->incCount(lidxTet, -1);
     }
 
@@ -538,11 +525,6 @@ int Diff::apply(const rng::RNGptr& rng, uint nmolcs) {
     }
 
     AssertLog(pNdirections >= 1);
-    // AssertLog(pConnectedTets.size() == pNdirections+1);
-
-    // Start with nullptr because previous data may be held and we may
-    // may not visit every direction. Remember pConnectedTets[0] = pTet
-    // std::fill (pConnectedTets.begin()+1, pConnectedTets.end(), nullptr);
 
     // Multinomial by stl
     uint molcs_moved = 0;
@@ -571,10 +553,14 @@ int Diff::apply(const rng::RNGptr& rng, uint nmolcs) {
             AssertLog(nexttet != nullptr);
             AssertLog(pNeighbCompLidx[direction].valid());
 
-            if (nexttet->clamped(pNeighbCompLidx[direction]) == false) {
-                // 0 index is the source tet, hence the i+1
-                // pConnectedTets[i+1] = nexttet;
+            if (!(nexttet->clamped(pNeighbCompLidx[direction]) ||
+                  (pDiffBndDirection[direction] &&
+                   nexttet->compdef()->clamped(pNeighbCompLidx[direction])))) {
                 nexttet->incCount(pNeighbCompLidx[direction], molcsthisdir);
+            }
+
+            if (!(clamped || (pDiffBndDirection[direction] && pTet->compdef()->clamped(lidxTet)))) {
+                pTet->incCount(lidxTet, -molcsthisdir);
             }
 
             molcs_moved += molcsthisdir;
@@ -592,19 +578,20 @@ int Diff::apply(const rng::RNGptr& rng, uint nmolcs) {
         AssertLog(nexttet != nullptr);
         AssertLog(pNeighbCompLidx[direction].valid());
 
-        if (nexttet->clamped(pNeighbCompLidx[direction]) == false) {
-            // pConnectedTets[pNdirections] = nexttet;
+        if (!(nexttet->clamped(pNeighbCompLidx[direction]) ||
+              (pDiffBndDirection[direction] &&
+               nexttet->compdef()->clamped(pNeighbCompLidx[direction])))) {
             nexttet->incCount(pNeighbCompLidx[direction], molcsthisdir);
+        }
+
+        if (!(clamped || (pDiffBndDirection[direction] && pTet->compdef()->clamped(lidxTet)))) {
+            pTet->incCount(lidxTet, -molcsthisdir);
         }
 
         molcs_moved += molcsthisdir;
     }
 
     AssertLog(molcs_moved == nmolcs);
-
-    if (clamped == false) {
-        pTet->incCount(lidxTet, -nmolcs);
-    }
 
     rExtent += nmolcs;
 

@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -47,9 +47,6 @@ class ChannelCurrentDeclarations(unittest.TestCase):
             sus1, sus2, sus3, sus4 = SubUnitState.Create()
             suA, suB = SubUnit.Create([sus1, sus2], [sus3, sus4])
 
-            with self.assertRaises(NotImplementedError):
-                CC = Channel.Create([suA, suB], statesAsSpecies=False)
-
             Chan = Channel.Create([suA, suB])
 
             # Load from STEPS object
@@ -64,6 +61,10 @@ class ChannelCurrentDeclarations(unittest.TestCase):
             states = [state._getStepsObjects()[0] for state in chan2b[...]]
             stepsStates = [chanstate1, chanstate2, chanstate3]
             self.assertCountEqual(states, stepsStates)
+
+            csus1, csus2, csus3, csus4 = SubUnitState.Create()
+            csuA, csuB = SubUnit.Create([csus1, csus2], [csus3, csus4])
+            complex_chan = Channel.Create([csuA, csuB], statesAsSpecies=False)
 
     def testVDepReacDeclaration(self):
         mdl = Model()
@@ -168,6 +169,30 @@ class ChannelCurrentDeclarations(unittest.TestCase):
                 with ssys:
                     OhmicCurr(42, 1e-10, -70e-3)
 
+    def testComplexOhmicCurrentDeclaration(self):
+        mdl = Model()
+        with mdl:
+            susA1, susA2, susA3, susB1, susB2, susB3 = SubUnitState.Create()
+            suA, suB = SubUnit.Create([susA1, susA2, susA3], [susB1, susB2, susB3])
+
+            Chan1 = Channel.Create([suA, suB], statesAsSpecies=False)
+
+            ssys = SurfaceSystem.Create()
+
+            with ssys:
+                Curr1 = OhmicCurr.Create(Chan1[:, susB1], 1e-10, -70e-3)
+            with self.assertRaises(KeyError):
+                Curr1[susA1, susB1]
+            with self.assertRaises(KeyError):
+                Curr1[:, susB2]
+            self.assertEqual(Curr1[:, susB1]._getStepsObjects()[0].getG(), 1e-10)
+            self.assertEqual(Curr1[:, susB1]._getStepsObjects()[0].getERev(), -70e-3)
+
+            cdc1 = CompDepCond(lambda s: s.Count(susA1) + 10*s.Count(susA3), [Chan1])
+            with self.assertRaises(TypeError):
+                with ssys:
+                    Curr2 = OhmicCurr.Create(Chan1[...], cdc1, -70e-3) 
+
     def testGHCKurrentDeclaration(self):
         mdl = Model()
 
@@ -266,6 +291,32 @@ class ChannelCurrentDeclarations(unittest.TestCase):
 
             self.assertEqual(Curr4.P.value, Curr4._getStepsObjects()[0].getP())
             self.assertEqual(Curr5.P.value, Curr5._getStepsObjects()[0].getP())
+
+    def testComplexGHKCurrentDeclaration(self):
+        mdl = Model()
+        with mdl:
+            Ca = Species.Create()
+            Ca.valence = 2
+
+            susA1, susA2, susA3, susB1, susB2, susB3 = SubUnitState.Create()
+            suA, suB = SubUnit.Create([susA1, susA2, susA3], [susB1, susB2, susB3])
+
+            Chan1 = Channel.Create([suA, suB], statesAsSpecies=False)
+
+            ssys = SurfaceSystem.Create()
+
+            with ssys:
+                Curr1 = GHKCurr.Create(Chan1[:, susB1], Ca, 1e-20)
+            with self.assertRaises(KeyError):
+                Curr1[susA1, susB1]
+            with self.assertRaises(KeyError):
+                Curr1[:, susB2]
+            self.assertEqual(Curr1[:, susB1]._getStepsObjects()[0].getP(), 1e-20)
+
+            cdc1 = CompDepCond(lambda s: s.Count(susA1) + 10*s.Count(susA3), [Chan1])
+            with self.assertRaises(TypeError):
+                with ssys:
+                    Curr2 = GHKCurr.Create(Chan1[...], Ca, cdc1) 
 
 def suite():
     all_tests = []

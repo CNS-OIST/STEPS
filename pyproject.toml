@@ -1,28 +1,28 @@
 [build-system]
 build-backend = "scikit_build_core.build"
 requires = [
-    "build",
-    "cmeel-boost>=1.80",
-    "cmeel-eigen>=3",
-  # cmeel-metis is pinned to 5.1.0 because the next version (5.2.1) leads to linking problems
-  # (libmetis.so: undefined symbol: gk_jbufs), see https://github.com/KarypisLab/METIS/issues/83
-  # It can be unpinned when the issue is fixed.
-    "cmeel-metis==5.1.0",
+    # scikit-build-core is pinned because we use experimental=true to be able to call
+    # pysteps/get_dependencies.py. The interface is not stable and might change between minor
+    # versions (see https://scikit-build-core.readthedocs.io/en/latest/configuration/dynamic.html).
+    # It can be unpinned once we do not need pysteps/get_dependencies.py anymore.
+    "scikit-build-core==0.11.6",
+    # Common dependencies
     "cython>=0.29",
-    "gmsh>=4.10",
     "matplotlib",
     "mpi4py",
-    "ninja>=1.5",
-    "numpy>=1.19",
-    "petsc",
+    # The other acceptable range is "numpy>=1.19,<=2.0.2", outside of that, numpy creates issues
+    # during data recording
+    "numpy>=2.3.5",
     "scipy",
-    "scikit-build-core",
+    # Should normally be added by scikit-build-core if necessary, but it seems it can be missing in
+    # some cases so I add it here.
+    "ninja>=1.5",
 ]
 
 [tool.scikit-build]
 build.verbose = true
-logging.level = "DEBUG"
-wheel.packages = ["pysteps/steps"]
+logging.level = "WARNING"
+wheel.packages = ["pysteps/steps", "pysteps/stepsblender"]
 ninja.make-fallback = false
 sdist.exclude = [
     ".*",
@@ -33,35 +33,64 @@ sdist.exclude = [
     "/dist",
     "/test",
     "MolSim Functional Requirements",
+    "CMake/hpc-coding-conventions",
 ]
+# These build dependencies are the ones required for the bundle install.
+# They are overriden with [[tool.scikit-build.overrides]] if the bundle shouldn't be installed.
+build.requires = [
+    "cmeel-boost>=1.80",
+    "cmeel-eigen>=3",
+    # cmeel-metis is pinned to 5.1.0 because the next version (5.2.1) leads to linking problems
+    # (libmetis.so: undefined symbol: gk_jbufs), see https://github.com/KarypisLab/METIS/issues/83
+    # It can be unpinned when the issue is fixed.
+    "cmeel-metis==5.1.0",
+    "gmsh>=4.10",
+    "petsc",
+]
+# Experimental needs to be enabled to call pysteps/get_dependencies.py and get the dependencies
+# dynamically.
+experimental = true
 
 [tool.scikit-build.cmake.define]
 STEPS_INSTALL_PYTHON_DEPS = "OFF"
 USE_PETSC = "ON"
 BUILD_TESTING = "OFF"
 
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "pysteps/steps/__init__.py"
+
+# As long as PEP 771 (https://peps.python.org/pep-0771/) is not adopted, we need to use custom code
+# to control which dependencies are required.
+# Once this PEP is adopted, we would want to have the bundle extra be the default and let the user
+# optionally do `pip install steps[]` to avoid installing the bundle.
+# One remaining problem with that approach is that, AFAIK, there is no way to change the build
+# dependencies depending on the extras specified by the user.
+[tool.scikit-build.metadata.dependencies]
+provider = "get_env_dependencies"
+provider-path = "pysteps/"
+env-prefix = "STEPS_NO_"
+
+# This gives the possibility to define the STEPS_NO_BUNDLE environment variable during the
+# build to avoid using pip-installed petsc etc.
+[[tool.scikit-build.overrides]]
+if.env.STEPS_NO_BUNDLE = true
+build.requires = []
+
 [project]
 name = "STEPS"
 authors = [{name = "STEPS Development Team", email = "steps.dev@gmail.com"}]
 description = "STochastic Engine for Pathway Simulation"
-version="5.0.4"
-dependencies = [
-    "cython>=0.29",
-    "h5py",
-    "matplotlib",
-    "mpi4py",
-    "numpy>=1.19",
-    "scipy",
-]
+dynamic = ["version", "dependencies"]
 readme = "README.md"
 requires-python = ">=3.8"
-license = {file = "LICENSE.md"}
+license = "GPL-3.0-only"
+license-files = ["LICENSE.md"]
 classifiers=[
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console :: Curses",
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: C++",
@@ -74,8 +103,21 @@ classifiers=[
     "Topic :: Scientific/Engineering :: Chemistry",
 ]
 
+[project.urls]
+Homepage = "https://steps.sourceforge.net"
+Documentation = "https://steps.sourceforge.net/manual/"
+Repository = "https://github.com/CNS-OIST/STEPS"
+
 [project.optional-dependencies]
-bundle = [
+default-runtime = [
+    "cython>=0.29",
+    "h5py",
+    "matplotlib",
+    "mpi4py",
+    "numpy>=2.3.5",
+    "scipy",
+]
+default-bundle = [
     "cmeel-boost>=1.80",
     "cmeel-eigen>=3",
     "cmeel-metis==5.1.0", # Can be unpinned when issues with cmeel-metis are fixed

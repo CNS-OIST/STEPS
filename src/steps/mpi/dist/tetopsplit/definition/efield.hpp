@@ -1,9 +1,9 @@
 #pragma once
 
-#include "util/error.hpp"
 #include <Omega_h_defines.hpp>
 #include <functional>
 #include <map>
+#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -13,8 +13,14 @@
 #include <petscksp.h>
 #endif  // USE_PETSC
 
+#include "complexeventsdef.hpp"
+#include "fwd.hpp"
 #include "geom/dist/fwd.hpp"
+#include "model/fwd.hpp"
+#include "model/ghkcurr.hpp"
+#include "model/ohmiccurr.hpp"
 #include "mpi/dist/tetopsplit/fwd.hpp"
+#include "util/error.hpp"
 #include "util/vocabulary.hpp"
 
 
@@ -22,9 +28,10 @@ namespace steps::dist {
 
 //------------------------------------------------
 /**
- * \brief A definition of an Ohmic current.
+ * \brief Base class for the definition of an Ohmic current.
  */
-struct OhmicCurrent {
+class OhmicCurrdefBase {
+  public:
     /**
      * \brief Ohmic current ctor.
      *
@@ -35,19 +42,16 @@ struct OhmicCurrent {
      * \param t_channel_state the channel state that enables the ohmic current. If
      * none is provided the ohmic current is enabled.
      */
-    OhmicCurrent(osh::Real t_conductance,
-                 osh::Real t_reversal_potential,
-                 const std::optional<container::species_id>& t_channel_state)
-        : conductance(t_conductance)
-        , channel_state(t_channel_state)
-        , reversal_potential(t_reversal_potential) {}
+    OhmicCurrdefBase(const steps::model::OhmicCurrBase& curr)
+        : conductance(curr.getG())
+        , reversal_potential(curr.getERev()) {}
 
-    OhmicCurrent(const OhmicCurrent&) = delete;
+    OhmicCurrdefBase(const OhmicCurrdefBase&) = delete;
+    virtual ~OhmicCurrdefBase() = default;
 
     osh::Real getReversalPotential(mesh::triangle_id_t triangle) const;
     void setReversalPotential(mesh::triangle_id_t triangle, osh::Real value);
     void reset();
-    friend std::ostream& operator<<(std::ostream& os, OhmicCurrent const& m);
 
 #ifdef USE_PETSC
     /** Boundary condition to get the ohmic current flowing through a triangle an split among the
@@ -64,10 +68,10 @@ struct OhmicCurrent {
      * \param sim_time
      * \return
      */
-    PetscReal getTriBConVertex(const mesh::triangle_id_t& b_id,
-                               const MolState& mol_state,
-                               double Avert,
-                               osh::Real sim_time) const;
+    virtual PetscReal getTriBConVertex(const mesh::triangle_id_t& b_id,
+                                       const MolState& mol_state,
+                                       double Avert,
+                                       osh::Real sim_time) const = 0;
 
     /** get tri current on vertex
      *
@@ -75,6 +79,7 @@ struct OhmicCurrent {
      * current flowing through the triangle
      *
      * \param potential_on_vertex: voltage on the particular vertex
+     * \param patch_id: Id of the patch that contains the triangle
      * \param b_id: triangle id
      * \param mol_state: channel counts
      * \param mesh: required if the channel_state is not specified
@@ -106,11 +111,48 @@ struct OhmicCurrent {
 #endif  // USE_PETSC
 
     const osh::Real conductance;
-    const std::optional<container::species_id> channel_state;
 
-  private:
+  protected:
     const osh::Real reversal_potential;
     std::unordered_map<mesh::triangle_id_t, osh::Real> reversal_potentials;
+};
+
+/**
+ * \brief Ohmic current with species channel state.
+ */
+class OhmicCurrdef: public OhmicCurrdefBase {
+  public:
+    OhmicCurrdef(const Patchdef& patchdef, const steps::model::OhmicCurr& curr);
+    virtual ~OhmicCurrdef() = default;
+
+#ifdef USE_PETSC
+    PetscReal getTriBConVertex(const mesh::triangle_id_t& b_id,
+                               const MolState& mol_state,
+                               double Avert,
+                               osh::Real sim_time) const override;
+#endif  // USE_PETSC
+    friend std::ostream& operator<<(std::ostream& os, OhmicCurrdef const& m);
+
+    container::species_id channel_state;
+};
+
+/**
+ * \brief Ohmic current with complex channel state.
+ */
+class ComplexOhmicCurrdef: public OhmicCurrdefBase {
+  public:
+    ComplexOhmicCurrdef(const Patchdef& patchdef, const steps::model::ComplexOhmicCurr& curr);
+    virtual ~ComplexOhmicCurrdef() = default;
+
+#ifdef USE_PETSC
+    PetscReal getTriBConVertex(const mesh::triangle_id_t& b_id,
+                               const MolState& mol_state,
+                               double Avert,
+                               osh::Real sim_time) const override;
+#endif  // USE_PETSC
+
+    const ComplexFilterDescr channel_state;
+    mutable model::complex_filter_occupancy_id occupancy_id;
 };
 
 //------------------------------------------------
@@ -119,7 +161,17 @@ struct OhmicCurrent {
  * \brief Goldman-Hodgkin-Katz current.
  *
  */
-struct GHKCurrent {
+class GHKCurrdefBase {
+  public:
+    GHKCurrdefBase(const Patchdef& patchdef, const steps::model::GHKcurrBase& curr);
+
+  protected:
+    const model::species_name ion_id;
+    const osh::I64 valence;
+};
+
+class GHKCurrdef: public GHKCurrdefBase {
+  public:
     /**
      * \brief GHKCurrent ctor.
      *
@@ -127,54 +179,42 @@ struct GHKCurrent {
      * \param t_ion_id the species that flows through the membrane
      * \param t_valence the valence of the species that flows through the membrane
      */
-    GHKCurrent(model::species_name t_ion_channel_state,
-               model::species_name t_ion_id,
-               osh::I64 t_valence)
-        : ion_channel_state(std::move(t_ion_channel_state))
-        , ion_id(std::move(t_ion_id))
-        , valence(t_valence) {}
+    GHKCurrdef(const Patchdef& patchdef, const steps::model::GHKcurr& curr);
 
-    const model::species_name ion_channel_state;
-    const model::species_name ion_id;
-    const osh::I64 valence;
+    /// Reset the def-object values to model defaults
+    void reset() {}
 
-    friend std::ostream& operator<<(std::ostream& os, GHKCurrent const& m);
+    const container::species_id channel_state;
+};
+
+/**
+ * \brief Goldman-Hodgkin-Katz current with a complex channel.
+ *
+ */
+class ComplexGHKCurrdef: public GHKCurrdefBase {
+  public:
+    /**
+     * \brief GHKCurrent ctor.
+     *
+     * \param t_ion_channel_state channel state that enables the flow of ions
+     * \param t_ion_id the species that flows through the membrane
+     * \param t_valence the valence of the species that flows through the membrane
+     */
+    ComplexGHKCurrdef(const Patchdef& patchdef, const steps::model::ComplexGHKcurr& curr);
+
+    /// Reset the def-object values to model defaults
+    void reset() {}
+
+    const ComplexFilterDescr channel_state;
 };
 
 //------------------------------------------------
-
-struct Channel {
-    explicit Channel(std::vector<container::species_id> t_channel_states)
-        : channel_states(std::move(t_channel_states)) {}
-
-    void addOhmicCurrent(const OhmicCurrent& current) {
-        if (current.channel_state) {
-            if (std::find(channel_states.begin(), channel_states.end(), *current.channel_state) ==
-                channel_states.end()) {
-                std::logic_error(std::string("Ohmic current : Unknown channel state ") +
-                                 std::to_string(*current.channel_state));
-            }
-        }
-        ohmic_currents.emplace_back(current);
-    }
-
-    void addGHKCurrent(const GHKCurrent& ghk_current) {
-        ghk_currents.emplace_back(ghk_current);
-    }
-
-    std::vector<container::species_id> channel_states;
-    std::vector<std::reference_wrapper<const OhmicCurrent>> ohmic_currents;
-    std::vector<std::reference_wrapper<const GHKCurrent>> ghk_currents;
-
-    friend std::ostream& operator<<(std::ostream& os, Channel const& m);
-};
 
 /**
  * \brief Membrane definition.
  */
 struct Membrane {
     using Stimulus = std::function<osh::Real(osh::Real)>;
-    using Channels = std::map<model::channel_id, Channel>;
 
     /**
      * \brief Membrane ctor.
@@ -182,14 +222,10 @@ struct Membrane {
      * \param patch patchid of the membrane
      * \param capacitance capacitance of the membrane
      */
-    Membrane(const model::patch_id& patch, osh::Real capacitance)
-        : patch_(patch)
-        , capacitance_(capacitance)
-        , current_([](auto) { return 0.0; }) {}
+    Membrane(Statedef& statedef_, const DistMemb& membrane);
 
-    void addChannel(const std::string& channel_name, const Channel& channel) {
-        channels_.emplace(channel_name, channel);
-    }
+    /// Reset the def-object values to model defaults
+    void reset();
 
     void setStimulus(Stimulus stimulus) noexcept {
         current_ = std::move(stimulus);
@@ -203,20 +239,20 @@ struct Membrane {
         reversal_potential_ = reversal_potential;
     }
 
-    const model::patch_id& getPatch() const noexcept {
-        return patch_;
+    void setCapacitance(osh::Real capacitance) noexcept {
+        capacitance_ = capacitance;
+    }
+
+    const std::vector<model::patch_id>& getPatchesIds() const noexcept {
+        return patches_ids;
+    }
+
+    const std::vector<std::reference_wrapper<const Patchdef>>& getPatchdefs() const noexcept {
+        return patchdefs;
     }
 
     osh::Real capacitance() const noexcept {
         return capacitance_;
-    }
-
-    Channels& channels() noexcept {
-        return channels_;
-    }
-
-    const Channels& channels() const noexcept {
-        return channels_;
     }
 
     const Stimulus& stimulus() const noexcept {
@@ -232,9 +268,12 @@ struct Membrane {
     }
 
   private:
-    model::patch_id patch_;
-    const osh::Real capacitance_;
-    Channels channels_;
+    const DistMemb& memb_;
+    const Statedef& statedef;
+    std::vector<std::reference_wrapper<const Patchdef>> patchdefs;
+
+    std::vector<model::patch_id> patches_ids;
+    osh::Real capacitance_;
     osh::Real conductivity_{};
     osh::Real reversal_potential_{};
     Stimulus current_;
@@ -243,8 +282,8 @@ struct Membrane {
 #ifdef USE_PETSC
 /** Small object for preparing values to be inserted in i(), bc(), A0, and diag() in efield
  *
- * It is created with only the capacitance as contribution. Ohmic currents are optional and added
- * after construction
+ * It is created with only the capacitance as contribution. Ohmic currents are optional and
+ * added after construction
  *
  * Since this struct is related to triangles the numbers 3 and 9 are related to the number of
  * vertexes in a triangle

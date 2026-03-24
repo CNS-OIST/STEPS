@@ -3,21 +3,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -155,16 +155,15 @@ class CompVesRaft {
     // -1 return means not added, otherwise its unique index
     solver::vesicle_individual_id addVesicle(solver::Vesicledef* vesdef,
                                              const math::position_abs& pos,
-                                             tetrahedron_global_id tet_gidx = {});
+                                             tetrahedron_global_id tet_gidx = {},
+                                             const double diam = -1,
+                                             const double dcst = -1);
 
     // Returns map of species global indices to positions in space (is that
     // necessary? Just need the numbers, surely)
     std::map<solver::spec_global_id, std::vector<PointSpec*>> removeOneVesicle(
         Vesicle* ves,
         tetrahedron_global_id tet_gidx);
-
-    // Check if vesicle starts on a path and set up path diffusion stuff if so
-    void checkVesiclePath(Vesicle* v, math::position_abs const& pos_ves) const;
 
     void deleteSingleVesicle(Vesicle* ves);
 
@@ -208,7 +207,14 @@ class CompVesRaft {
     uint getVesicleInnerSpecCount(solver::vesicle_global_id vidx,
                                   solver::spec_global_id spec_gidx) const;
 
-    void setVesicleTetDcst(solver::vesicle_global_id vidx, tetrahedron_global_id tidx, double dcst);
+    void setVesicleTetDcst(solver::vesicle_global_id vidx,
+                           tetrahedron_global_id tidx,
+                           double dcst,
+                           bool rel);
+
+    double getVesicleTetDcst(solver::vesicle_global_id vidx, tetrahedron_global_id tidx) const;
+
+    bool getVesicleTetDcstRel(solver::vesicle_global_id vidx, tetrahedron_global_id tidx) const;
 
     uint getVesicleLinkSpecCount(solver::vesicle_global_id vidx,
                                  solver::linkspec_global_id linkspec_gidx) const;
@@ -252,7 +258,8 @@ class CompVesRaft {
     std::map<solver::vesicle_global_id, std::set<CompVesRaft*>> pVesicles_permittedcomps;
 
     // User can optionally alter dcst per tet from default for vesicles
-    std::map<solver::vesicle_global_id, std::map<tetrahedron_global_id, double>> pVes_Tetskcst;
+    std::map<solver::vesicle_global_id, std::map<tetrahedron_global_id, std::pair<double, bool>>>
+        pVes_Tetsdcst;
 
     // Store a pointer to the RNG for convenience
     const rng::RNGptr pRNG;

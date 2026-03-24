@@ -197,6 +197,55 @@ class flat_multimap_data_iterator<T, 1, Policy> {
 };
 
 template <typename T, int Size, int Policy>
+struct flat_multimap_item_accessor {
+    using fmm_type = typename std::conditional<
+        std::is_const<T>::value,
+        const flat_multimap<typename std::remove_const<T>::type, Size, Policy>,
+        flat_multimap<T, Size, Policy>>::type;
+    using size_type = typename fmm_type::size_type;
+    using value_type = typename flat_multimap_data_iterator<T, Size, Policy>::value_type;
+    using const_value_type =
+        typename flat_multimap_data_iterator<const T, Size, Policy>::value_type;
+
+    inline value_type operator()(fmm_type& fmm, size_type element_idx, size_type data_idx) {
+        const auto index = fmm.ab(element_idx, data_idx);
+        return {fmm.ab2c_.data() + index, Size};
+    }
+
+    inline const_value_type operator()(const fmm_type& fmm,
+                                       size_type element_idx,
+                                       size_type data_idx) const {
+        const auto index = fmm.ab(element_idx, data_idx);
+        return {fmm.ab2c_.data() + index, Size};
+    }
+};
+
+template <typename T, int Policy>
+struct flat_multimap_item_accessor<T, 1, Policy> {
+    using fmm_type = typename std::conditional<
+        std::is_const<T>::value,
+        const flat_multimap<typename std::remove_const<T>::type, 1, Policy>,
+        flat_multimap<T, 1, Policy>>::type;
+    using size_type = typename fmm_type::size_type;
+    using const_value_type = typename flat_multimap_data_iterator<T, 1, Policy>::value_type;
+    using value_type = typename flat_multimap_data_iterator<T, 1, Policy>::value_type&;
+
+    inline value_type operator()(fmm_type& fmm,
+                                 size_type element_idx,
+                                 size_type data_idx) noexcept {
+        const auto index = fmm.ab(element_idx, data_idx);
+        return fmm.ab2c_[index];
+    }
+
+    inline const_value_type operator()(const fmm_type& fmm,
+                                       size_type element_idx,
+                                       size_type data_idx) const noexcept {
+        const auto index = fmm.ab(element_idx, data_idx);
+        return fmm.ab2c_[index];
+    }
+};
+
+template <typename T, int Size, int Policy>
 class flat_multimap_element {
   public:
     using iterator = flat_multimap_data_iterator<T, Size, Policy>;
@@ -261,6 +310,22 @@ class flat_multimap_element {
     /**
      * \}
      */
+
+    /**
+     * \return data reference at the given \a data_idx
+     */
+    inline typename flat_multimap_item_accessor<T, Size, Policy>::const_value_type operator()(
+        size_type data_idx) const noexcept {
+        return flat_multimap_item_accessor<T, Size, Policy>()(fmm_, element_idx_, data_idx);
+    }
+
+    /**
+     * \return data at the given \a data_idx
+     */
+    inline typename flat_multimap_item_accessor<T, Size, Policy>::value_type operator()(
+        size_type data_idx) {
+        return flat_multimap_item_accessor<T, Size, Policy>()(fmm_, element_idx_, data_idx);
+    }
 
     /**
      * \return the element index
@@ -345,55 +410,6 @@ class flat_multimap_element_iterator {
     value_type element_;
 };
 
-template <typename T, int Size, int Policy>
-struct flat_multimap_item_accessor {
-    using fmm_type = typename std::conditional<
-        std::is_const<T>::value,
-        const flat_multimap<typename std::remove_const<T>::type, Size, Policy>,
-        flat_multimap<T, Size, Policy>>::type;
-    using size_type = typename fmm_type::size_type;
-    using value_type = typename flat_multimap_data_iterator<T, Size, Policy>::value_type;
-    using const_value_type =
-        typename flat_multimap_data_iterator<const T, Size, Policy>::value_type;
-
-    inline value_type operator()(fmm_type& fmm, size_type element_idx, size_type data_idx) {
-        const auto index = fmm.ab(element_idx, data_idx);
-        return {fmm.ab2c_.data() + index, Size};
-    }
-
-    inline const_value_type operator()(const fmm_type& fmm,
-                                       size_type element_idx,
-                                       size_type data_idx) const {
-        const auto index = fmm.ab(element_idx, data_idx);
-        return {fmm.ab2c_.data() + index, Size};
-    }
-};
-
-template <typename T, int Policy>
-struct flat_multimap_item_accessor<T, 1, Policy> {
-    using fmm_type = typename std::conditional<
-        std::is_const<T>::value,
-        const flat_multimap<typename std::remove_const<T>::type, 1, Policy>,
-        flat_multimap<T, 1, Policy>>::type;
-    using size_type = typename fmm_type::size_type;
-    using const_value_type = typename flat_multimap_data_iterator<T, 1, Policy>::value_type;
-    using value_type = typename flat_multimap_data_iterator<T, 1, Policy>::value_type&;
-
-    inline value_type operator()(fmm_type& fmm,
-                                 size_type element_idx,
-                                 size_type data_idx) noexcept {
-        const auto index = fmm.ab(element_idx, data_idx);
-        return fmm.ab2c_[index];
-    }
-
-    inline const_value_type operator()(const fmm_type& fmm,
-                                       size_type element_idx,
-                                       size_type data_idx) const noexcept {
-        const auto index = fmm.ab(element_idx, data_idx);
-        return fmm.ab2c_[index];
-    }
-};
-
 
 /**
  * random-access data structure where elements can have 0 or more associated
@@ -430,6 +446,7 @@ class flat_multimap {
     using element_type = flat_multimap_element<T, Size, Policy>;
 
     friend struct flat_multimap_item_accessor<T, Size, Policy>;
+    friend struct flat_multimap_item_accessor<const T, Size, Policy>;
     friend class flat_multimap_data_iterator<T, Size, Policy>;
     friend class flat_multimap_data_iterator<const T, Size, Policy>;
 
@@ -637,6 +654,9 @@ class flat_multimap {
     void reshape(const a2ab_type& num_data, bool keep_data = false, T value = {}) {
         const auto& construct = build_a2ab(num_data, value);
         a2ab_ = std::get<0>(construct);
+        occupancy_rate_ = std::get<2>(construct);
+        max_num_data_per_element_ = std::get<3>(construct);
+        num_data_ = std::get<4>(construct);
         if (!keep_data) {
             ab2c_ = ab2c_type(std::get<1>(construct), value);
         }

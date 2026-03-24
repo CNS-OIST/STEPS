@@ -50,9 +50,45 @@ if(Gmsh_EXECUTABLE)
   endif()
 endif()
 
-find_path(Gmsh_INCLUDE_DIRS NAMES gmsh.h)
-find_library(Gmsh_LIBRARIES NAMES gmsh gmsh.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR}
-                                  libgmsh.so.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR})
+# First try to find include and libraries from pip-installed gmsh
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" "-c" "import gmsh; print(gmsh.libpath, end='')"
+  ERROR_VARIABLE Gmsh_PIP_LIBRARIES
+  OUTPUT_VARIABLE Gmsh_PIP_LIBRARIES
+  ERROR_STRIP_TRAILING_WHITESPACE)
+if(EXISTS "${Gmsh_PIP_LIBRARIES}")
+  set(Gmsh_LIBRARIES "${Gmsh_PIP_LIBRARIES}")
+  cmake_path(GET Gmsh_PIP_LIBRARIES PARENT_PATH Gmsh_PIP_LIBDIR)
+  find_path(
+    Gmsh_INCLUDE_DIRS
+    NAMES gmsh.h
+    HINTS "${Gmsh_PIP_LIBDIR}/../include")
+else()
+  # If gmsh internals changed and gmsh.libpath is no longer accessible, try to find the includes and
+  # library with find_path and find_library
+
+  # First try to find a local gmsh (e.g. installed from pip)
+  find_path(Gmsh_INCLUDE_DIRS NAMES gmsh.h NO_CMAKE_SYSTEM_PATH)
+  find_library(
+    Gmsh_LIBRARIES
+    NAMES gmsh gmsh.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR}
+          libgmsh.so.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR} NO_CMAKE_SYSTEM_PATH)
+
+  # If that didn't work, look for system files as well
+  if(Gmsh_INCLUDE_DIRS STREQUAL "Gmsh_INCLUDE_DIRS-NOTFOUND")
+    unset(Gmsh_INCLUDE_DIRS)
+    unset(Gmsh_LIBRARIES)
+    find_path(Gmsh_INCLUDE_DIRS NAMES gmsh.h)
+    find_library(Gmsh_LIBRARIES NAMES gmsh gmsh.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR}
+                                      libgmsh.so.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR})
+  elseif(Gmsh_LIBRARIES STREQUAL "Gmsh_LIBRARIES-NOTFOUND")
+    unset(Gmsh_INCLUDE_DIRS)
+    unset(Gmsh_LIBRARIES)
+    find_path(Gmsh_INCLUDE_DIRS NAMES gmsh.h)
+    find_library(Gmsh_LIBRARIES NAMES gmsh gmsh.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR}
+                                      libgmsh.so.${Gmsh_VERSION_MAJOR}.${Gmsh_VERSION_MINOR})
+  endif()
+endif()
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
