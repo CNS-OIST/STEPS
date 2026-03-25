@@ -18,7 +18,7 @@ Minimum system requirements
 
 1. C++ compiler supporting c++17 (e.g. gcc 7.4, clang 6)
 2. [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
-3. [Python](https://www.python.org) 3.9 or above, along with `pip`
+3. [Python](https://www.python.org) 3.11 or above, along with `pip`
 4. [Git](https://git-scm.com) SCM utility
 5. BLAS/[OpenBLAS](http://www.openblas.net) library
 6. MPI library (Open MPI, MPICH, ...)
@@ -69,7 +69,7 @@ To facilitate new requirements from the parallel TetOpSplit solver, STEPS 3.0 an
 Minimum Prerequisites
 ---------------------
 1. C++ compiler supporting c++17 (e.g. gcc 7.4, clang 6)
-2. Python3 (3.8 or above, 3.9 or above if using `stepsblender` Python package)
+2. Python (3.9 or above)
 3. [CMake](https://cmake.org/) (3.16.3 or above)
 4. [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/) (not installed by default on Mac, `brew install pkg-config` to install it)
 5. [Cython](http://www.cython.org/) (0.29 or above)

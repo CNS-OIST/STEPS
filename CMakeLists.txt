@@ -74,7 +74,7 @@ mark_as_advanced_all("PROFILING")
 include(CTest)
 
 find_package(
-  Python 3.8
+  Python 3.9
   COMPONENTS Interpreter Development
   REQUIRED)
 include(FindPythonModule)
@@ -357,12 +357,6 @@ set_property(CACHE CMAKE_BUILD_TYPE
 
 # Requirements
 # -------------------------------------------------------------------
-if(STEPS_USE_STEPSBLENDER AND (Python_VERSION VERSION_LESS 3.9.0))
-  message(
-    FATAL_ERROR
-      "The stepsblender python package requires python 3.9 but only python ${Python_VERSION} was found. If the stepsblender python package is not needed, it can be deactivated by using the following cmake argument: -DSTEPS_USE_STEPSBLENDER=False"
-  )
-endif()
 
 if(APPLE)
   # assume built-in pthreads on MacOS https://stackoverflow.com/questions/54587052

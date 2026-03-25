@@ -18,10 +18,11 @@ Build and Packaging
 
 Python API
 ----------
-1. Added the possibility to access result selectors from their description when loading HDF5 files.
-2. Allow multiple patches per membrane as well as internal patches in `DistTetOpSplit`.
-3. Vesicle diffusion coefficient can now be set per individual vesicle (`vesref.Dcst = ...`, see [SimPath.addVesicle](https://steps.sourceforge.net/manual/API_2/API_sim.html#steps.API_2.sim.SimPath.addVesicle)).
-4. Add missing data getting / setting methods to `DistTetOpSplit`.
+1. The minimum python version was bumped from 3.8 to 3.9.
+2. Added the possibility to access result selectors from their description when loading HDF5 files.
+3. Allow multiple patches per membrane as well as internal patches in `DistTetOpSplit`.
+4. Vesicle diffusion coefficient can now be set per individual vesicle (`vesref.Dcst = ...`, see [SimPath.addVesicle](https://steps.sourceforge.net/manual/API_2/API_sim.html#steps.API_2.sim.SimPath.addVesicle)).
+5. Add missing data getting / setting methods to `DistTetOpSplit`.
 
 Functional changes and improvements
 -----------------------------------
