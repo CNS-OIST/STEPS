@@ -2424,7 +2424,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
     def getDiffusionLeapThreshold(self):
         """Get the minimum number of species for leaping with TAU_LEAPING_DT diffusion
 
-        This is only available with 'DistTetOpSplit' simulations that use the
+        This is only available with ``DistTetOpSplit`` simulations that use the
         TAU_LEAPING_DT diffusion scheme.
 
         :returns: The minimum number of species (in any tetrahedron) required for diffusion leaping to happen
@@ -2438,7 +2438,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
     def setDiffusionLeapThreshold(self, leap_threshold):
         """Set the minimum number of species for leaping with TAU_LEAPING_DT diffusion
 
-        This is only available with 'DistTetOpSplit' simulations that use the
+        This is only available with ``DistTetOpSplit`` simulations that use the
         TAU_LEAPING_DT diffusion scheme.
         It defaults to 10.
 
