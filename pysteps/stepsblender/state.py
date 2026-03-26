@@ -120,17 +120,17 @@ class StateDependentObject(objects.BlenderObject, StateUser):
         - Use a small number of materials that are already declared in the Blender file;
         - Programatically customize the material of the object.
 
-    The first way is done by setting the `setMaterialFunc` parameter to a function with the following
+    The first way is done by setting the ``setMaterialFunc`` parameter to a function with the following
     signature::
 
         def myCustomMatSetFunc(scene, depg, state) -> str
 
-    The first two parameters are passed from the `bpy.app.handlers.frame_change_pre` callback function
+    The first two parameters are passed from the ``bpy.app.handlers.frame_change_pre`` callback function
     (see https://docs.blender.org/api/current/bpy.app.handlers.html). The third parameter contains the
     state of the object (see table in :py:class:`StateDependentMesh`). The function should return a
     string that is the name of a material in the Blender file.
 
-    The second way is done by setting the `updateMaterialFunc` parameter to a function with the
+    The second way is done by setting the ``updateMaterialFunc`` parameter to a function with the
     following signature::
 
         def myCustomMatUpdateFunc(scene, depg, material, state) -> None
@@ -160,25 +160,25 @@ class StateDependentObject(objects.BlenderObject, StateUser):
 class StateDependentSeparateObjects(objects.SeparateObjects, StateUser):
     """Base class for state-dependent objects like Vesicles or Rafts
 
-    This class can be used in place of `SeparateObjects` to customize the material of each object
+    This class can be used in place of ``SeparateObjects`` to customize the material of each object
     as a function of the state of the STEPS object (its position, the species on its surface, etc.).
 
     There are two possible ways to achieve this:
         - Use a small number of materials that are already declared in the Blender file;
         - Programatically customize the material of each object.
 
-    The first way is done by setting the `setMaterialFunc` parameter to a function with the following
+    The first way is done by setting the ``setMaterialFunc`` parameter to a function with the following
     signature::
 
         def myCustomMatSetFunc(scene, depg, state) -> str
 
-    The first two parameters are passed from the `bpy.app.handlers.frame_change_pre` callback function
+    The first two parameters are passed from the ``bpy.app.handlers.frame_change_pre`` callback function
     (see https://docs.blender.org/api/current/bpy.app.handlers.html). The third parameter contains the
     state of the object (see tables in :py:class:`StateDependentVesicle` or 
     :py:class:`StateDependentRaft`). The function should return a string that is the name of a
     material in the Blender file.
 
-    The second way is done by setting the `updateMaterialFunc` parameter to a function with the
+    The second way is done by setting the ``updateMaterialFunc`` parameter to a function with the
     following signature::
 
         def myCustomMatUpdateFunc(scene, depg, material, state) -> None

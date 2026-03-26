@@ -239,54 +239,54 @@ def GetColor(s=1, v=1, a=1):
 
 
 class HierarchicalParameters:
-    """Class for holding hierarchies of parameters
+    r"""Class for holding hierarchies of parameters
 
     This class holds several levels of parameter dictionaries and allows the retrieval of
     parameter values by iterating through levels, starting with the most specific.
-    The hierarchy is built from nested dictionnaries, for example:
+    The hierarchy is built from nested dictionnaries, for example::
 
-    parameters = {
-        'color': (1, 0, 0, 1),         # Red
-        'Species': {
-            'color': (0, 1, 0, 1),     # Green
-            'radius': 0.01,
-            'S1': {
-                'radius': 0.02,
-                'color': (0, 0, 1, 1), # Blue
+        parameters = {
+            'color': (1, 0, 0, 1),         # Red
+            'Species': {
+                'color': (0, 1, 0, 1),     # Green
+                'radius': 0.01,
+                'S1': {
+                    'radius': 0.02,
+                    'color': (0, 0, 1, 1), # Blue
+                },
             },
-        },
-    }
+        }
 
     If these parameters are given to :py:class:`HDF5BlenderLoader`, all objects that declared a
     `radius` or `color` attribute in their class (see :py:class:`HierarchicalParamReader`),
-    will get a value that depends on their position in the object hierarchy (abridged here):
+    will get a value that depends on their position in the object hierarchy (abridged here)::
 
-    Loader -----> Species ---> S1 --> mesh     | radius == 0.02
-           \              \       \-> material | color  == Blue
-            \              \-> S2 --> mesh     | radius == 0.01
-             \                    \-> material | color  == Green
-              \-> Vesicles --> V1 --> mesh     |
-                                  \-> material | color  == Red
+        Loader -----> Species ---> S1 --> mesh     | radius == 0.02
+               \              \       \-> material | color  == Blue
+                \              \-> S2 --> mesh     | radius == 0.01
+                 \                    \-> material | color  == Green
+                  \-> Vesicles --> V1 --> mesh     |
+                                      \-> material | color  == Red
 
     When retrieving the color value for the material of species S2, we first try to find the most
-    specific value: parameters['Species']['S2']['material']['color'], if this does not exist, we then
-    try parameters['Species']['S2']['color'], then parameters['Species']['color'] which exist in our
+    specific value: ``parameters['Species']['S2']['material']['color']``, if this does not exist, we then
+    try ``parameters['Species']['S2']['color']``, then ``parameters['Species']['color']`` which exist in our
     example, so the color is set to green.
-    For species S1, parameters['Species']['S1']['material']['color'] does not exist but
-    parameters['Species']['S1']['color'] does, the color is thus set to blue.
+    For species S1, ``parameters['Species']['S1']['material']['color']`` does not exist but
+    ``parameters['Species']['S1']['color']`` does, the color is thus set to blue.
 
     In addition to specifying hierarchies of parameter values, one can also change the class that
     will be used to instantiate any object in the hierarchy, for example, to provide a custom material
-    for species of type S2, we would give:
+    for species of type S2, we would give::
 
-    parameters = {
-        'S2' : {
-            'material': {
-                '__class__': MyCustomMaterialClass,
-                'myCustomParameter': 5.0,
+        parameters = {
+            'S2' : {
+                'material': {
+                    '__class__': MyCustomMaterialClass,
+                    'myCustomParameter': 5.0,
+                },
             },
-        },
-    }
+        }
 
     With MyCustomMaterialClass inheriting from :py:class:`BlenderMaterial` and having
     `myCustomParameter` as class attribute (see :py:class:`HierarchicalParamReader`).
@@ -295,13 +295,13 @@ class HierarchicalParameters:
 
     Finally, parameter objects that inherit from :py:class:`BlenderWrapper` can be loaded from the
     Blender file by giving the name of the blender object. For example, if we created a material in
-    Blender called 'myCustomMaterial', we could assign it to Species S2 with:
+    Blender called ``'myCustomMaterial'``, we could assign it to Species S2 with::
 
-    parameters = {
-        'S2' : {
-            'material': 'myCustomMaterial',
-        },
-    }
+        parameters = {
+            'S2' : {
+                'material': 'myCustomMaterial',
+            },
+        }
     """
 
     def __init__(self, parameters={}, _kwargs=[]):
@@ -380,24 +380,25 @@ class HierarchicalParamReader:
 
         a = classA(parameters={val1: 2})
 
-    This code leads to `a.val1 == 2` and `a.val2 == 'str'`.
+    This code leads to ``a.val1 == 2`` and ``a.val2 == 'str'``.
     
     If the default value is a class that inherits from :py:class:`HierarchicalParamReader`, an
     object from this class will be instantiated and recursively initialized with the
     HierarchicalParameters object.
 
-    By default, all :py:class:`HierarchicalParamReader` instances have a `parent` and `nameInParent`
+    By default, all :py:class:`HierarchicalParamReader` instances have a ``parent`` and ``nameInParent``
     attributes that will be filled in at instanciation.
-    
+
     Example::
-        
+
         class classB(HierarchicalParamReader):
             objA = classA
             val3 = 5.0
 
         objB = classB(parameters={'objA':{'val1':2}})
 
-    This code leads to objA being automatically instantiated with:
+    This code leads to objA being automatically instantiated with::
+
         objB.objA.parent == objB
         objB.objA.nameInParent == 'objA'
 
@@ -448,7 +449,7 @@ class HierarchicalParamReader:
 
     If a string is given as a second parameter to :py:class:`typing.Annotated`, it will be interpreted
     as the description of the parameter. If a dictionary is given, it will be supplied as keyword arguments
-    to :py:func:`argparse.ArgumentParser.add_argument` in the :py:module:`stepsblender.load` module to
+    to :py:func:`argparse.ArgumentParser.add_argument` in the :py:mod:`stepsblender.load` module to
     automatically add the parameter as a command-line argument.
 
     Simple types like int and float will be converted from the string provided as a command-line argument

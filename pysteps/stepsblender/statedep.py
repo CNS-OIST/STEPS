@@ -34,34 +34,47 @@ class StateDependentVesicles(objects.BlenderVesicles, state.StateDependentSepara
     See :py:class:`StateDependentSeparateObjects` for information about material set and update
     functions.
 
-    The `state` parameter given to both functions is a dictionary that contains the following values: 
+    The `state` parameter given to both functions is a dictionary that contains the following values:
 
-    +-----------------+---------------------------------+-----------------------------------------+
-    | Name            | Example                         | Description                             |
-    +=================+=================================+=========================================+
-    | idx             | 45                              | Index of the specific vesicle           |
-    +-----------------+---------------------------------+-----------------------------------------+
-    | position        | [x, y, z]                       | 3D position of the vesicle in cartesian |
-    |                 |                                 | coordinates                             |
-    +-----------------+---------------------------------+-----------------------------------------+
-    | name            | 'Ves1'                          | Name of the vesicle type in STEPS       |
-    +-----------------+---------------------------------+-----------------------------------------+
-    | surface_species | {'S1':[                         | Dictionary of species name to list      |
-    |                 |   (r1, theta1, phi1),           | of spherical coordinate positions       |
-    |                 |   (r2, theta2, phi2),           | relative to the vesicle                 |
-    |                 | ...], ...}                      |                                         |
-    +-----------------+---------------------------------+-----------------------------------------+
-    | inside_species  | {'S1': 10, ...}                 | Dictionary of species name to count     |
-    +-----------------+---------------------------------+-----------------------------------------+
-    | link_species    | {'L1':                          | Dictionary of link species name to      |
-    |                 |   {123: {                       | dictionary of specific link species     |
-    |                 |     'position': [r, theta, phi] | to 3D position in relative spherical    |
-    |                 |     'link': 456},               | coordinates and corresponding link      |
-    |                 |   ...}, ...}                    | species                                 |
-    +-----------------+---------------------------------+-----------------------------------------+
-    | on_path         | [x, y, z]                       | 3D position of the path point to which  |
-    |                 |                                 | the vesicle is bound. None if not bound |
-    +-----------------+---------------------------------+-----------------------------------------+
+    +-----------------+-------------------------------------+-----------------------------------------+
+    | Name            | Example                             | Description                             |
+    +=================+=====================================+=========================================+
+    |                 | ::                                  |                                         |
+    |                 |                                     |                                         |
+    | idx             |     45                              | Index of the specific vesicle           |
+    +-----------------+-------------------------------------+-----------------------------------------+
+    |                 | ::                                  |                                         |
+    |                 |                                     |                                         |
+    | position        |     [x, y, z]                       | 3D position of the vesicle in cartesian |
+    |                 |                                     | coordinates                             |
+    +-----------------+-------------------------------------+-----------------------------------------+
+    |                 | ::                                  |                                         |
+    |                 |                                     |                                         |
+    | name            |     'Ves1'                          | Name of the vesicle type in STEPS       |
+    +-----------------+-------------------------------------+-----------------------------------------+
+    |                 | ::                                  |                                         |
+    |                 |                                     |                                         |
+    | surface_species |     {'S1':[                         | Dictionary of species name to list      |
+    |                 |       (r1, theta1, phi1),           | of spherical coordinate positions       |
+    |                 |       (r2, theta2, phi2),           | relative to the vesicle                 |
+    |                 |     ...], ...}                      |                                         |
+    +-----------------+-------------------------------------+-----------------------------------------+
+    |                 | ::                                  |                                         |
+    |                 |                                     |                                         |
+    | inside_species  |     {'S1': 10, ...}                 | Dictionary of species name to count     |
+    +-----------------+-------------------------------------+-----------------------------------------+
+    |                 | ::                                  |                                         |
+    |                 |                                     |                                         |
+    | link_species    |     {'L1':                          | Dictionary of link species name to      |
+    |                 |       {123: {                       | dictionary of specific link species     |
+    |                 |         'position': [r, theta, phi] | to 3D position in relative spherical    |
+    |                 |         'link': 456},               | coordinates and corresponding link      |
+    |                 |       ...}, ...}                    | species                                 |
+    +-----------------+-------------------------------------+-----------------------------------------+
+    |                 | ::                                  | 3D position of the path point to which  |
+    |                 |                                     | the vesicle is bound. None if not bound |
+    | on_path         |     [x, y, z]                       |                                         |
+    +-----------------+-------------------------------------+-----------------------------------------+
 
     Example::
 
@@ -76,7 +89,7 @@ class StateDependentVesicles(objects.BlenderVesicles, state.StateDependentSepara
 
         loader = HDF5BlenderLoader(parameters=parameters, ...)
 
-    This example will display all vesicles that have link species `'L1'` on their surface as red
+    This example will display all vesicles that have link species ``'L1'`` on their surface as red
     and all other vesicles as green.
     """
     stateClasses = [groups.LinkSpeciesGroup, groups.VesicleGroup]
@@ -118,20 +131,28 @@ class StateDependentRafts(objects.BlenderRafts, state.StateDependentSeparateObje
     See :py:class:`StateDependentSeparateObjects` for information about material set and update
     functions.
 
-    The `state` parameter given to both functions is a dictionary that contains the following values: 
+    The ``state`` parameter given to both functions is a dictionary that contains the following values: 
 
-    +-----------------+------------------------+--------------------------------------+
-    | Name            | Example                | Description                          |
-    +=================+========================+======================================+
-    | idx             | 45                     | Index of the specific raft           |
-    +-----------------+------------------------+--------------------------------------+
-    | position        | [x, y, z]              | 3D position of the raft in cartesian |
-    |                 |                        | coordinates                          |
-    +-----------------+------------------------+--------------------------------------+
-    | name            | 'Raft1'                | Name of the raft type in STEPS       |
-    +-----------------+------------------------+--------------------------------------+
-    | surface_species | {'S1': 0, 'S2':5, ...} | Dictionary of species name to counts |
-    +-----------------+------------------------+--------------------------------------+
+    +-----------------+----------------------------+--------------------------------------+
+    | Name            | Example                    | Description                          |
+    +=================+============================+======================================+
+    |                 | ::                         |                                      |
+    |                 |                            |                                      |
+    | idx             |     45                     | Index of the specific raft           |
+    +-----------------+----------------------------+--------------------------------------+
+    |                 | ::                         |                                      |
+    |                 |                            |                                      |
+    | position        |     [x, y, z]              | 3D position of the raft in cartesian |
+    |                 |                            | coordinates                          |
+    +-----------------+----------------------------+--------------------------------------+
+    |                 | ::                         |                                      |
+    |                 |                            |                                      |
+    | name            |     'Raft1'                | Name of the raft type in STEPS       |
+    +-----------------+----------------------------+--------------------------------------+
+    |                 | ::                         |                                      |
+    |                 |                            |                                      |
+    | surface_species |     {'S1': 0, 'S2':5, ...} | Dictionary of species name to counts |
+    +-----------------+----------------------------+--------------------------------------+
 
     Example::
 
@@ -146,7 +167,7 @@ class StateDependentRafts(objects.BlenderRafts, state.StateDependentSeparateObje
 
         loader = HDF5BlenderLoader(parameters=parameters, ...)
 
-    This example will display all rafts that have species `'S1'` on their surface as red
+    This example will display all rafts that have species ``'S1'`` on their surface as red
     and all other rafts as green.
     """
     stateClasses = [groups.RaftGroup]
