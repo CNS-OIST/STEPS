@@ -44,7 +44,7 @@ ComplexOhmicCurrdef::ComplexOhmicCurrdef(const Patchdef& patchdef,
     : OhmicCurrdefBase(curr)
     , channel_state(curr.getChanState(), patchdef.statedef()) {}
 
-GHKCurrdefBase::GHKCurrdefBase(const Patchdef& patchdef, const steps::model::GHKcurrBase& curr)
+GHKCurrdefBase::GHKCurrdefBase(const Patchdef& /*patchdef*/, const steps::model::GHKcurrBase& curr)
     : ion_id(curr.getIon().getID())
     , valence(curr._valence()) {
     if (not curr._infosupplied()) {
@@ -89,7 +89,7 @@ PetscReal OhmicCurrdefBase::getTriCurrentOnVertex(const osh::Real potential_on_v
 
 PetscReal OhmicCurrdef::getTriBConVertex(const mesh::triangle_id_t& b_id,
                                          const MolState& mol_state,
-                                         const double Avert,
+                                         const double /*Avert*/,
                                          const osh::Real sim_time) const {
     const auto avg_open_channels = mol_state.get_occupancy_ef(b_id, channel_state, sim_time) / 3.0;
 

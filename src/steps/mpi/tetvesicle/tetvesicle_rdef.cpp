@@ -4127,7 +4127,7 @@ uint TetVesicleRDEF::_getTriExtent(triangle_global_id triid) const {
 std::vector<double> TetVesicleRDEF::getBatchTetA(std::vector<index_t> tetids) const {
     std::vector<double> local_vec(tetids.size());
     std::vector<double> output_vec(tetids.size(), 0);
-    for (int i = 0; i < tetids.size(); i++) {
+    for (uint i = 0; i < tetids.size(); i++) {
         auto tidx = tetids[i];
         local_vec[i] = pTets[tetrahedron_global_id(tidx)]->getA();  // getA returns 0 if not in host
     }
@@ -4141,7 +4141,7 @@ std::vector<double> TetVesicleRDEF::getBatchTetA(std::vector<index_t> tetids) co
 std::vector<uint> TetVesicleRDEF::getBatchTetExtent(std::vector<index_t> tetids) const {
     std::vector<uint> local_vec(tetids.size());
     std::vector<uint> output_vec(tetids.size(), 0);
-    for (int i = 0; i < tetids.size(); i++) {
+    for (uint i = 0; i < tetids.size(); i++) {
         auto tidx = tetids[i];
         local_vec[i] = pTets[tetrahedron_global_id(tidx)]->getExtent();  // getExtent returns 0 if
                                                                          // not in host
@@ -4156,7 +4156,7 @@ std::vector<uint> TetVesicleRDEF::getBatchTetExtent(std::vector<index_t> tetids)
 std::vector<uint> TetVesicleRDEF::getBatchTetWeightedExtent(std::vector<index_t> tetids) const {
     std::vector<uint> local_vec(tetids.size());
     std::vector<uint> output_vec(tetids.size());
-    for (int i = 0; i < tetids.size(); i++) {
+    for (uint i = 0; i < tetids.size(); i++) {
         auto tetid = tetids[i];
         int host_rank = _getTetHost(tetrahedron_global_id(tetid));
         uint total_degree = 0;
@@ -4179,7 +4179,7 @@ std::vector<uint> TetVesicleRDEF::getBatchTetWeightedExtent(std::vector<index_t>
 std::vector<double> TetVesicleRDEF::getBatchTriA(std::vector<index_t> triids) const {
     std::vector<double> local_vec(triids.size());
     std::vector<double> output_vec(triids.size(), 0);
-    for (int i = 0; i < triids.size(); i++) {
+    for (uint i = 0; i < triids.size(); i++) {
         auto tidx = triids[i];
         auto host_result = triHosts.find(triangle_global_id(tidx));
         if (host_result == triHosts.end() || host_result->second != myRank_World) {
@@ -4198,7 +4198,7 @@ std::vector<double> TetVesicleRDEF::getBatchTriA(std::vector<index_t> triids) co
 std::vector<uint> TetVesicleRDEF::getBatchTriExtent(std::vector<index_t> triids) const {
     std::vector<uint> local_vec(triids.size());
     std::vector<uint> output_vec(triids.size(), 0);
-    for (int i = 0; i < triids.size(); i++) {
+    for (uint i = 0; i < triids.size(); i++) {
         auto tidx = triids[i];
         auto host_result = triHosts.find(triangle_global_id(tidx));
         if (host_result == triHosts.end() || host_result->second != myRank_World) {
@@ -4217,7 +4217,7 @@ std::vector<uint> TetVesicleRDEF::getBatchTriExtent(std::vector<index_t> triids)
 std::vector<uint> TetVesicleRDEF::getBatchTriWeightedExtent(std::vector<index_t> triids) const {
     std::vector<uint> local_vec(triids.size());
     std::vector<uint> output_vec(triids.size());
-    for (int i = 0; i < triids.size(); i++) {
+    for (uint i = 0; i < triids.size(); i++) {
         auto tidx = triids[i];
         auto host_result = triHosts.find(triangle_global_id(tidx));
         if (host_result == triHosts.end() || host_result->second != myRank_World) {

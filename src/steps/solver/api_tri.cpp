@@ -603,8 +603,7 @@ void API::setTriVDepSReacActive(triangle_global_id tidx, const std::string& vsr,
 
 uint API::getTriExtent(triangle_global_id tidx) const {
     if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
-        ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTris()),
-                    "Triangle index out of range.");
+        ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
         return _getTriExtent(tidx);
     } else {
@@ -616,8 +615,7 @@ uint API::getTriExtent(triangle_global_id tidx) const {
 
 double API::getTriA(triangle_global_id tidx) const {
     if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
-        ArgErrLogIf(tidx >= static_cast<index_t>(mesh->countTris()),
-                    "Triangle index out of range.");
+        ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
 
         return _getTriA(tidx);
     } else {

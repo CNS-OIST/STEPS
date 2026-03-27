@@ -4341,7 +4341,7 @@ uint TetOpSplitP::_getTriExtent(triangle_global_id triid) const {
 std::vector<uint> TetOpSplitP::getBatchTetExtent(std::vector<index_t> tetids) const {
     std::vector<uint> local_vec(tetids.size());
     std::vector<uint> output_vec(tetids.size());
-    for (int i = 0; i < tetids.size(); i++) {
+    for (uint i = 0; i < tetids.size(); i++) {
         auto tidx = tetids[i];
         int host_rank = getTetHostRank(tetrahedron_global_id(tidx));
         if (host_rank == myRank) {
@@ -4365,7 +4365,7 @@ std::vector<uint> TetOpSplitP::getBatchTetExtent(std::vector<index_t> tetids) co
 std::vector<uint> TetOpSplitP::getBatchTetWeightedExtent(std::vector<index_t> tetids) const {
     std::vector<uint> local_vec(tetids.size());
     std::vector<uint> output_vec(tetids.size(), 0);
-    for (int i = 0; i < tetids.size(); i++) {
+    for (uint i = 0; i < tetids.size(); i++) {
         auto tetid = tetids[i];
         int host_rank = getTetHostRank(tetrahedron_global_id(tetid));
         uint total_degree = 0;
@@ -4393,7 +4393,7 @@ std::vector<uint> TetOpSplitP::getBatchTetWeightedExtent(std::vector<index_t> te
 std::vector<double> TetOpSplitP::getBatchTriA(std::vector<index_t> triids) const {
     std::vector<double> local_vec(triids.size());
     std::vector<double> output_vec(triids.size());
-    for (int i = 0; i < triids.size(); i++) {
+    for (uint i = 0; i < triids.size(); i++) {
         auto tidx = triids[i];
         auto host_result = triHosts.find(triangle_global_id(tidx));
         if (host_result == triHosts.end()) {
@@ -4412,7 +4412,7 @@ std::vector<double> TetOpSplitP::getBatchTriA(std::vector<index_t> triids) const
 std::vector<uint> TetOpSplitP::getBatchTriExtent(std::vector<index_t> triids) const {
     std::vector<uint> local_vec(triids.size());
     std::vector<uint> output_vec(triids.size());
-    for (int i = 0; i < triids.size(); i++) {
+    for (uint i = 0; i < triids.size(); i++) {
         auto tidx = triids[i];
         auto host_result = triHosts.find(triangle_global_id(tidx));
         if (host_result == triHosts.end()) {
@@ -4436,7 +4436,7 @@ std::vector<uint> TetOpSplitP::getBatchTriExtent(std::vector<index_t> triids) co
 std::vector<uint> TetOpSplitP::getBatchTriWeightedExtent(std::vector<index_t> triids) const {
     std::vector<uint> local_vec(triids.size());
     std::vector<uint> output_vec(triids.size(), 0);
-    for (int i = 0; i < triids.size(); i++) {
+    for (uint i = 0; i < triids.size(); i++) {
         auto tidx = triids[i];
         auto host_result = triHosts.find(triangle_global_id(tidx));
         if (host_result == triHosts.end()) {

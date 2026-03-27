@@ -57,7 +57,7 @@ class SimulationInput {
                                                 : 0,
                                             0) {}
 
-    void reset(const Statedef& statedef, DistMesh& mesh) const {
+    void reset(const Statedef& statedef, DistMesh& /*mesh*/) const {
         std::fill(potential_on_vertices_w.begin(), potential_on_vertices_w.end(), DEFAULT_MEMB_POT);
         std::fill(current_on_vertices_w.begin(), current_on_vertices_w.end(), 0);
 

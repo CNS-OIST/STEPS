@@ -402,8 +402,8 @@ unsigned long long API::_getPatchSReacExtent(patch_global_id /*pidx*/,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-unsigned long long API::_getPatchVDepSReacExtent(patch_global_id pidx,
-                                                 vdepsreac_global_id vsridx) const {
+unsigned long long API::_getPatchVDepSReacExtent(patch_global_id /*pidx*/,
+                                                 vdepsreac_global_id /*vsridx*/) const {
     NotImplErrLog("");
 }
 

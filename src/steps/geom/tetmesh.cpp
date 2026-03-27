@@ -2374,7 +2374,7 @@ std::vector<int> Tetmesh::getWeightedPartition(int seed, uint nparts, std::vecto
         eind[curr_pos + 3] = verts[3];
         current_elem += 1;
     }
-    for (int i = 0; i < weights.size(); i++) {
+    for (uint i = 0; i < weights.size(); i++) {
         _weights[i] = static_cast<idx_t>(weights[i]);
     }
 
