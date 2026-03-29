@@ -22,6 +22,7 @@ Minimum system requirements
 4. [Git](https://git-scm.com) SCM utility
 5. BLAS/[OpenBLAS](http://www.openblas.net) library
 6. MPI library (Open MPI, MPICH, ...)
+7. [Gmsh](https://gmsh.info/) (only required for MacOS)
 
 On Ubuntu 24.04, the non-default packages can be installed with:
 ```
@@ -30,7 +31,7 @@ sudo apt install build-essential pkg-config git libopenblas-dev libopenmpi-dev
 
 On MacOS 15 (Sequoia), the non-default packages can be installed with [Homebrew](https://brew.sh/) (not installed by default):
 ```
-brew install pkg-config openblas open-mpi
+brew install pkg-config openblas open-mpi gmsh
 ```
 
 Installing with pip

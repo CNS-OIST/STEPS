@@ -44,7 +44,7 @@ build.requires = [
     # (libmetis.so: undefined symbol: gk_jbufs), see https://github.com/KarypisLab/METIS/issues/83
     # It can be unpinned when the issue is fixed.
     "cmeel-metis==5.1.0",
-    "gmsh>=4.10",
+    "gmsh>=4.10;sys_platform != 'darwin'",
     "petsc",
 ]
 # Experimental needs to be enabled to call pysteps/get_dependencies.py and get the dependencies
@@ -120,6 +120,6 @@ default-bundle = [
     "cmeel-boost>=1.80",
     "cmeel-eigen>=3",
     "cmeel-metis==5.1.0", # Can be unpinned when issues with cmeel-metis are fixed
-    "gmsh>=4.10",
+    "gmsh>=4.10;sys_platform != 'darwin'",
     "petsc",
 ]
