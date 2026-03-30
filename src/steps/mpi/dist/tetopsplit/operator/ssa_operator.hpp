@@ -22,15 +22,16 @@ namespace steps::dist {
 template <NextEventSearchMethod SearchMethod>
 class SSAOperator {
   public:
-    SSAOperator(MolState& mol_state,
-                kproc::KProcState& kproc_state,
-                rng::RNG& t_rng,
-                osh::Reals potential_on_vertices);
+    SSAOperator(MolState& mol_state, kproc::KProcState& kproc_state, rng::RNG& t_rng);
 
     /// \return the number of kinetic events that arose on the current process
     inline osh::I64 getExtent() const noexcept {
         return extent;
     }
+
+    std::map<std::string, double> getDebugInfo() const {
+        return {};
+    };
 
     /**
      * \brief Execute the operator
@@ -74,7 +75,6 @@ class SSAOperator {
     MolState& pMolState;
     kproc::KProcState& pKProcState;
     rng::RNG& rng_;
-    osh::Reals potential_on_vertices_;
 
     osh::I64 extent{};
     kproc::Propensities<kproc::PropensitiesPolicy::get<SearchMethod>() |

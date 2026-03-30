@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -187,7 +187,8 @@ class VDepSReac(stepslib._py_VDepSReac):
             ilhs = [ ], olhs = [ ], slhs = [ ],
             irhs = [ ], orhs = [ ], srhs = [ ],
             k = <function>,
-            vrange = [-150.0e-3, 100.0e-3, 1.0e-4] )
+            vrange = [-150.0e-3, 100.0e-3, 1.0e-4],
+            charge = 0)
 
         Construct a voltage-dependent reaction object with identifier string id
         and assign surfsys as the parent surface system. A list of
@@ -212,10 +213,13 @@ class VDepSReac(stepslib._py_VDepSReac):
             * list(steps.model.Spec) srhs (default = [ ])
             * function k
             * list vrange (default = [-150.0e-3, 100.0e-3, 1.0e-4])
+            * int charge
         """
         # Get optional arguments that must be passed without change
         all_args = {hs: val for hs, val in kwargs.items() if hs in {'olhs', 'ilhs',
-                                                                    'slhs', 'irhs', 'srhs', 'orhs'}}
+                                                                    'slhs', 'irhs', 
+                                                                    'srhs', 'orhs',
+                                                                    'charge'}}
         # Process vrange
         rate_f = kwargs['k']
         vtable = _VoltageTable(rate_f, kwargs.get('vrange'))

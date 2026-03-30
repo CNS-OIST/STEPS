@@ -6,7 +6,7 @@
 __copyright__ = "Copyright 2016 EPFL BBP-project"
 # =====================================================================================================================
 from libcpp cimport bool
-from libcpp.memory cimport shared_ptr
+from libcpp.memory cimport shared_ptr, unique_ptr
 from libcpp.pair cimport pair
 cimport std
 cimport steps
@@ -27,144 +27,194 @@ cdef extern from "math/distributions.hpp" namespace "steps::math":
         MULTINOMIAL "steps::math::DistributionMethod::DIST_MULTINOMIAL"
 
 # ======================================================================================================================
-cdef extern from "mpi/dist/tetopsplit/fwd.hpp" namespace "steps::dist":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    cdef cppclass SSAMethod_SSA "steps::dist::SSAMethod::SSA":
-        pass
-
-    cdef cppclass SSAMethod_RSSA "steps::dist::SSAMethod::RSSA":
-        pass
-
-    cdef cppclass NextEventSearchMethod_Direct "steps::dist::NextEventSearchMethod::Direct":
-        pass
-
-    cdef cppclass NextEventSearchMethod_GibsonBruck "steps::dist::NextEventSearchMethod::GibsonBruck":
-        pass
-
-
-# ======================================================================================================================
 cdef extern from "mpi/dist/tetopsplit/simulation.hpp" namespace "steps::dist":
 # ----------------------------------------------------------------------------------------------------------------------
     cdef struct MembraneResistivity:
         double resistivity
         double reversal_potential
 
-# ======================================================================================================================
-cdef extern from "mpi/dist/tetopsplit/tetopsplit.hpp" namespace "steps::dist":
-# ----------------------------------------------------------------------------------------------------------------------
     ###### Cybinding for TetOpSplit ######
-    cdef cppclass TetOpSplitBase:
+    cdef cppclass Simulation:
         std.string getSolverName() except +
-        std.string getSolverDesc() except +
-        std.string getSolverAuthors() except +
-        std.string getSolverEmail() except +
         void reset() except +
         void run(double) except +
-        void checkpoint(std.string) except +
-        void restore(std.string) except +
         double getTime() except +
         uint getNSteps() except +
         void setTime(double) except +
         void setNSteps(uint) except +
 
-        std.vector[double] getBatchTetSpecCounts(std.vector[GO], std.string, bool) except +
-        void setBatchTetSpecCounts(std.vector[GO], std.string, std.vector[double], bool) except +
-        std.vector[double] getBatchTetSpecConcs(std.vector[GO], std.string, bool) except +
-        void setBatchTetSpecConcs(std.vector[GO], std.string, std.vector[double], bool) except +
-        std.vector[double] getBatchTriSpecCounts(std.vector[GO], std.string, bool) except +
-        void setBatchTriSpecCounts(std.vector[GO], std.string, std.vector[double], bool) except +
+        std.vector[double] getBatchTetSpecCounts(std.vector[GO], species_name, bool) except +
+        void setBatchTetSpecCounts(std.vector[GO], species_name, std.vector[double], bool) except +
+        std.vector[double] getBatchTetSpecConcs(std.vector[GO], species_name, bool) except +
+        void setBatchTetSpecConcs(std.vector[GO], species_name, std.vector[double], bool) except +
+        std.vector[double] getBatchTriSpecCounts(std.vector[GO], species_name, bool) except +
+        void setBatchTriSpecCounts(std.vector[GO], species_name, std.vector[double], bool) except +
 
-        void getBatchTetSpecCountsNP(GO*, int, std.string, double*, int, bool) except +
-        void setBatchTetSpecCountsNP(GO*, int, std.string, double*, int, bool) except +
-        void getBatchTetSpecConcsNP(GO*, int, std.string, double*, int, bool) except +
-        void setBatchTetSpecConcsNP(GO*, int, std.string, double*, int, bool) except +
-        void getBatchTriSpecCountsNP(GO*, int, std.string, double*, int, bool) except +
-        void setBatchTriSpecCountsNP(GO*, int, std.string, double*, int, bool) except +
+        void getBatchTetSpecCountsNP(GO*, int, species_name, double*, int, bool) except +
+        void setBatchTetSpecCountsNP(GO*, int, species_name, double*, int, bool) except +
+        void getBatchTetSpecConcsNP(GO*, int, species_name, double*, int, bool) except +
+        void setBatchTetSpecConcsNP(GO*, int, species_name, double*, int, bool) except +
+        void getBatchTriSpecCountsNP(GO*, int, species_name, double*, int, bool) except +
+        void setBatchTriSpecCountsNP(GO*, int, species_name, double*, int, bool) except +
+
+        bool getTetSpecClamped(GO, species_name, bool) except +
+        void setTetSpecClamped(GO, species_name, bool, bool) except +
+        bool getTriSpecClamped(GO, species_name, bool) except +
+        void setTriSpecClamped(GO, species_name, bool, bool) except +
 
         void getBatchVertVsNP(GO*, int, double*, int, bool) except +
         void getBatchTriVsNP(GO*, int, double*, int, bool) except +
         void getBatchTetVsNP(GO*, int, double*, int, bool) except +
+        void setBatchVertVsNP(GO*, int, double*, int, bool) except +
+        void setBatchTriVsNP(GO*, int, double*, int, bool) except +
+        void setBatchTetVsNP(GO*, int, double*, int, bool) except +
 
-        void getBatchTriOhmicIsNP(GO*, int, std.string, double*, int, bool) except +
-        void getBatchTriGHKIsNP(GO*, int, std.string, double*, int, bool) except +
+        void getBatchTriOhmicIsNP(GO*, int, ohmic_current_id, double*, int, bool) except +
+        void getBatchTriComplexOhmicIsNP(GO*, int, complex_ohmic_current_id, double*, int, bool) except +
+        void getBatchTriGHKIsNP(GO*, int, ghk_current_id, double*, int, bool) except +
+        void getBatchTriComplexGHKIsNP(GO*, int, complex_ghk_current_id, double*, int, bool) except +
+        void getBatchTriIsNP(GO*, int, double*, int, bool) except +
 
-        void setDiffBoundarySpecDiffusionActive(std.string, std.string, bool) except +
-        bool getDiffBoundarySpecDiffusionActive(std.string, std.string) except +
+        double getTetDiffD(GO, diffusion_id, GO, bool) except +
+        void setTetDiffD(GO, diffusion_id, double, GO, bool) except +
+        double getTetReacK(GO, reaction_id, bool) except +
+        void setTetReacK(GO, reaction_id, double, bool) except +
+        double getTetComplexReacK(GO, complex_reaction_id, bool) except +
+        void setTetComplexReacK(GO, complex_reaction_id, double, bool) except +
+
+        void setDiffBoundarySpecDiffusionActive(diffusion_boundary_name, species_name, bool) except +
+        bool getDiffBoundarySpecDiffusionActive(diffusion_boundary_name, species_name) except +
+        void setDiffBoundarySpecDcst(diffusion_boundary_name, species_name, double) except +
 
         void setDiffApplyThreshold(int) except +
         int getDiffApplyThreshold() except +
 
         unsigned long long getReacExtent(bool) except +
         unsigned long long getDiffExtent(bool) except +
+        std.map[std.string, double] getReactionDebugInfo(bool) except +
+        std.map[std.string, double] getDiffusionDebugInfo(bool) except +
 
         double getNIteration() except +
         double getUpdPeriod() except +
-        double getCompTime() except +
-        double getSyncTime() except +
-        double getIdleTime() except +
+        double getEFieldTime() except +
         double getRDTime() except +
         double getDiffusionTime() except +
         double getReactionTime() except +
-        double getDataExchangeTime() except +
 
-        void setMembIClamp(std.string, double) except +
+        void setMembIClamp(membrane_id, double) except +
         MembraneResistivity getTriRes(GO, bool) except +
+        bool getTetVClamped(GO, bool) except +
+        void setTetVClamped(GO, bool, bool) except +
         void setTriRes(GO, double, double, bool) except +
         double getTriCapac(GO, bool) except +
         void setTriCapac(GO, double, bool) except +
+        double getTriSReacK(GO, surface_reaction_id, bool) except +
+        void setTriSReacK(GO, surface_reaction_id, double, bool) except +
+        double getTriComplexSReacK(GO, complex_surface_reaction_id, bool) except +
+        void setTriComplexSReacK(GO, complex_surface_reaction_id, double, bool) except +
+        double getTriSReacI(GO, surface_reaction_id, bool) except +
+        double getTriVDepSReacI(GO, vdep_surface_reaction_id, bool) except +
+        double getTriComplexSReacI(GO, complex_surface_reaction_id, bool) except +
+        double getTriVDepComplexSReacI(GO, vdep_complex_surface_reaction_id, bool) except +
+        bool getTriVClamped(GO, bool) except +
+        void setTriVClamped(GO, bool, bool) except +
+        double getTriIClamp(GO, bool) except +
+        void setTriIClamp(GO, double, bool) except +
         double getVertIClamp(GO, bool) except +
         void setVertIClamp(GO, double, bool) except +
-        double getTriOhmicErev(GO, std.string, bool) except +
-        void getBatchTriOhmicErevsNP(GO*, int, std.string, double*, int, bool) except +
-        void setTriOhmicErev(GO, std.string, double, bool) except +
+        bool getVertVClamped(GO, bool) except +
+        void setVertVClamped(GO, bool, bool) except +
+        double getTriOhmicErev(GO, ohmic_current_id, bool) except +
+        void getBatchTriOhmicErevsNP(GO*, int, ohmic_current_id, double*, int, bool) except +
+        void setTriOhmicErev(GO, ohmic_current_id, double, bool) except +
+        double getTriComplexOhmicErev(GO, complex_ohmic_current_id, bool) except +
+        void getBatchTriComplexOhmicErevsNP(GO*, int, complex_ohmic_current_id, double*, int, bool) except +
+        void setTriComplexOhmicErev(GO, complex_ohmic_current_id, double, bool) except +
         double getEfieldDT() except +
         void setEfieldDT(double) except +
         void setPetscOptions(std.string) except +
         void setTemp(double) except +
         double getTemp() except +
+        double getDiffusionTolerance() except +
+        void setDiffusionTolerance(double) except +
+        double getDiffusionNormalApproximationThreshold() except +
+        void setDiffusionNormalApproximationThreshold(double) except +
+        double getDiffusionCrankNicolsonThreshold() except +
+        void setDiffusionCrankNicolsonThreshold(double) except +
+        uint getDiffusionLeapThreshold() except +
+        void setDiffusionLeapThreshold(uint) except +
+        uint getDiffusionMaxDtSkips() except +
+        void setDiffusionMaxDtSkips(uint) except +
+        double getDiffusionMinDtFactor() except +
+        void setDiffusionMinDtFactor(double) except +
+        uint getReactionSSAThreshold() except +
+        void setReactionSSAThreshold(uint) except +
+        uint getReactionSSASteps() except +
+        void setReactionSSASteps(uint) except +
+        uint getReactionLComputePeriod() except +
+        void setReactionLComputePeriod(uint) except +
+        double getReactionTolerance() except +
+        void setReactionTolerance(double) except +
+        double getReactionTheta() except +
+        void setReactionTheta(double) except +
 
         # Not sure they are all mandatory
-        double getCompVol(std.string) except +
-        double getCompSpecCount(std.string, std.string) except +
-        void setCompSpecCount(std.string, std.string, double, DistributionMethod) except +
-        double getCompAmount(std.string, std.string) except +
-        void setCompAmount(std.string, std.string, double) except +
-        double getCompSpecConc(std.string, std.string) except +
-        void setCompSpecConc(std.string, std.string, double, DistributionMethod) except +
-        bool getCompClamped(std.string, std.string) except +
-        void setCompClamped(std.string, std.string, bool) except +
-        double getCompReacK(std.string, std.string) except +
-        void setCompReacK(std.string, std.string, double) except +
-        bool getCompReacActive(std.string, std.string) except +
-        void setCompReacActive(std.string, std.string, bool) except +
-        double getTetSpecCount(uint, std.string, bool) except +
-        void setTetSpecCount(uint, std.string, double, bool) except +
-        double getTetSpecConc(uint, std.string, bool) except +
-        void setTetSpecConc(uint, std.string, double, bool) except +
-        double getPatchArea(std.string) except +
-        double getPatchSpecCount(std.string, std.string) except +
-        void setPatchSpecCount(std.string, std.string, double, DistributionMethod) except +
-        double getPatchAmount(std.string, std.string) except +
-        void setPatchAmount(std.string, std.string, double) except +
-        bool getPatchClamped(std.string, std.string) except +
-        void setPatchClamped(std.string, std.string, bool) except +
-        double getPatchSReacK(std.string, std.string) except +
-        void setPatchSReacK(std.string, std.string, double) except +
-        bool getPatchSReacActive(std.string, std.string) except +
-        void setPatchSReacActive(std.string, std.string, bool) except +
-        double getPatchMaxV(std.string) except +
-        double getTriSpecCount(uint, std.string, bool) except +
-        void setTriSpecCount(uint, std.string, double, bool) except +
+        double getCompSpecCount(compartment_id, species_name) except +
+        void setCompSpecCount(compartment_id, species_name, double, DistributionMethod) except +
+        double getCompSpecConc(compartment_id, species_name) except +
+        void setCompSpecConc(compartment_id, species_name, double, DistributionMethod) except +
+        bool getCompSpecClamped(compartment_id, species_name) except +
+        bool setCompSpecClamped(compartment_id, species_name, bool) except +
+        double getCompComplexCount(compartment_id, complex_name, std.vector[std.vector[steps_model.SubunitStateFilter]]) except +
+        void setCompComplexCount(compartment_id, complex_name, std.vector[std.vector[steps_model.SubunitStateFilter]], double n, DistributionMethod) except +
+        double getCompComplexSUSCount(compartment_id, complex_name, std.vector[std.vector[steps_model.SubunitStateFilter]], complex_substate_id) except +
+        double getCompReacK(compartment_id, reaction_id) except +
+        void setCompReacK(compartment_id, reaction_id, double) except +
+        unsigned long long getCompReacExtent(compartment_id, reaction_id) except +
+        unsigned long long getCompComplexReacExtent(compartment_id, complex_reaction_id) except +
+        double getCompDiffD(compartment_id, diffusion_id) except +
+        void setCompDiffD(compartment_id, diffusion_id, double) except +
+        double getPatchComplexCount(patch_id, complex_name, std.vector[std.vector[steps_model.SubunitStateFilter]]) except +
+        void setPatchComplexCount(patch_id, complex_name, std.vector[std.vector[steps_model.SubunitStateFilter]], double n, DistributionMethod) except +
+        double getPatchComplexSUSCount(patch_id, complex_name, std.vector[std.vector[steps_model.SubunitStateFilter]], complex_substate_id) except +
+        bool getCompReacActive(compartment_id, std.string) except +
+        void setCompReacActive(compartment_id, std.string, bool) except +
+        double getTetSpecCount(uint, species_name, bool) except +
+        void setTetSpecCount(uint, species_name, double, bool) except +
+        double getTetSpecConc(uint, species_name, bool) except +
+        void setTetSpecConc(uint, species_name, double, bool) except +
+        double getPatchArea(patch_id) except +
+        double getPatchSpecCount(patch_id, species_name) except +
+        void setPatchSpecCount(patch_id, species_name, double, DistributionMethod) except +
+        bool getPatchSpecClamped(patch_id, species_name) except +
+        bool setPatchSpecClamped(patch_id, species_name, bool) except +
+        double getPatchSReacK(patch_id, surface_reaction_id) except +
+        void setPatchSReacK(patch_id, surface_reaction_id, double) except +
+        unsigned long long getPatchSReacExtent(patch_id, surface_reaction_id) except +
+        unsigned long long getPatchComplexSReacExtent(patch_id, complex_surface_reaction_id) except +
+        unsigned long long getPatchVDepSReacExtent(patch_id, vdep_surface_reaction_id) except +
+        unsigned long long getPatchVDepComplexSReacExtent(patch_id, vdep_complex_surface_reaction_id) except +
+        bool getPatchSReacActive(patch_id, surface_reaction_id) except +
+        void setPatchSReacActive(patch_id, surface_reaction_id, bool) except +
+        double getTriSpecCount(uint, species_name, bool) except +
+        void setTriSpecCount(uint, species_name, double, bool) except +
         double getVertV(GO, bool) except +
         double getTriV(GO, bool) except +
         double getTetV(GO, bool) except +
-        double getTriOhmicI(GO, std.string, bool) except +
-        double getTriGHKI(GO, std.string, bool) except +
-        void setMembPotential(std.string, double) except +
-        void setMembRes(std.string, double, double) except +
-        MembraneResistivity getMembRes(std.string) except +
+        void setVertV(GO, double, bool) except +
+        void setTriV(GO, double, bool) except +
+        void setTetV(GO, double, bool) except +
+        double getTriOhmicI(GO, ohmic_current_id, bool) except +
+        double getTriComplexOhmicI(GO, complex_ohmic_current_id, bool) except +
+        double getTriGHKI(GO, ghk_current_id, bool) except +
+        double getTriComplexGHKI(GO, complex_ghk_current_id, bool) except +
+        double getTriI(GO, bool) except +
+        void setMembPotential(membrane_id, double) except +
+        void setMembCapac(membrane_id, double) except +
+        void setMembVolRes(membrane_id, double) except +
+        void setMembRes(membrane_id, double, double) except +
+        MembraneResistivity getMembRes(membrane_id) except +
         void dumpDepGraphToFile(std.string) except +
 
-    cdef cppclass TetOpSplit[T, U]:
-        TetOpSplit(steps_model.Model&, steps_dist_tetmesh.DistMesh&, shared_ptr[steps_rng.RNG], bool, bool) except +
+    cdef unique_ptr[Simulation] GetSimulation(steps_model.Model&, steps_dist_tetmesh.DistMesh&, shared_ptr[steps_rng.RNG], int, int, int, bool, bool)
+

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -89,7 +89,7 @@ void CompVesRaft::checkpoint(std::fstream& cp_file) {
         }
     }
     util::checkpoint(cp_file, ves_perm_comps);
-    util::checkpoint(cp_file, pVes_Tetskcst);
+    util::checkpoint(cp_file, pVes_Tetsdcst);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -117,7 +117,7 @@ void CompVesRaft::restore(std::fstream& cp_file) {
             pVesicles_permittedcomps[ves_comp.first].insert(comp);
         }
     }
-    util::restore(cp_file, pVes_Tetskcst);
+    util::restore(cp_file, pVes_Tetsdcst);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -132,7 +132,7 @@ void CompVesRaft::reset() {
         vit.second.clear();
     }
 
-    for (auto& vtdit: pVes_Tetskcst) {
+    for (auto& vtdit: pVes_Tetsdcst) {
         vtdit.second.clear();
     }
 
@@ -156,8 +156,7 @@ void CompVesRaft::setupVesicles() {
 
         pVesicles[vesicledef_gidx] = ves;
 
-        std::map<tetrahedron_global_id, double> tetskcst;
-        pVes_Tetskcst[vesicledef_gidx] = tetskcst;
+        pVes_Tetsdcst[vesicledef_gidx];
 
         pVesicles_permittedcomps[vesicledef_gidx].insert(this);
     }
@@ -186,7 +185,9 @@ void CompVesRaft::addTet(TetVesRaft* tet) {
 
 solver::vesicle_individual_id CompVesRaft::addVesicle(solver::Vesicledef* vesdef,
                                                       const math::position_abs& pos,
-                                                      tetrahedron_global_id tet_gidx) {
+                                                      tetrahedron_global_id tet_gidx,
+                                                      const double diam,
+                                                      const double dcst) {
     solver::vesicle_global_id vgidx = vesdef->gidx();
     if (pVesicles.count(vgidx) == 0) {
         std::ostringstream os;
@@ -218,10 +219,12 @@ solver::vesicle_individual_id CompVesRaft::addVesicle(solver::Vesicledef* vesdef
 
     Vesicle* jama_vesicle = nullptr;
 
+    double diameter = diam > 0.0 ? diam : vesdef->diameter();
+    double d = dcst >= 0.0 ? dcst : vesdef->dcst();
+
     // Check if position is available- if not return undefined individual ID
     // We know central tet is in this compartment, so we don't need to
-    bool avail =
-        checkPos(&vpos, vesdef->diameter(), vgidx, tets_overlap_new, jama_vesicle, tet_gidx);
+    bool avail = checkPos(&vpos, diameter, vgidx, tets_overlap_new, jama_vesicle, tet_gidx);
     if (avail == false) {
         return {};
     }
@@ -229,15 +232,12 @@ solver::vesicle_individual_id CompVesRaft::addVesicle(solver::Vesicledef* vesdef
     solver::vesicle_individual_id unique_index = pVesRaft->getVesicleNextIndex_();
 
     // Create the vesicle
-    auto* ves = new Vesicle(vesdef, this, pos, unique_index, tets_overlap_new);
+    auto* ves = new Vesicle(vesdef, this, pos, unique_index, tets_overlap_new, diameter, d);
 
     // addOverlap takes care of the references for tets
     pVesRaft->addOverlap_(tets_overlap_new, ves);
 
     pVesicles[vgidx].push_back(ves);
-
-    // Check if this vesicle is on a path and set up if so
-    checkVesiclePath(ves, pos);
 
     return unique_index;
 }
@@ -304,6 +304,15 @@ bool CompVesRaft::checkPos(overlap::Vector* pos,
     double vol_sphere = (4.0 / 3) * math::PI * pow(diam / 2.0, 3);
 
     math::position_abs pos2((*pos)[0], (*pos)[1], (*pos)[2]);
+
+    // If the vesicle is on a Path, check that we allow movements that would intersect that path
+    if (ves != nullptr and ves->onPath()) {
+        const auto& path = ves->getPath();
+        if (not path->canIntersect(*ves) and
+            path->intersectsSphere(pos2, 0, ves->getDiam() / 2.0, false)) {
+            return false;
+        }
+    }
 
     // If we have the central tet, just use that. If not, use the previous overlap.
     if (central_tet_idx.valid()) {
@@ -577,7 +586,8 @@ void CompVesRaft::setVesicleCount(solver::vesicle_global_id vidx, uint count) {
 
 void CompVesRaft::setVesicleTetDcst(solver::vesicle_global_id vidx,
                                     tetrahedron_global_id tidx,
-                                    double dcst) {
+                                    double dcst,
+                                    bool rel) {
     if (pVesicles.count(vidx) == 0) {
         std::ostringstream os;
         os << "Vesicle index " << vidx << " is unknown in compartment.\n";
@@ -591,7 +601,49 @@ void CompVesRaft::setVesicleTetDcst(solver::vesicle_global_id vidx,
     }
 
     // No checks on the tet idx- if it's wrong it'll just get ignored
-    pVes_Tetskcst[vidx][tidx] = dcst;
+    pVes_Tetsdcst[vidx][tidx] = {dcst, rel};
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double CompVesRaft::getVesicleTetDcst(solver::vesicle_global_id vidx,
+                                      tetrahedron_global_id tidx) const {
+    auto v_it = pVes_Tetsdcst.find(vidx);
+
+    if (v_it == pVes_Tetsdcst.end()) {
+        std::ostringstream os;
+        os << "Vesicle index " << vidx << " is unknown in compartment.\n";
+        ProgErrLog(os.str());
+    }
+
+    auto t_it = v_it->second.find(tidx);
+
+    if (t_it == v_it->second.end()) {
+        return -1;
+    }
+
+    return t_it->second.first;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+bool CompVesRaft::getVesicleTetDcstRel(solver::vesicle_global_id vidx,
+                                       tetrahedron_global_id tidx) const {
+    auto v_it = pVes_Tetsdcst.find(vidx);
+
+    if (v_it == pVes_Tetsdcst.end()) {
+        std::ostringstream os;
+        os << "Vesicle index " << vidx << " is unknown in compartment.\n";
+        ProgErrLog(os.str());
+    }
+
+    auto t_it = v_it->second.find(tidx);
+
+    if (t_it == v_it->second.end()) {
+        return false;
+    }
+
+    return t_it->second.second;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -651,8 +703,8 @@ void CompVesRaft::runVesicle(double dt) {
     }
 
     for (auto const& ev: exo_vesicles) {
-        // despite our best efforts its still possible an exocytosis was applied in a vesproxy when
-        // linkspecs were created on another vesproxy
+        // despite our best efforts its still possible an exocytosis was applied in a vesproxy
+        // when linkspecs were created on another vesproxy
         if (ev.first->containsLink() == false) {
             // in applying Exocytosis, the pVesicle strucure will be altered
             applyExocytosis(ev.first, ev.second);
@@ -668,6 +720,14 @@ void CompVesRaft::runVesicle(double dt) {
         for (auto const& v: vesicles) {
             if (v->getImmobility() == 0) {
                 solver::vesicle_global_id ves_gidx = v->def()->gidx();
+
+                // First check whether the vesicle bound to a path or unbound from a path during the
+                // dt period
+                if (not v->onPath()) {
+                    v->checkPathBinding(dt);
+                } else {
+                    v->checkPathUnbinding(dt);
+                }
 
                 tetrahedron_global_id centraltet = v->getCentralTet();
 
@@ -708,12 +768,19 @@ void CompVesRaft::runVesicle(double dt) {
                         }
                     }
                 } else {
-                    if (pVes_Tetskcst[ves_gidx].count(centraltet) > 0) {
-                        dcst = pVes_Tetskcst[ves_gidx][centraltet];
+                    auto dcstit = pVes_Tetsdcst[ves_gidx].find(centraltet);
+                    if (dcstit != pVes_Tetsdcst[ves_gidx].end()) {
+                        auto [d, rel] = dcstit->second;
+                        if (rel) {
+                            dcst = d * v->getDcst();
+                        } else {
+                            dcst = d;
+                        }
                     } else {
                         dcst = v->getDcst();
                     }
-                    float scale = sqrt(2 * dcst * dt);  // because rng (next 3 lines) returns floats
+                    float scale = sqrt(2 * dcst * dt);  // because rng (next 3 lines) returns
+                                                        // floats
                     auto dx = static_cast<double>(rng()->getStdNrm() * scale);
                     auto dy = static_cast<double>(rng()->getStdNrm() * scale);
                     auto dz = static_cast<double>(rng()->getStdNrm() * scale);
@@ -750,10 +817,6 @@ void CompVesRaft::runVesicle(double dt) {
 
                         if (v->onPath()) {
                             v->updatePositionOnPath(it);
-                        } else {
-                            // Check if this position starts a new path for vesicle
-                            math::position_abs pos_ves{new_pos[0], new_pos[1], new_pos[2]};
-                            checkVesiclePath(v, pos_ves);
                         }
                     }
                 }
@@ -963,8 +1026,8 @@ void CompVesRaft::applyExocytosis(Vesicle* vesicle, solver::exocytosis_global_id
                     continue;
                 }
 
-                // Note: clamped status doesn't matter because RDEF stores that and will check clanp
-                // during sync
+                // Note: clamped status doesn't matter because RDEF stores that and will check
+                // clamp during sync
                 uint prev_count = pVesRaft->getTriSpecCount_(update_tri->idx(), spec_gidx);
                 pVesRaft->setTriSpecCount_(update_tri->idx(),
                                            spec_gidx,
@@ -1021,7 +1084,7 @@ void CompVesRaft::setVesiclePos(solver::vesicle_global_id vidx,
         os << "Vesicle addition error. Index " << vidx << " is unknown in compartment.\n";
         ProgErrLog(os.str());
     }
-    for (auto const& v: pVesicles[vidx]) {
+    for (auto const v: pVesicles[vidx]) {
         if (v->getUniqueIndex() == ves_unique_idx) {
             AssertLog(v->idx() == vidx);
 
@@ -1063,11 +1126,6 @@ void CompVesRaft::setVesiclePos(solver::vesicle_global_id vidx,
 
                     // Now need to remove from any paths it's currently on
                     v->removeFromPath();
-
-                    // check if this position starts a new path for vesicle
-                    math::position_abs pos_ves{new_pos[0], new_pos[1], new_pos[2]};
-
-                    checkVesiclePath(v, pos_ves);
                 } else {
                     CLOG(WARNING, "general_log") << "Did not change position: surface "
                                                  << "molecule has no overlap tet.\n";
@@ -1089,9 +1147,6 @@ void CompVesRaft::setVesiclePos(solver::vesicle_global_id vidx,
                     pVesRaft->removeOverlap_(tets_overlap_prev, v);
                     pVesRaft->addOverlap_(tets_overlap_new, v);
                     v->removeFromPath();
-                    math::position_abs pos_ves{new_pos[0], new_pos[1], new_pos[2]};
-
-                    checkVesiclePath(v, pos_ves);
 
                     std::map<tetrahedron_global_id, double> tets_overlap_jv =
                         jama_vesicle->getOverlap_gidx();
@@ -1102,8 +1157,6 @@ void CompVesRaft::setVesiclePos(solver::vesicle_global_id vidx,
                     pVesRaft->removeOverlap_(tets_overlap_jv, jama_vesicle);
                     pVesRaft->addOverlap_(tets_overlap_prev, jama_vesicle);
                     jama_vesicle->removeFromPath();
-                    math::position_abs pos_jamaves{old_pos[0], old_pos[1], old_pos[2]};
-                    checkVesiclePath(jama_vesicle, pos_jamaves);
                 }
             }
             // All roads lead here- safe to have only this return statement
@@ -1117,36 +1170,6 @@ void CompVesRaft::setVesiclePos(solver::vesicle_global_id vidx,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void CompVesRaft::checkVesiclePath(Vesicle* v, math::position_abs const& pos_ves) const {
-    solver::vesicle_global_id ves_gidx = v->idx();
-
-    double ves_radius = v->getDiam() / 2.0;
-
-    auto ves_paths = pVesRaft->vesicleCrossedPaths_(pos_ves, ves_gidx, ves_radius);
-
-    for (auto const& ves_path: ves_paths) {
-        // One final check to see if the spec deps are there
-        std::map<solver::spec_global_id, uint> const& path_ves_speceps =
-            ves_path->getVesicleSpecDeps(ves_gidx);
-
-        bool gotdeps = true;
-        for (auto const& vsd: path_ves_speceps) {
-            if (v->getSurfSpecCount(vsd.first) < vsd.second) {
-                gotdeps = false;
-                break;
-            }
-        }
-
-        if (gotdeps) {
-            auto route = ves_path->calculateRoute(pos_ves, ves_gidx, rng(), ves_radius);
-            v->setPathPositions(route);
-            return;  // vesicle can only be on one path at a time
-        }
-        // If the deps are not there we simply continue to the next path if there is one
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
 
 void CompVesRaft::addVesicleSpecs(solver::vesicle_global_id vidx,
                                   solver::vesicle_individual_id ves_unique_idx,

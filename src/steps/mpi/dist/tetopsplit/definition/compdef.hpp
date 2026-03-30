@@ -7,7 +7,11 @@
 
 #include "fwd.hpp"
 
+#include "geom/dist/fwd.hpp"
+#include "model/fwd.hpp"
+#include "model/reac.hpp"
 #include "mpi/dist/tetopsplit/kproc/fwd.hpp"
+#include "util/strong_ra.hpp"
 #include "util/vocabulary.hpp"
 
 namespace steps::dist {
@@ -23,25 +27,56 @@ namespace steps::dist {
  */
 class Compdef {
   public:
+    using AllModReacID = std::variant<model::reaction_id, model::complex_reaction_id>;
+    using AllContReacID = std::variant<container::reaction_id, container::complex_reaction_id>;
+
     Compdef(const Statedef& statedef,
-            model::compartment_id t_model_compartment,
+            const DistComp& comp,
             container::compartment_id t_container_compartment);
+
+    /// Reset the def-object values to model defaults
+    void reset();
 
     inline const model::compartment_id& getID() const noexcept {
         return model_compartment;
     }
 
-    inline container::compartment_id getModelIdx() const noexcept {
+    inline container::compartment_id getIdx() const noexcept {
         return container_compartment;
     }
-    /**
-     * Add the species to the compartment definition and return its local index.
-     * If the species has been added before, return its lidx in record,
-     * otherwise add the species to the record and return its new lidx.
-     */
-    container::species_id addSpec(model::species_id species);
+
+    inline osh::Real getConductivity() const noexcept {
+        return conductivity;
+    }
+
+    inline void setConductivity(double cond) noexcept {
+        conductivity = cond;
+    }
+
+    inline bool getSpecClamped(container::species_id spec) const noexcept {
+        return clamped[spec.get()];
+    }
+
+    inline void setSpecClamped(container::species_id spec, bool _clampled) noexcept {
+        clamped[spec.get()] = _clampled;
+    }
+
     container::species_id getSpecContainerIdx(model::species_id species) const;
+
+    container::species_id getSpecContainerIdx(const steps::model::Spec& spec) const;
+
     model::species_id getSpecModelIdx(container::species_id species) const;
+
+    template <typename MReacID>
+    typename ModID2ContID<MReacID>::type getReacIdx(MReacID reac) const {
+        using ReacID = typename ModID2ContID<MReacID>::type;
+        return std::get<ReacID>(reacM2C.at(reac));
+    }
+
+    template <typename rdefT, typename MReacID>
+    rdefT& getReacdef(MReacID reac) const {
+        return *reacdefs<rdefT>().at(getReacIdx(reac).get());
+    }
 
     /**
      * \return number of chemical species in the compartment
@@ -49,55 +84,6 @@ class Compdef {
     inline osh::I32 getNSpecs() const noexcept {
         return static_cast<osh::I32>(specC2M.size());
     }
-
-    container::reaction_id addReac(const std::vector<container::species_id>& reactants,
-                                   const std::vector<container::species_id>& products,
-                                   osh::Real kcst);
-    Reacdef& getReac(container::reaction_id reaction) const;
-
-    /**
-     * Register a diffusion process in the compartment
-     * \param species the diffusion chemical specie
-     * \param dcst the diffusion constant
-     * \return the diffusion identifier
-     */
-    container::diffusion_id addDiff(container::species_id species, osh::Real dcst);
-
-    /**
-     * Get internal species identifier of the given diffusion
-     * \param diffusion the diffusion identifier
-     * \return the internal chemical species identifier
-     */
-    container::species_id getDiffSpecContainerIdx(container::diffusion_id diffusion);
-
-    /**
-     * Get global species identifier of the given diffusion
-     * \param diffusion the diffusion identifier
-     * \return the global chemical species identifier
-     */
-    model::species_id getDiffSpecModelIdx(container::diffusion_id diffusion);
-
-    /**
-     * \param diffusion internal diffusion identifier
-     * \return definition of the specified diffusion
-     */
-    Diffdef& getDiff(container::diffusion_id diffusion);
-
-    /**
-     * Get diffusion definition
-     * \param kproc internal kproc identifier of the diffusion
-     * \return the diffusion definition
-     */
-    Diffdef& getDiffByKProcContainerIdx(container::kproc_id kproc);
-
-    /**
-     * Check if a KProc with local index kproc_lidx depends on
-     * the species with local index spec_lidx.
-     * \param kproc Local index of the KProc.
-     * \param species Local index of the Species.
-     * return True if there is dependency, false if not.
-     */
-    bool KProcDepSpec(container::kproc_id kproc, container::species_id species) const;
 
     /**
      * \return number of kinetic processes defined in the compartment
@@ -136,41 +122,61 @@ class Compdef {
                species_diffused_.end();
     }
 
+    Diffdef& getDiffdef(const model::diffusion_id diff) const;
+
     /**
      * \return the reaction definitions
      */
-    inline const std::vector<std::unique_ptr<Reacdef>>& reacdefs() const noexcept {
-        return reacdefPtrs;
+    template <typename rdefT>
+    inline std::vector<std::unique_ptr<rdefT>>& reacdefs() noexcept {
+        if constexpr (std::is_same_v<rdefT, Reacdef>) {
+            return reacdefPtrs;
+        } else if constexpr (std::is_same_v<rdefT, ComplexReacdef>) {
+            return complexReacdefPtrs;
+        } else {
+            static_assert(util::always_false_v<rdefT>, "Unmanaged reaction type");
+        }
+    }
+
+    template <typename rdefT>
+    inline const std::vector<std::unique_ptr<rdefT>>& reacdefs() const noexcept {
+        return const_cast<Compdef*>(this)->reacdefs<rdefT>();
     }
 
     inline const Statedef& statedef() const noexcept {
         return pStatedef;
     }
 
-    inline kproc::KProcType getKProcType(container::kproc_id kproc) const {
-        if (kproc.get() >= 0 && kproc < getNReacs()) {
-            return kproc::KProcType::Reac;
-        } else if (kproc >= getNReacs() && kproc < getNKProcs()) {
-            return kproc::KProcType::Diff;
-        } else {
-            throw std::out_of_range("KProc local index error.");
-        }
-    }
-
     void report(std::ostream& ostr) const;
 
   private:
+    /**
+     * Add the STEPS objects to the compartment definition and return their local index.
+     * If the object has been added before, return its lidx in record,
+     * otherwise add the object to the record and return its new lidx.
+     */
+    container::species_id addSpec(const steps::model::Spec& spec);
+    template <typename ReacT>
+    void addReac(const ReacT& reac);
+    container::diffusion_id addDiff(const steps::model::Diff& diff);
+
     // compartment KProc order: Reac then Diff
+    const DistComp& pComp;
     const Statedef& pStatedef;
     model::compartment_id model_compartment;
     container::compartment_id container_compartment;
     std::set<container::species_id> species_diffused_;
     std::unordered_map<model::species_id, container::species_id> specM2C;
+    std::map<AllModReacID, AllContReacID> reacM2C;
+    std::map<model::diffusion_id, container::diffusion_id> diffM2C;
     std::vector<model::species_id> specC2M;
+    osh::Real conductivity;
 
     osh::I64 nKProcs{};
     std::vector<std::unique_ptr<Reacdef>> reacdefPtrs;
+    std::vector<std::unique_ptr<ComplexReacdef>> complexReacdefPtrs;
     std::vector<std::unique_ptr<Diffdef>> diffdefPtrs;
+    std::vector<bool> clamped;
 };
 
 }  // namespace steps::dist

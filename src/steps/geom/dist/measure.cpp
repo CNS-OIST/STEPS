@@ -1,6 +1,10 @@
 #include "measure.hpp"
 
+#include "distcomp.hpp"
+#include "distmesh.hpp"
 #include "mpi/mpi_init.hpp"
+#include "util/strong_ra.hpp"
+#include "util/vocabulary.hpp"
 
 namespace steps::dist {
 
@@ -12,16 +16,18 @@ Measure::Measure(MPI_Comm comm,
     , num_measures_per_rank_(1 + num_compartments)
     , element_measure_func_(t_element_measure_func) {}
 
-void Measure::init(const mesh::tetrahedron_ids& t_owned_elements, const osh::LOs& t_elem2compid) {
+void Measure::init(const mesh::tetrahedron_ids& t_owned_elements,
+                   const util::strongid_vector<mesh::tetrahedron_local_id_t, TetStruct>& tetInfo) {
     const auto comm_size = mpi::getNHosts(comm_);
     osh::Write<osh::Real> rank2measures(num_measures_per_rank_ * comm_size, 0);
     auto rankmeasures = rank2measures.data() + rank_ * num_measures_per_rank_;
     for (auto element: t_owned_elements) {
         const auto measure = element_measure_func_(element);
-        const auto compid = t_elem2compid[element.get()];
+        const auto* comp = tetInfo[element].compPtr;
         rankmeasures[0] += measure;
-        if (compid != INITIAL_COMPARTMENT_ID) {
-            rankmeasures[1 + compid] += measure;
+        if (comp != nullptr) {
+            auto compid = comp->getMeshID();
+            rankmeasures[1 + compid.get()] += measure;
         }
     }
 

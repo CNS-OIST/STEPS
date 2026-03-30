@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -139,7 +139,7 @@ void ComplexSReac::setupDeps() {
                 updset.insert(k->schedIDX());
             }
         }
-        for (const auto& v: defcsr().complexUPDMAP(model::ComplexLocation::PATCH_SURF)) {
+        for (const auto& v: defcsr().complexUPDMAP(model::Location::PATCH_SURF)) {
             for (auto sus: v.second) {
                 if (k->depComplexPatch(v.first, sus, &pPatch)) {
                     updset.insert(k->schedIDX());
@@ -155,7 +155,7 @@ void ComplexSReac::setupDeps() {
                     updset.insert(k->schedIDX());
                 }
             }
-            for (const auto& v: defcsr().complexUPDMAP(model::ComplexLocation::PATCH_IN)) {
+            for (const auto& v: defcsr().complexUPDMAP(model::Location::PATCH_IN)) {
                 for (auto sus: v.second) {
                     if (k->depComplexComp(v.first, sus, icomp)) {
                         updset.insert(k->schedIDX());
@@ -170,7 +170,7 @@ void ComplexSReac::setupDeps() {
                         updset.insert(k->schedIDX());
                     }
                 }
-                for (const auto& v: defcsr().complexUPDMAP(model::ComplexLocation::PATCH_IN)) {
+                for (const auto& v: defcsr().complexUPDMAP(model::Location::PATCH_IN)) {
                     for (auto sus: v.second) {
                         if (k->depComplexComp(v.first, sus, icomp)) {
                             updset.insert(k->schedIDX());
@@ -186,7 +186,7 @@ void ComplexSReac::setupDeps() {
                         updset.insert(k->schedIDX());
                     }
                 }
-                for (const auto& v: defcsr().complexUPDMAP(model::ComplexLocation::PATCH_IN)) {
+                for (const auto& v: defcsr().complexUPDMAP(model::Location::PATCH_IN)) {
                     for (auto sus: v.second) {
                         if (k->depComplexComp(v.first, sus, icomp)) {
                             updset.insert(k->schedIDX());
@@ -204,7 +204,7 @@ void ComplexSReac::setupDeps() {
                     updset.insert(k->schedIDX());
                 }
             }
-            for (const auto& v: defcsr().complexUPDMAP(model::ComplexLocation::PATCH_OUT)) {
+            for (const auto& v: defcsr().complexUPDMAP(model::Location::PATCH_OUT)) {
                 for (auto sus: v.second) {
                     if (k->depComplexComp(v.first, sus, ocomp)) {
                         updset.insert(k->schedIDX());
@@ -219,7 +219,7 @@ void ComplexSReac::setupDeps() {
                         updset.insert(k->schedIDX());
                     }
                 }
-                for (const auto& v: defcsr().complexUPDMAP(model::ComplexLocation::PATCH_OUT)) {
+                for (const auto& v: defcsr().complexUPDMAP(model::Location::PATCH_OUT)) {
                     for (auto sus: v.second) {
                         if (k->depComplexComp(v.first, sus, ocomp)) {
                             updset.insert(k->schedIDX());
@@ -235,7 +235,7 @@ void ComplexSReac::setupDeps() {
                         updset.insert(k->schedIDX());
                     }
                 }
-                for (const auto& v: defcsr().complexUPDMAP(model::ComplexLocation::PATCH_OUT)) {
+                for (const auto& v: defcsr().complexUPDMAP(model::Location::PATCH_OUT)) {
                     for (auto sus: v.second) {
                         if (k->depComplexComp(v.first, sus, ocomp)) {
                             updset.insert(k->schedIDX());
@@ -250,7 +250,7 @@ void ComplexSReac::setupDeps() {
 
     // Setup complex events
     {
-        const model::ComplexLocation loc = model::ComplexLocation::PATCH_SURF;
+        const model::Location loc = model::Location::PATCH_SURF;
         auto& cands = candidates[loc];
         for (auto& ue: defcsr().updEvents(loc)) {
             solver::complex_global_id cmplxId(ue->complexIdx());
@@ -270,7 +270,7 @@ void ComplexSReac::setupDeps() {
         }
     }
     if (icomp != nullptr) {
-        const model::ComplexLocation loc = model::ComplexLocation::PATCH_IN;
+        const model::Location loc = model::Location::PATCH_IN;
         auto& cands = candidates[loc];
         for (auto& ue: defcsr().updEvents(loc)) {
             solver::complex_global_id cmplxId(ue->complexIdx());
@@ -290,7 +290,7 @@ void ComplexSReac::setupDeps() {
         }
     }
     if (ocomp != nullptr) {
-        const model::ComplexLocation loc = model::ComplexLocation::PATCH_OUT;
+        const model::Location loc = model::Location::PATCH_OUT;
         auto& cands = candidates[loc];
         for (auto& ue: defcsr().updEvents(loc)) {
             solver::complex_global_id cmplxId(ue->complexIdx());
@@ -328,9 +328,9 @@ bool ComplexSReac::depComplexComp(solver::complex_global_id gidx,
                                   solver::complex_substate_id sus,
                                   Comp* comp) {
     if (comp == pPatch.iComp()) {
-        return defcsr().complexdep(model::ComplexLocation::PATCH_IN, gidx, sus);
+        return defcsr().complexdep(model::Location::PATCH_IN, gidx, sus);
     } else if (comp == pPatch.oComp()) {
-        return defcsr().complexdep(model::ComplexLocation::PATCH_OUT, gidx, sus);
+        return defcsr().complexdep(model::Location::PATCH_OUT, gidx, sus);
     }
     return false;
 }
@@ -346,7 +346,7 @@ bool ComplexSReac::depSpecPatch(solver::spec_global_id gidx, Patch* patch) {
 bool ComplexSReac::depComplexPatch(solver::complex_global_id gidx,
                                    solver::complex_substate_id sus,
                                    Patch* patch) {
-    return patch == &pPatch and defcsr().complexdep(model::ComplexLocation::PATCH_SURF, gidx, sus);
+    return patch == &pPatch and defcsr().complexdep(model::Location::PATCH_SURF, gidx, sus);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -399,7 +399,7 @@ double ComplexSReac::rate() const {
         }
     }
 
-    for (auto& v: candidates.at(model::ComplexLocation::PATCH_SURF)) {
+    for (auto& v: candidates.at(model::Location::PATCH_SURF)) {
         cmult *= v.second.rateMult(pdef->complexStates(v.first));
     }
 
@@ -444,8 +444,7 @@ double ComplexSReac::rate() const {
             }
         }
 
-        const auto loc = defcsr().inside() ? model::ComplexLocation::PATCH_IN
-                                           : model::ComplexLocation::PATCH_OUT;
+        const auto loc = defcsr().inside() ? model::Location::PATCH_IN : model::Location::PATCH_OUT;
         const auto cdef = defcsr().inside() ? pPatch.iComp()->def() : pPatch.oComp()->def();
         for (auto& v: candidates.at(loc)) {
             cmult *= v.second.rateMult(cdef->complexStates(v.first));
@@ -482,7 +481,7 @@ std::vector<solver::kproc_global_id> const& ComplexSReac::apply() {
     }
 
     // Surface complexes
-    for (auto& v: candidates.at(model::ComplexLocation::PATCH_SURF)) {
+    for (auto& v: candidates.at(model::Location::PATCH_SURF)) {
         for (auto& event: v.second.selectEvents(rng)) {
             if (event.first->type() == solver::UPDEvent) {
                 const auto ev = std::dynamic_pointer_cast<const solver::ComplexUpdateEventdef>(
@@ -492,7 +491,7 @@ std::vector<solver::kproc_global_id> const& ComplexSReac::apply() {
                 pdef->updateComplex(v.first, event.second, ev->getUpdate(state, rng));
 
                 switch (ev->destLoc()) {
-                case model::ComplexLocation::PATCH_IN: {
+                case model::Location::PATCH_IN: {
                     AssertLog(icomp != nullptr);
                     icomp->def()->addComplex(v.first,
                                              event.second,
@@ -500,7 +499,7 @@ std::vector<solver::kproc_global_id> const& ComplexSReac::apply() {
                     pdef->removeComplex(v.first, event.second);
                     break;
                 }
-                case model::ComplexLocation::PATCH_OUT: {
+                case model::Location::PATCH_OUT: {
                     AssertLog(ocomp != nullptr);
                     ocomp->def()->addComplex(v.first,
                                              event.second,
@@ -518,7 +517,7 @@ std::vector<solver::kproc_global_id> const& ComplexSReac::apply() {
         }
     }
     // Creations
-    for (auto& ce: defcsr().creEvents(model::ComplexLocation::PATCH_SURF)) {
+    for (auto& ce: defcsr().creEvents(model::Location::PATCH_SURF)) {
         pdef->addComplex(ce->complexIdx(), pPatch.solver()->getNextComplexInd(), ce->init());
     }
 
@@ -538,7 +537,7 @@ std::vector<solver::kproc_global_id> const& ComplexSReac::apply() {
             AssertLog(nc >= 0);
             icomp->def()->setCount(s, static_cast<double>(nc));
         }
-        for (auto& ce: defcsr().creEvents(model::ComplexLocation::PATCH_IN)) {
+        for (auto& ce: defcsr().creEvents(model::Location::PATCH_IN)) {
             icomp->def()->addComplex(ce->complexIdx(),
                                      pPatch.solver()->getNextComplexInd(),
                                      ce->init());
@@ -559,7 +558,7 @@ std::vector<solver::kproc_global_id> const& ComplexSReac::apply() {
             AssertLog(nc >= 0);
             ocomp->def()->setCount(s, static_cast<double>(nc));
         }
-        for (auto& ce: defcsr().creEvents(model::ComplexLocation::PATCH_OUT)) {
+        for (auto& ce: defcsr().creEvents(model::Location::PATCH_OUT)) {
             ocomp->def()->addComplex(ce->complexIdx(),
                                      pPatch.solver()->getNextComplexInd(),
                                      ce->init());
@@ -569,8 +568,7 @@ std::vector<solver::kproc_global_id> const& ComplexSReac::apply() {
     if (defcsr().inside() or defcsr().outside()) {
         const auto comp = defcsr().inside() ? pPatch.iComp() : pPatch.oComp();
 
-        const auto loc = defcsr().inside() ? model::ComplexLocation::PATCH_IN
-                                           : model::ComplexLocation::PATCH_OUT;
+        const auto loc = defcsr().inside() ? model::Location::PATCH_IN : model::Location::PATCH_OUT;
         for (auto& v: candidates.at(loc)) {
             for (auto& event: v.second.selectEvents(rng)) {
                 if (event.first->type() == solver::UPDEvent) {
@@ -582,15 +580,15 @@ std::vector<solver::kproc_global_id> const& ComplexSReac::apply() {
 
                     if (ev->destLoc() != loc) {
                         switch (ev->destLoc()) {
-                        case model::ComplexLocation::PATCH_SURF: {
+                        case model::Location::PATCH_SURF: {
                             pdef->addComplex(v.first,
                                              event.second,
                                              comp->def()->complexStates(v.first).at(event.second));
                             comp->def()->removeComplex(v.first, event.second);
                             break;
                         }
-                        case model::ComplexLocation::PATCH_IN:
-                        case model::ComplexLocation::PATCH_OUT: {
+                        case model::Location::PATCH_IN:
+                        case model::Location::PATCH_OUT: {
                             const auto other = defcsr().inside() ? pPatch.oComp() : pPatch.iComp();
                             AssertLog(other != nullptr);
                             other->def()->addComplex(v.first,

@@ -9,6 +9,7 @@ from cython.operator cimport dereference as deref
 from libcpp cimport bool
 cimport std
 from steps_common cimport *
+from steps cimport *
 
 ctypedef Spec* SpecP
 
@@ -70,15 +71,6 @@ cdef extern from "model/chanstate.hpp" namespace "steps::model":
 # ======================================================================================================================
 cdef extern from "model/ghkcurr.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
-    # ctypedef GHKcurr* GHKcurrP
-    # ctypedef std.map[std.string,GHKcurr*] GHKcurrPMap
-    # ctypedef std.map[std.string,GHKcurr*].iterator GHKcurrPMapI
-    # ctypedef std.map[std.string,GHKcurr*].const_iterator GHKcurrPMapCI
-    # ctypedef std.vector[GHKcurr*] GHKcurrPVec
-    # ctypedef std.vector[GHKcurr*].iterator GHKcurrPVecI
-    # ctypedef std.vector[GHKcurr*].const_iterator GHKcurrPVecCI
-    # ctypedef std.map[std.string,double] MyMap
-
     ###### Cybinding for GHKcurr ######
     cdef cppclass GHKcurr:
         GHKcurr(std.string, Surfsys, ChanState, Spec, bool, double, double) except +
@@ -90,6 +82,18 @@ cdef extern from "model/ghkcurr.hpp" namespace "steps::model":
         void setChanState(ChanState) except +
         Spec& getIon()
         # Below modified/added by Iain
+        void setIon(Spec ion) except +
+        double getP() except +
+        void setP(double p) except +
+        void setPInfo(double g, double V, double T, double oconc, double iconc) except +
+
+    cdef cppclass ComplexGHKcurr:
+        ComplexGHKcurr(std.string, Surfsys, std.string, std.vector[std.vector[SubunitStateFilter]], Spec, bool, double, double) except +
+        std.string getID()
+        void setID(std.string) except +
+        Surfsys& getSurfsys()
+        Model& getModel()
+        Spec& getIon()
         void setIon(Spec ion) except +
         double getP() except +
         void setP(double p) except +
@@ -136,7 +140,7 @@ cdef extern from "model/vdepsreac.hpp" namespace "steps::model":
 
     ###### Cybinding for VDepSReac ######
     cdef cppclass VDepSReac:
-        VDepSReac(std.string, Surfsys, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[double], double, double, double, uint) except +
+        VDepSReac(std.string, Surfsys, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[double], double, double, double, uint, int) except +
         std.string getID()
         void setID(std.string) except +
         Surfsys& getSurfsys()
@@ -157,6 +161,8 @@ cdef extern from "model/vdepsreac.hpp" namespace "steps::model":
         void setORHS(std.vector[Spec*]) except +
         uint getOrder()
         std.vector[double] getK()
+        int getCharge()
+        void setCharge(int)
         flat_set[Spec*] getAllSpecs()
 
 # ======================================================================================================================
@@ -200,7 +206,7 @@ cdef extern from "model/sreac.hpp" namespace "steps::model":
 
     ###### Cybinding for SReac ######
     cdef cppclass SReac:
-        SReac(std.string, Surfsys, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], double) except +
+        SReac(std.string, Surfsys, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], double, int) except +
         std.string getID()
         void setID(std.string) except +
         Surfsys& getSurfsys()
@@ -221,18 +227,14 @@ cdef extern from "model/sreac.hpp" namespace "steps::model":
         void setORHS(std.vector[Spec*]) except +
         uint getOrder()
         double getKcst()
-        flat_set[Spec*] getAllSpecs()
         void setKcst(double kcst) except +
+        int getCharge()
+        void setCharge(int)
+        flat_set[Spec*] getAllSpecs()
 
 # ======================================================================================================================
 cdef extern from "model/complexevents.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
-
-    cdef enum ComplexLocation:
-        COMP
-        PATCH_IN
-        PATCH_SURF
-        PATCH_OUT
 
     cdef struct SubunitStateFilter:
         uint min
@@ -245,7 +247,7 @@ cdef extern from "model/complexevents.hpp" namespace "steps::model":
         ComplexEvent(std.string)
 
     cdef cppclass ComplexUpdateEvent:
-        ComplexUpdateEvent(std.string, std.vector[std.vector[SubunitStateFilter]], std.vector[uint], std.vector[ComplexUpdate], ComplexLocation) except +
+        ComplexUpdateEvent(std.string, std.vector[std.vector[SubunitStateFilter]], std.vector[uint], std.vector[ComplexUpdate], Location) except +
 
     cdef cppclass ComplexDeleteEvent:
         ComplexDeleteEvent(std.string, std.vector[std.vector[SubunitStateFilter]]) except +
@@ -272,13 +274,14 @@ cdef extern from "model/complexreac.hpp" namespace "steps::model":
         double getKcst()
         void setKcst(double) except +
 
+
 # ======================================================================================================================
 cdef extern from "model/complexsreac.hpp" namespace "steps::model":
 # ----------------------------------------------------------------------------------------------------------------------
 
     ###### Cybinding for ComplexSReac ######
     cdef cppclass ComplexSReac:
-        ComplexSReac(std.string, Surfsys, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[ComplexEvent*], std.vector[ComplexEvent*], std.vector[ComplexEvent*], double) except +
+        ComplexSReac(std.string, Surfsys, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[ComplexEvent*], std.vector[ComplexEvent*], std.vector[ComplexEvent*], double, int) except +
         std.string getID()
         Surfsys& getSurfsys()
         Model& getModel()
@@ -294,6 +297,28 @@ cdef extern from "model/complexsreac.hpp" namespace "steps::model":
         uint getOrder()
         double getKcst()
         void setKcst(double) except +
+        int getCharge()
+        void setCharge(int)
+
+    ###### Cybinding for VDepComplexSReac ######
+    cdef cppclass VDepComplexSReac:
+        VDepComplexSReac(std.string, Surfsys, std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[Spec*], std.vector[ComplexEvent*], std.vector[ComplexEvent*], std.vector[ComplexEvent*], std.vector[double], double, double, double, uint, int) except +
+        std.string getID()
+        Surfsys& getSurfsys()
+        Model& getModel()
+        bool getInner()
+        bool getOuter()
+        std.vector[Spec*] getOLHS()
+        std.vector[Spec*] getILHS()
+        std.vector[Spec*] getSLHS()
+        std.vector[Spec*] getIRHS()
+        std.vector[Spec*] getSRHS()
+        std.vector[Spec*] getORHS()
+        flat_set[Spec*] getAllSpecs()
+        uint getOrder()
+        std.vector[double] getK()
+        int getCharge()
+        void setCharge(int)
 
 # ======================================================================================================================
 cdef extern from "model/chan.hpp" namespace "steps::model":
@@ -327,6 +352,18 @@ cdef extern from "model/ohmiccurr.hpp" namespace "steps::model":
         Model& getModel()
         ChanState& getChanState()
         void setChanState(ChanState) except +
+        double getERev()
+        void setERev(double) except +
+        double getG()
+        void setG(double g) except +
+
+    ###### Cybinding for ComplexOhmicCurr ######
+    cdef cppclass ComplexOhmicCurr:
+        ComplexOhmicCurr(std.string, Surfsys, std.string, std.vector[std.vector[SubunitStateFilter]], double, double) except +
+        std.string getID()
+        void setID(std.string) except +
+        Surfsys& getSurfsys()
+        Model& getModel()
         double getERev()
         void setERev(double) except +
         double getG()
@@ -369,6 +406,7 @@ cdef extern from "model/surfsys.hpp" namespace "steps::model":
         void delSReac(std.string) except +
         std.vector[SReac*] getAllSReacs()
         std.vector[ComplexSReac*] getAllComplexSReacs()
+        std.vector[VDepComplexSReac*] getAllVDepComplexSReacs()
         Diff& getDiff(std.string) except +
         void delDiff(std.string) except +
         std.vector[Diff*] getAllDiffs()
@@ -429,11 +467,12 @@ cdef extern from "model/linkspec.hpp" namespace "steps::model":
 
     ###### Cybinding for LinkSpec ######
     cdef cppclass LinkSpec:
-        LinkSpec(std.string, Model, double) except +
+        LinkSpec(std.string, Model, double, double) except +
         std.string getID()
         void setID(std.string) except +
         Model& getModel()
         double getDcst()
+        double getMaxAngle()
 
 
 # ======================================================================================================================

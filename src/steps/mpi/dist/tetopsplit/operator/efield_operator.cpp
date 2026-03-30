@@ -5,6 +5,7 @@
 #include <Omega_h_map.hpp>
 #include <Omega_h_mesh.hpp>
 #include <Omega_h_shape.hpp>
+#include <algorithm>
 #include <petscmat.h>
 
 #include "../mol_state.hpp"
@@ -12,6 +13,7 @@
 #include "util/mesh.hpp"
 #include "util/petsc.hpp"
 #include "util/profile/profiler_interface.hpp"
+#include "util/vocabulary.hpp"
 
 
 #define STRINGIFY(arg) #arg
@@ -37,16 +39,14 @@ EFieldOperator::~EFieldOperator() {
 }
 
 //----------------------------------------------
-EFieldOperator::EFieldOperator(DistMesh& o_mesh,
-                               const Statedef& statedef,
-                               const std::vector<mesh::triangle_id_t>& ghk_current_boundaries,
-                               MolState& mol_state)
+
+EFieldOperator::EFieldOperator(DistMesh& o_mesh, const Statedef& statedef, MolState& mol_state)
     : state_def(statedef)
     , mesh(o_mesh)
     , global_indices_(mesh.global_indices(osh::VERT))
     , owned_verts_(osh::collect_marked(mesh.owned_verts_mask()))
-    , tri2verts_(mesh.ask_verts_of(osh::FACE))
-    , ghk_current_boundaries_(ghk_current_boundaries) {
+    , tri2verts_(mesh.ask_verts_of(osh::FACE)) {
+    util::petsc::Init(nullptr, nullptr, nullptr, "OpSplit solver");
     setupSystem();
     setupStiffnessMatrix();
     setupEfieldOccupancyTracking(mol_state);
@@ -63,6 +63,7 @@ void EFieldOperator::setupSystem() {
 
     [[maybe_unused]] const auto num_global_vertices = mesh.total_num_verts();
     const auto num_owned_verts = mesh.num_verts();
+    std::cout << mesh.comm_rank() << " num owned verts " << num_owned_verts << std::endl;
 
     // we use PETSC_DETERMINE because global_indices presents only the global indices of owned and
     // ghost vertices, not everything
@@ -139,7 +140,7 @@ std::ostream& operator<<(std::ostream& ostr, const EFieldOperator& efo) {
 }
 
 void EFieldOperator::add_ohmic_currents(TriMatAndVecs& tri_mat_and_vecs,
-                                        const Membrane& membrane,
+                                        const Patchdef& patchdef,
                                         const mesh::triangle_id_t& b_id,
                                         const MolState& mol_state,
                                         const double Avert,
@@ -154,22 +155,24 @@ void EFieldOperator::add_ohmic_currents(TriMatAndVecs& tri_mat_and_vecs,
     avgv /= 3;
 
     // add ohmic currents
-    for (const auto& chan_pair: membrane.channels()) {
-        const auto& c = chan_pair.second;
-        for (const auto& h: c.ohmic_currents) {
-            const PetscReal tri_oc_bc = h.get().getTriBConVertex(b_id, mol_state, Avert, sim_time);
-            for (auto ir = 0u; ir < tri_mat_and_vecs.triBC.size(); ++ir) {
-                tri_mat_and_vecs.triBC[ir] += tri_oc_bc *
-                                              (h.get().getReversalPotential(b_id) - avgv);
+    for (const auto& current: patchdef.template currents<OhmicCurrdef>()) {
+        const PetscReal tri_oc_bc = current->getTriBConVertex(b_id, mol_state, Avert, sim_time);
+        for (auto ir = 0u; ir < tri_mat_and_vecs.triBC.size(); ++ir) {
+            tri_mat_and_vecs.triBC[ir] += tri_oc_bc * (current->getReversalPotential(b_id) - avgv);
 
-                // to switch to an implicit scheme you need to uncomment the following line leave
-                // the previous one as it is. Since we could want to do the switch in the future I
-                // leave it here, for now, comented Katta
-                //
-                //  std::for_each(tri_mat_and_vecs.triStiffnessPETSc.begin(),
-                //  tri_mat_and_vecs.triStiffnessPETSc.end(), [&tri_oc_bc](PetscReal& i){ i +=
-                //  tri_oc_bc/3; });
-            }
+            // to switch to an implicit scheme you need to uncomment the following line leave
+            // the previous one as it is. Since we could want to do the switch in the future I
+            // leave it here, for now, comented Katta
+            //
+            //  std::for_each(tri_mat_and_vecs.triStiffnessPETSc.begin(),
+            //  tri_mat_and_vecs.triStiffnessPETSc.end(), [&tri_oc_bc](PetscReal& i){ i +=
+            //  tri_oc_bc/3; });
+        }
+    }
+    for (const auto& current: patchdef.template currents<ComplexOhmicCurrdef>()) {
+        const PetscReal tri_oc_bc = current->getTriBConVertex(b_id, mol_state, Avert, sim_time);
+        for (auto ir = 0u; ir < tri_mat_and_vecs.triBC.size(); ++ir) {
+            tri_mat_and_vecs.triBC[ir] += tri_oc_bc * (current->getReversalPotential(b_id) - avgv);
         }
     }
 }
@@ -202,75 +205,87 @@ void EFieldOperator::apply_membrane_BC(
     const osh::Real sim_time,
     const osh::Real dt,
     const osh::Write<osh::Real>& potential_on_verts,
+    const osh::Read<osh::Real>& current_on_triangles,
     const osh::Read<osh::Real>& capacitance_on_triangles,
     const osh::Read<osh::Real>& conductivity_on_triangles,
     const osh::Read<osh::Real>& reversal_potential_on_triangles) {
-    for (const auto& memb_pair: state_def.membranes()) {
+    for (const auto& memb: state_def.membranes()) {
+        const auto& membrane = *memb;
         // IDs
-        const auto& membrane = *memb_pair.second;
-        const auto& patch_id = membrane.getPatch();
-        const auto& patch_tris = patch_tris_[patch_id];
-        // useful data required later
-        const auto current_density = membrane.stimulus()(sim_time) / patch_areas_[patch_id];
+        for (const Patchdef& patchdef: membrane.getPatchdefs()) {
+            const auto& patch_tris = patchdef.patch().getTris(true);
+            // useful data required later
+            const auto current_density = membrane.stimulus()(sim_time) /
+                                         patchdef.patch().getTotalArea();
 
-        const auto applyBC = OMEGA_H_LAMBDA(osh::LO triangle_idx) {
-            // IDS
-            const mesh::triangle_id_t b_id{patch_tris[triangle_idx]};
-            const auto& face_bf2verts = osh::gather_verts<3>(tri2verts_, b_id.get());
+            // NOTE: Used to be OMEGA_H_LAMBDA but that caused problems when capturing references
+            const auto applyBC = [=, &patchdef](osh::LO triangle_idx) {
+                // IDS
+                const mesh::triangle_id_t b_id{patch_tris[triangle_idx]};
+                const auto& face_bf2verts = osh::gather_verts<3>(tri2verts_, b_id.get());
 
-            // A tri split among the vertexes
-            const double Avert = mesh.getTri(b_id).area / 3.0;
-            // capacitance
-            const PetscReal tri_capacitance = Avert * capacitance_on_triangles[b_id.get()] / dt;
-            // current injection
-            const auto tri_i = current_density * Avert;
-            // create local matrices and vectors
+                // A tri split among the vertexes
+                const double Avert = mesh.getTri(b_id).area / 3.0;
+                // capacitance
+                const PetscReal tri_capacitance_div_dt = Avert *
+                                                         capacitance_on_triangles[b_id.get()] / dt;
+                // current injection
+                const auto tri_i = current_density * Avert + current_on_triangles[b_id.get()] / 3.0;
+                // create local matrices and vectors
 
-            TriMatAndVecs tri_mat_and_vecs(face_bf2verts, tri_capacitance, tri_i);
-            // add ohmic currents
-            add_ohmic_currents(
-                tri_mat_and_vecs, membrane, b_id, mol_state, Avert, sim_time, potential_on_verts);
-            // add leakage
-            add_leaks(tri_mat_and_vecs,
-                      Avert,
-                      conductivity_on_triangles[b_id.get()],
-                      reversal_potential_on_triangles[b_id.get()],
-                      potential_on_verts);
-            // apply
-            util::petsc::scalars triBC(tri_mat_and_vecs.triBC);
-            auto lerr = VecSetValuesLocal(bc(),
-                                          tri_mat_and_vecs.face_bf2vertsPETSc.size(),
-                                          tri_mat_and_vecs.face_bf2vertsPETSc.data(),
-                                          triBC.data(),
-                                          ADD_VALUES);
-            CHKERRABORT(mesh.comm_impl(), lerr);
-            util::petsc::scalars triI(tri_mat_and_vecs.triI);
-            lerr = VecSetValuesLocal(i(),
-                                     tri_mat_and_vecs.face_bf2vertsPETSc.size(),
-                                     tri_mat_and_vecs.face_bf2vertsPETSc.data(),
-                                     triI.data(),
-                                     ADD_VALUES);
-            CHKERRABORT(mesh.comm_impl(), lerr);
-            util::petsc::scalars triStiffnessPETSc(tri_mat_and_vecs.triStiffnessPETSc);
-            lerr = MatSetValuesLocal(A0,
-                                     tri_mat_and_vecs.face_bf2vertsPETSc.size(),
-                                     tri_mat_and_vecs.face_bf2vertsPETSc.data(),
-                                     tri_mat_and_vecs.face_bf2vertsPETSc.size(),
-                                     tri_mat_and_vecs.face_bf2vertsPETSc.data(),
-                                     triStiffnessPETSc.data(),
-                                     ADD_VALUES);
-            CHKERRABORT(mesh.comm_impl(), lerr);
-        };
-        osh::parallel_for(patch_tris.size(), applyBC);
+                TriMatAndVecs tri_mat_and_vecs(face_bf2verts, tri_capacitance_div_dt, tri_i);
+                // add ohmic currents
+                add_ohmic_currents(tri_mat_and_vecs,
+                                   patchdef,
+                                   b_id,
+                                   mol_state,
+                                   Avert,
+                                   sim_time,
+                                   potential_on_verts);
+                // add leakage
+                add_leaks(tri_mat_and_vecs,
+                          Avert,
+                          conductivity_on_triangles[b_id.get()],
+                          reversal_potential_on_triangles[b_id.get()],
+                          potential_on_verts);
+                // apply
+                util::petsc::scalars triBC(tri_mat_and_vecs.triBC);
+                auto lerr = VecSetValuesLocal(bc(),
+                                              tri_mat_and_vecs.face_bf2vertsPETSc.size(),
+                                              tri_mat_and_vecs.face_bf2vertsPETSc.data(),
+                                              triBC.data(),
+                                              ADD_VALUES);
+                CHKERRABORT(mesh.comm_impl(), lerr);
+                util::petsc::scalars triI(tri_mat_and_vecs.triI);
+                lerr = VecSetValuesLocal(i(),
+                                         tri_mat_and_vecs.face_bf2vertsPETSc.size(),
+                                         tri_mat_and_vecs.face_bf2vertsPETSc.data(),
+                                         triI.data(),
+                                         ADD_VALUES);
+                CHKERRABORT(mesh.comm_impl(), lerr);
+                util::petsc::scalars triStiffnessPETSc(tri_mat_and_vecs.triStiffnessPETSc);
+                lerr = MatSetValuesLocal(A0,
+                                         tri_mat_and_vecs.face_bf2vertsPETSc.size(),
+                                         tri_mat_and_vecs.face_bf2vertsPETSc.data(),
+                                         tri_mat_and_vecs.face_bf2vertsPETSc.size(),
+                                         tri_mat_and_vecs.face_bf2vertsPETSc.data(),
+                                         triStiffnessPETSc.data(),
+                                         ADD_VALUES);
+                CHKERRABORT(mesh.comm_impl(), lerr);
+            };
+            osh::parallel_for(patch_tris.size(), applyBC);
+        }
     }
 }
 
-
-void EFieldOperator::apply_GHKcurrents(const osh::Reals& ghk_currents) {
-    const auto applyGHKCurrents = OMEGA_H_LAMBDA(osh::LO reaction_idx) {
-        const mesh::triangle_id_t b_id{ghk_current_boundaries_[static_cast<size_t>(reaction_idx)]};
+template <typename SReacT>
+void EFieldOperator::apply_charge_currents(const SReacT sreacs) {
+    const auto& current_boundaries = sreacs.boundaries();
+    const auto& currents = sreacs.currents();
+    const auto applySReacCurrents = OMEGA_H_LAMBDA(osh::LO reaction_idx) {
+        const mesh::triangle_id_t b_id{current_boundaries[static_cast<size_t>(reaction_idx)]};
         const auto& face_bf2verts = osh::gather_verts<3>(tri2verts_, b_id.get());
-        const auto tri_i = -ghk_currents[static_cast<size_t>(reaction_idx)] / 3.0;
+        const auto tri_i = -currents[static_cast<size_t>(reaction_idx)] / 3.0;
         std::array<PetscScalar, 3> triI{tri_i, tri_i, tri_i};
         std::array<PetscInt, 3> face_bf2vertsPETSc{static_cast<PetscInt>(face_bf2verts[0]),
                                                    static_cast<PetscInt>(face_bf2verts[1]),
@@ -279,7 +294,16 @@ void EFieldOperator::apply_GHKcurrents(const osh::Reals& ghk_currents) {
             VecSetValuesLocal(i(), triI.size(), face_bf2vertsPETSc.data(), triI.data(), ADD_VALUES);
         CHKERRABORT(mesh.comm_impl(), err);
     };
-    osh::parallel_for(static_cast<osh::LO>(ghk_current_boundaries_.size()), applyGHKCurrents);
+    osh::parallel_for(static_cast<osh::LO>(current_boundaries.size()), applySReacCurrents);
+}
+
+void EFieldOperator::apply_charge_currents(const kproc::KProcState& kproc_state) {
+    apply_charge_currents(kproc_state.surfaceReactions());
+    apply_charge_currents(kproc_state.vDepSurfaceReactions());
+    apply_charge_currents(kproc_state.ghkSurfaceReactions());
+    apply_charge_currents(kproc_state.complexSurfaceReactions());
+    apply_charge_currents(kproc_state.vDepComplexSurfaceReactions());
+    apply_charge_currents(kproc_state.complexGhkSurfaceReactions());
 }
 
 void EFieldOperator::get_sol(osh::Write<osh::Real>& potential_on_verts) {
@@ -386,11 +410,12 @@ void EFieldOperator::fix_voltages(Mat& A0) {
 
 void EFieldOperator::evolve(osh::Write<osh::Real>& potential_on_verts,
                             const osh::Read<osh::Real>& current_on_verts,
+                            const osh::Read<osh::Real>& current_on_triangles,
                             const osh::Read<osh::Real>& capacitance_on_triangles,
                             const osh::Read<osh::Real>& conductivity_on_triangles,
                             const osh::Read<osh::Real>& reversal_potential_on_triangles,
                             const MolState& mol_state,
-                            const osh::Reals& ghk_currents,
+                            const kproc::KProcState& kproc_state,
                             const osh::Real sim_time,
                             const osh::Real dt) {
     Instrumentor::phase p("EFieldOperator::evolve()");
@@ -406,10 +431,11 @@ void EFieldOperator::evolve(osh::Write<osh::Real>& potential_on_verts,
                       sim_time,
                       dt,
                       potential_on_verts,
+                      current_on_triangles,
                       capacitance_on_triangles,
                       conductivity_on_triangles,
                       reversal_potential_on_triangles);
-    apply_GHKcurrents(ghk_currents);
+    apply_charge_currents(kproc_state);
 
     // finalize vector building
     finalize_assembly(A0);
@@ -446,7 +472,20 @@ void EFieldOperator::evolve(osh::Write<osh::Real>& potential_on_verts,
 
 //----------------------------------------------
 
-void EFieldOperator::setupStiffnessMatrix() {
+void EFieldOperator::resetStiffnessMatrix() {
+    auto err = MatZeroEntries(A());
+    CHKERRABORT(mesh.comm_impl(), err);
+    // Calls with MAT_FLUSH_ASSEMBLY to avoid synchronization issues in setupStiffnessMatrix
+    err = MatAssemblyBegin(A(), MAT_FLUSH_ASSEMBLY);
+    CHKERRABORT(mesh.comm_impl(), err);
+    err = MatAssemblyEnd(A(), MAT_FLUSH_ASSEMBLY);
+    CHKERRABORT(mesh.comm_impl(), err);
+    setupStiffnessMatrix(false);
+}
+
+//----------------------------------------------
+
+void EFieldOperator::setupStiffnessMatrix(bool reset_fixed_voltages) {
     const auto& coords = mesh.coords();
     osh::Matrix<4, 3> P;
     for (auto ic = 1; ic < 4; ++ic) {
@@ -462,72 +501,70 @@ void EFieldOperator::setupStiffnessMatrix() {
 
     std::unordered_set<model::compartment_id> comp_ids;
     const std::array<PetscScalar, 4> fixed_voltages_mask_stencil = {0.0, 0.0, 0.0, 0.0};
-    for (const auto& memb_pair: state_def.membranes()) {
-        const auto& membrane = memb_pair.second;
-        auto patch_id = membrane->getPatch();
-        patch_tris_[patch_id] = mesh.getOwnedEntities(patch_id);
-        patch_areas_[patch_id] = mesh.total_measure(patch_id);
-        const auto& patchdef = state_def.getPatchdef(patch_id);
-        auto inner_comp_id = patchdef.getInnerCompId();
-        auto inner_comp_conductivity = state_def.getCompartmentConductivity(inner_comp_id);
-        auto owned_tets = mesh.getOwnedEntities(inner_comp_id);
-        const auto& tets2verts = mesh.ask_elem_verts();
-        auto assembleSystem = OMEGA_H_LAMBDA(osh::LO idx) {
-            auto j = owned_tets[idx].get();
-            const auto& tet_j2verts = osh::gather_verts<4>(tets2verts, j);
-            auto tet_j2x = osh::gather_vectors<4, 3>(coords, tet_j2verts);  // SM: coords of the
-            // vertices in tet_j2verts
-            auto M = osh::simplex_basis<3, 3>(tet_j2x);
-            if (osh::cross(M[0], M[1]) * M[2] <= 0.0) {
-                throw std::logic_error(AT "Wrong setup.");
-            }
-            osh::Matrix<3, 4> N;
-            for (auto ic = 1; ic < 4; ++ic) {
-                N[ic] = osh::cross(M[ic % 3], M[(ic + 1) % 3]);
-            }
-            N[0] = -N[1] - N[2] - N[3];  // SM: the divergence theorem on any constant
-            // vector field imposes their sum to be 0
-            const auto& grad_phi = P * invert(M);  // SM: grad_phi[ic][ir] = dphi_r/dx_c
-            std::array<PetscInt, 4> tet_j2vertsPETSc{};
-            std::array<PetscScalar, 16> triStiffnessPETSc{};
-            triStiffnessPETSc.fill(0);
+    for (const auto& membrane: state_def.membranes()) {
+        for (const Patchdef& patchdef: membrane->getPatchdefs()) {
+            auto inner_comp_id = patchdef.getInnerCompId();
+            auto inner_comp_conductivity = patchdef.getInnerComp().getConductivity();
+            auto owned_tets = mesh.getOwnedEntities(inner_comp_id);
+            const auto& tets2verts = mesh.ask_elem_verts();
+            auto assembleSystem = OMEGA_H_LAMBDA(osh::LO idx) {
+                auto j = owned_tets[idx].get();
+                const auto& tet_j2verts = osh::gather_verts<4>(tets2verts, j);
+                auto tet_j2x = osh::gather_vectors<4, 3>(coords, tet_j2verts);  // SM: coords of the
+                // vertices in tet_j2verts
+                auto M = osh::simplex_basis<3, 3>(tet_j2x);
+                if (osh::cross(M[0], M[1]) * M[2] <= 0.0) {
+                    throw std::logic_error(AT "Wrong setup.");
+                }
+                osh::Matrix<3, 4> N;
+                for (auto ic = 1; ic < 4; ++ic) {
+                    N[ic] = osh::cross(M[ic % 3], M[(ic + 1) % 3]);
+                }
+                N[0] = -N[1] - N[2] - N[3];  // SM: the divergence theorem on any constant
+                // vector field imposes their sum to be 0
+                const auto& grad_phi = P * invert(M);  // SM: grad_phi[ic][ir] = dphi_r/dx_c
+                std::array<PetscInt, 4> tet_j2vertsPETSc{};
+                std::array<PetscScalar, 16> triStiffnessPETSc{};
+                triStiffnessPETSc.fill(0);
 
 
-            for (auto ir = 0u; ir < tet_j2vertsPETSc.size(); ++ir) {
-                tet_j2vertsPETSc[ir] = static_cast<PetscInt>(tet_j2verts[static_cast<osh::LO>(ir)]);
-                for (auto jr = ir + 1; jr < tet_j2vertsPETSc.size(); ++jr) {
-                    auto nDotGrad_phi_times_cond =
-                        inner_comp_conductivity * grad_phi *
-                        (N[static_cast<osh::LO>(jr)] - N[static_cast<osh::LO>(ir)]) / 24.0;
-                    for (auto ic = 0u; ic < tet_j2vertsPETSc.size(); ++ic) {
-                        triStiffnessPETSc[ir + 4 * ic] -=
-                            nDotGrad_phi_times_cond[static_cast<osh::LO>(ic)];
-                        triStiffnessPETSc[jr + 4 * ic] +=
-                            nDotGrad_phi_times_cond[static_cast<osh::LO>(ic)];
+                for (auto ir = 0u; ir < tet_j2vertsPETSc.size(); ++ir) {
+                    tet_j2vertsPETSc[ir] = static_cast<PetscInt>(
+                        tet_j2verts[static_cast<osh::LO>(ir)]);
+                    for (auto jr = ir + 1; jr < tet_j2vertsPETSc.size(); ++jr) {
+                        auto nDotGrad_phi_times_cond =
+                            inner_comp_conductivity * grad_phi *
+                            (N[static_cast<osh::LO>(jr)] - N[static_cast<osh::LO>(ir)]) / 24.0;
+                        for (auto ic = 0u; ic < tet_j2vertsPETSc.size(); ++ic) {
+                            triStiffnessPETSc[ir + 4 * ic] -=
+                                nDotGrad_phi_times_cond[static_cast<osh::LO>(ic)];
+                            triStiffnessPETSc[jr + 4 * ic] +=
+                                nDotGrad_phi_times_cond[static_cast<osh::LO>(ic)];
+                        }
                     }
                 }
-            }
-            auto err0 = MatSetValuesLocal(A(),
-                                          tet_j2vertsPETSc.size(),
-                                          tet_j2vertsPETSc.data(),
-                                          tet_j2vertsPETSc.size(),
-                                          tet_j2vertsPETSc.data(),
-                                          triStiffnessPETSc.data(),
-                                          ADD_VALUES);
-            CHKERRABORT(mesh.comm_impl(), err0);
+                auto err0 = MatSetValuesLocal(A(),
+                                              tet_j2vertsPETSc.size(),
+                                              tet_j2vertsPETSc.data(),
+                                              tet_j2vertsPETSc.size(),
+                                              tet_j2vertsPETSc.data(),
+                                              triStiffnessPETSc.data(),
+                                              ADD_VALUES);
+                CHKERRABORT(mesh.comm_impl(), err0);
 
-            // these indexes are touched by an inner compartment. We do not need to mark them as
-            // fixed
-            err0 = VecSetValuesLocal(fixed_voltage_verts_petsc,
-                                     tet_j2vertsPETSc.size(),
-                                     tet_j2vertsPETSc.data(),
-                                     fixed_voltages_mask_stencil.data(),
-                                     INSERT_VALUES);
-            CHKERRABORT(mesh.comm_impl(), err0);
-        };
-        auto comp_ids_insert_result = comp_ids.insert(inner_comp_id);
-        if (comp_ids_insert_result.second) {
-            osh::parallel_for(owned_tets.size(), assembleSystem);
+                // these indexes are touched by an inner compartment. We do not need to mark them as
+                // fixed
+                err0 = VecSetValuesLocal(fixed_voltage_verts_petsc,
+                                         tet_j2vertsPETSc.size(),
+                                         tet_j2vertsPETSc.data(),
+                                         fixed_voltages_mask_stencil.data(),
+                                         INSERT_VALUES);
+                CHKERRABORT(mesh.comm_impl(), err0);
+            };
+            auto comp_ids_insert_result = comp_ids.insert(inner_comp_id);
+            if (comp_ids_insert_result.second) {
+                osh::parallel_for(owned_tets.size(), assembleSystem);
+            }
         }
     }
 
@@ -540,19 +577,21 @@ void EFieldOperator::setupStiffnessMatrix() {
     err = MatDiagonalSet(A(), fixed_voltage_verts_petsc, ADD_VALUES);
     CHKERRABORT(mesh.comm_impl(), err);
 
-    // copy results: fixed_voltage_verts_petsc -> fixed_voltage_verts_
-    auto copyIntoFixedVoltageVerts = OMEGA_H_LAMBDA(osh::LO idx) {
-        PetscScalar val;
-        const auto local_idx = owned_verts_[idx];
-        const auto global_idx = global_indices_[local_idx];
-        auto lerr = mesh::petsc_get_values(fixed_voltage_verts_petsc, global_idx, val);
-        CHKERRABORT(mesh.comm_impl(), lerr);
-        if (util::petsc::to_real(val) != 0.0) {
-            fixed_voltage_verts_.emplace_back(local_idx);
-        }
-    };
-    osh::parallel_for(owned_verts_.size(), copyIntoFixedVoltageVerts);
-    std::sort(fixed_voltage_verts_.begin(), fixed_voltage_verts_.end());
+    if (reset_fixed_voltages) {
+        // copy results: fixed_voltage_verts_petsc -> fixed_voltage_verts_
+        auto copyIntoFixedVoltageVerts = OMEGA_H_LAMBDA(osh::LO idx) {
+            PetscScalar val;
+            const auto local_idx = owned_verts_[idx];
+            const auto global_idx = global_indices_[local_idx];
+            auto lerr = mesh::petsc_get_values(fixed_voltage_verts_petsc, global_idx, val);
+            CHKERRABORT(mesh.comm_impl(), lerr);
+            if (util::petsc::to_real(val) != 0.0) {
+                fixed_voltage_verts_.emplace_back(local_idx);
+            }
+        };
+        osh::parallel_for(owned_verts_.size(), copyIntoFixedVoltageVerts);
+        std::sort(fixed_voltage_verts_.begin(), fixed_voltage_verts_.end());
+    }
 
     err = MatAssemblyBegin(A(), MAT_FINAL_ASSEMBLY);
     CHKERRABORT(mesh.comm_impl(), err);
@@ -566,20 +605,43 @@ void EFieldOperator::setupStiffnessMatrix() {
 
 void EFieldOperator::setupEfieldOccupancyTracking(MolState& mol_state) {
     // register channels for ef occupancy tracking
-    for (const auto& memb_pair: state_def.membranes()) {
-        const auto& membrane = memb_pair.second;
-        for (const auto& chan_pair: membrane->channels()) {
-            const auto& c = chan_pair.second;
-            for (const auto& h: c.ohmic_currents) {
-                if (h.get().channel_state) {
-                    const auto& patch_id = membrane->getPatch();
-                    const auto& patch_tris = mesh.getOwnedEntities(patch_id);
-                    for (const auto tri_id: patch_tris) {
-                        mol_state.track_occupancy_ef(tri_id, *h.get().channel_state);
-                    }
+    for (const auto& membrane: state_def.membranes()) {
+        for (const Patchdef& patchdef: membrane->getPatchdefs()) {
+            const auto& patch_tris = patchdef.patch().getTris(true);
+            for (const auto tri_id: patch_tris) {
+                for (const auto& current: patchdef.template currents<OhmicCurrdef>()) {
+                    mol_state.track_occupancy_ef(tri_id, current->channel_state);
+                }
+                for (const auto& current: patchdef.template currents<ComplexOhmicCurrdef>()) {
+                    current->occupancy_id =
+                        mol_state.track_complex_occupancy_ef(tri_id, current->channel_state);
                 }
             }
         }
+    }
+}
+
+bool EFieldOperator::getVertVClamped(mesh::vertex_local_id_t vert) const {
+    assert(vert.valid());
+    return std::binary_search(fixed_voltage_verts_.begin(), fixed_voltage_verts_.end(), vert.get());
+}
+
+void EFieldOperator::setVertVClamped(mesh::vertex_local_id_t vert, bool clamp) {
+    assert(vert.valid());
+    if (clamp) {
+        // Add the vertex to clamped list
+        auto it =
+            std::upper_bound(fixed_voltage_verts_.begin(), fixed_voltage_verts_.end(), vert.get());
+        if (it > fixed_voltage_verts_.begin() and *(it - 1) == vert.get()) {
+            // Vertex is already in the list
+            return;
+        }
+        fixed_voltage_verts_.insert(it, vert.get());
+    } else {
+        // Remove the vertex from clamped list
+        auto [beg, end] =
+            std::equal_range(fixed_voltage_verts_.begin(), fixed_voltage_verts_.end(), vert.get());
+        fixed_voltage_verts_.erase(beg, end);
     }
 }
 

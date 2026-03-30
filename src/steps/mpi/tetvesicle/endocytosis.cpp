@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -264,7 +264,7 @@ void Endocytosis::apply(TetVesicleVesRaft* solver) {
             // them with the vesicle (do that before icomp->addOneVesicle and add to
             // that function??) Then we need to remove all those species from those
             // triangles with SOLVER function setTriCount. pTris[i]->setCount won't do
-            // it because the propensites don't get updated.. Could instead find all
+            // it because the propensites don't get updated. Could instead find all
             // the dependencies here and adaptively assign pUpdVec?
 
             AssertLog(pTris[i]->patchdef() == pdef);
@@ -279,6 +279,7 @@ void Endocytosis::apply(TetVesicleVesRaft* solver) {
 
                     // NEED SOMEHOW TO GET SURFACE DIFFUSION INFORMATION IN HERE
 
+                    // RDEF solver will check the clamp
                     solver->setTriSpecCount_(pTris[i]->idx(), spec_gidx, 0);
                 }
             }
@@ -292,11 +293,6 @@ void Endocytosis::apply(TetVesicleVesRaft* solver) {
         comp->addVesicleSpecs(ves_idx, ves_unique_index, specs_vesicle);
 
         addEvent(solver->getTime(), triApplied, ves_unique_index);
-
-        // Try doing a global update for good measure
-        // TODO do we need an update, or does solver->_setTriCount take care of all
-        // the updates for us??
-        // solver->_update();
     }
 }
 

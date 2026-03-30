@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -343,10 +343,6 @@ double SDiff::rate(Tetexact* /*solver*/) {
 ////////////////////////////////////////////////////////////////////////////////
 
 std::vector<KProc*> const& SDiff::apply(const rng::RNGptr& rng, double /*dt*/, double /*simtime*/) {
-    // uint lidxTet = this->lidxTet;
-    // Pre-fetch some general info.
-
-
     // Apply local change.
     uint local = pTri->pools()[lidxTri];
     bool clamped = pTri->clamped(lidxTri);
@@ -372,11 +368,15 @@ std::vector<KProc*> const& SDiff::apply(const rng::RNGptr& rng, double /*dt*/, d
     AssertLog(nexttri != nullptr);
     AssertLog(pNeighbPatchLidx[iSel].valid());
 
-    if (nexttri->clamped(pNeighbPatchLidx[iSel]) == false) {
+    // Need to check patch clamp if to a different patch (for both patches)
+    if (!(nexttri->clamped(pNeighbPatchLidx[iSel]) ||
+          (pSDiffBndDirection[iSel] && nexttri->patchdef()->clamped(pNeighbPatchLidx[iSel])))) {
         nexttri->incCount(pNeighbPatchLidx[iSel], 1);
     }
 
-    if (clamped == false) {
+    // Don't lose the molecule from this tri if it's clamped in this patch and another tri in this
+    // patch didn't gain one
+    if (!(clamped || (pSDiffBndDirection[iSel] && pTri->patchdef()->clamped(lidxTri)))) {
         pTri->incCount(lidxTri, -1);
     }
 

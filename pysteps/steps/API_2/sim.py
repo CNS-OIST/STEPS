@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -23,6 +23,7 @@
 ###
 
 import atexit
+import collections
 import copy
 import enum
 import heapq
@@ -60,8 +61,9 @@ __all__ = [
 
 ###################################################################################################
 
-UNDEFINED_VESICLE = stepslib.UNDEFINED_VESICLE
-UNDEFINED_RAFT = stepslib.UNDEFINED_RAFT
+if hasattr(stepslib, 'UNDEFINED_VESICLE'):
+    UNDEFINED_VESICLE = stepslib.UNDEFINED_VESICLE
+    UNDEFINED_RAFT = stepslib.UNDEFINED_RAFT
 
 ###################################################################################################
 # Enums
@@ -72,16 +74,22 @@ if stepslib._STEPS_USE_DIST_MESH:
     class SSAMethod(enum.IntEnum):
         SSA = stepslib._py_SSAMethod.SSA
         RSSA = stepslib._py_SSAMethod.RSSA
+        RLEAPING = stepslib._py_SSAMethod.RLEAPING
 
     class NextEventSearchMethod(enum.IntEnum):
         DIRECT = stepslib._py_SearchMethod.DIRECT
         GIBSON_BRUCK = stepslib._py_SearchMethod.GIBSON_BRUCK
+        RLEAPING = stepslib._py_SearchMethod.RLEAPING
+
+    class DiffusionMethod(enum.IntEnum):
+        CONSTANT_DT = stepslib._py_DiffMethod.CONSTANT_DT
+        TAU_LEAPING_DT = stepslib._py_DiffMethod.TAU_LEAPING_DT
 
     class DistributionMethod(enum.IntEnum):
         UNIFORM = stepslib._py_DistributionMethod.UNIFORM
         MULTINOMIAL = stepslib._py_DistributionMethod.MULTINOMIAL
 
-    __all__ += ['SSAMethod', 'NextEventSearchMethod', 'DistributionMethod']
+    __all__ += ['SSAMethod', 'NextEventSearchMethod', 'DiffusionMethod', 'DistributionMethod']
 
 
 ###################################################################################################
@@ -307,7 +315,9 @@ class _SimPathDescr:
                 func = getattr(sim.stepsSolver, funcName + self.name)
             except AttributeError:
                 raise SimPathSolverMissingMethod(
-                    f'Method {funcName+self.name} is not available for solver {sim.stepsSolver}.'
+                    f'Method {funcName+self.name} is not available for solver {sim.stepsSolver}. '
+                    'See https://steps.sourceforge.net/manual/API_2/API_sim.html#simulation-paths '
+                    'for documentation on available SimPaths.'
                 )
         if modifier is not None:
             return (lambda *x, **kw: modifier(func(*x, **kw))), params, kwparams
@@ -343,11 +353,7 @@ class SimPath:
     repeating this single value n times.
 
     The last part of the path needs to be a recognized attribute for the path to actually return
-    a value. Recognized attributes are: , :py:attr:`Vol`, :py:attr:`Area`, :py:attr:`K`,
-    :py:attr:`Active`, :py:attr:`C`, :py:attr:`H`, :py:attr:`A`, :py:attr:`D`, :py:attr:`Extent`,
-    :py:attr:`Count`, :py:attr:`Conc`, :py:attr:`Amount`, :py:attr:`Clamped`, :py:attr:`Dcst`,
-    :py:attr:`DiffusionActive`, :py:attr:`Potential`, :py:attr:`Capac`, :py:attr:`Res`,
-    :py:attr:`VolRes`, :py:attr:`I`, :py:attr:`IClamp`, :py:attr:`V`, :py:attr:`VClamped`.
+    a value. Recognized attributes are: __END_NAMES_ATTRS__.
 
     .. note::
         Should not be directly instantiated by a user, the class is only documented for clarity.
@@ -370,14 +376,19 @@ class SimPath:
         'D': """Diffusion constant, object needs to be a :py:class:`Diffusion`""",
         'Extent': """Number of times the reaction or diffusion rule has been executed, object
             needs to be a :py:class:`Reaction` or :py:class:`Diffusion`""",
+        'WeightedExtent': """Number of times all reactions or diffusion rules in a tetrahedron 
+            have been executed multiplied by the number of dependents of each reaction, object needs
+            to be a tetrahedron(s)""",
         'Count': """Number of objects""",
         'Conc': """Concentration of objects, location needs to be a :py:class:`Compartment` or
             tetrahedron(s)""",
         'Amount': """Amount (in mol) of objects""",
         'Clamped': """Whether the number of objects is clamped, meaning reactions and other
             processes do not change the number of objects""",
-        'Dcst': """Diffusion constant across a diffusion boundary, object needs to be a
-            :py:class:`DiffBoundary`, an additional object must be specified (e.g. a Species)""",
+        'Dcst': """Diffusion constant across a diffusion boundary (object needs to be a
+            :py:class:`DiffBoundary`, an additional object must be specified (e.g. a Species)), or
+            diffusion constant of vesicles.""",
+        'DcstRel': """Whether the diffusion constant is relative""",
         'DiffusionActive': """Whether diffusion across a diffusion boundary is active, object
             needs to be a :py:class:`DiffBoundary`""",
         'Potential': """Potential of a membrane, location needs to be a :py:class:`Membrane`""",
@@ -404,7 +415,9 @@ class SimPath:
         'Patch': """Patch of a simulation object like a raft""",
         'OverlapTets': """List of tetrahedrons that include parts of a specific vesicle""",
         'SDiffD': """Surface diffusion constant on vesicle surface""",
-        'PathPositions': """List of 3D points that a vesicle will walk along every vesicle dt""",
+        'OnPath': """A tuple with the name of the path to which a vesicle is bound, and its current
+            position on the path (3D point). If the vesicle is not on a path, this returns None.
+            Location needs to be a specific vesicle (e.g. ``VESICLE(vesref)``)""",
         'LinkedTo': """Index of the link species to which a link species is linked""",
         'Ves': """Index of the specific vesicle containing a simulation object like a link species""",
         'Events': """List of recent events, no location and object needs to be a :py:class:`Exocytosys`,
@@ -437,6 +450,8 @@ class SimPath:
         'V': nutils.Units('V'),
         'SDiffD': nutils.Units('m^2 s^-1'),
         'ReducedVol': nutils.Units('m^3'),
+        'Pos': nutils.Units('m'),
+        'PosSpherical': nutils.Units(''),
     }
 
     # Declare specific metadata associated to some path endings
@@ -447,7 +462,7 @@ class SimPath:
         'Compartment': {'value_type': 'string'},
         'Patch': {'value_type': 'string'},
         'OverlapTets': {'value_type': 'list'},
-        'PathPositions': {'value_type': 'list'},
+        'OnPath': {'value_type': 'list'},
         'Events': {'value_type': 'list'},
     }
 
@@ -1059,7 +1074,8 @@ class SimPath:
 
         return SimPath(self._sim, path._substituteElems(path._elems, _LinkSpecListStandIn))
 
-    def addVesicle(self, ves):
+    @nutils.ParameterizedObject.SpecifyUnits(diameter=nutils.Units('m'), dcst=nutils.Units('m^2 s^-1'))
+    def addVesicle(self, ves, diameter=-1.0, dcst=-1.0):
         """Add a vesicle to a location
 
         This method can only be used with the 'TetVesicle' solver. It adds a vesicle to the location
@@ -1068,13 +1084,20 @@ class SimPath:
 
         :param ves: The type of the vesicle that should be added
         :type ves: Union[:py:class:`steps.API_2.model.Vesicle`, str]
+        :param diameter: The diameter of the specific vesicle that should be added. If `-1.0`, the default
+            diameter from the vesicle type will be used
+        :type diameter: float
+        :param dcst: The diffusion constant (in S.I. units) for this specific vesicle. If `-1.0`, the default
+            diffusion constant from the vesicle type will be used
+        :type dcst: float
 
         :returns: A reference to the specific vesicle that was added
         :rtype: :py:class:`VesicleReference`
 
         Example::
 
-            uniqueVes = sim.comp1.addVesicle(ves_A)
+            uniqueVes1 = sim.comp1.addVesicle(ves_A)
+            uniqueVes2 = sim.comp1.addVesicle(ves_A, diameter=35e-9, dcst=0.1e-12)
         """
         if isinstance(ves, nmodel.Vesicle):
             ves = ves.name
@@ -1083,9 +1106,16 @@ class SimPath:
 
         funcArgs = [_SimPathDescr(nmodel.Vesicle._locStr)._getFunction('add', path) for path in self]
 
-        res = VesicleList(self._sim, ves, [f(*args, ves, **kwargs) for f, args, kwargs in funcArgs])
+        res = VesicleList(self._sim, ves,
+            [f(*args, ves, **kwargs, diam=diameter, dcst=dcst) for f, args, kwargs in funcArgs]
+        )
 
-        return res[0] if len(res) == 1 else res
+        vesref = res[0] if len(res) == 1 else res
+        # Record non-default diameters
+        if diameter > 0:
+            self._sim._runtimeInfo['VesicleDiameters'][ves][self._sim._runId][vesref.idx] = diameter
+
+        return vesref
 
     def addRaft(self, raft):
         """Add a raft to a location
@@ -1473,6 +1503,12 @@ for _name, _docstr in SimPath._endNames.items():
     _descrobj.__doc__ = _docstr
     setattr(SimPath, _name, _descrobj)
 
+# Add the names of descriptors to the documentation of SimPath
+SimPath.__doc__ = SimPath.__doc__.replace(
+    '__END_NAMES_ATTRS__',
+    ', '.join(f':py:attr:`{_name}`' for _name in SimPath._endNames)
+)
+
 
 class MPI:
     """Holds MPI related information and links to mpi packages
@@ -1633,6 +1669,10 @@ class _SimulationCheckpointer:
         else:
             self._nextTime = self._startTime + self._tind * self._period
 
+    # Needed for the heapq ordering in Simulation
+    def __lt__(self, other):
+        return True
+
 
 @nutils.FreezeAfterInit
 class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedParameterizedObject):
@@ -1673,14 +1713,12 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
     DISTRIBUTED_SOLVERS = ['DistTetOpSplit']
     """Available distributed solvers"""
 
-    def __init__(self, solverName, mdl, geom, rng=None, *args, name=None, check=True,
-                 _createObj=True, **kwargs):
+    def __init__(self, solverName, mdl, geom, rng=None, *args, name=None, check=True, _createObj=True, **kwargs):
         super().__init__(name=name)
 
         self._model = mdl
         self._geom = geom
         self._rng = rng
-
         self._solverStr = solverName
         self.stepsSolver = self._createSolver(solverName, *args, **kwargs) if _createObj else None
 
@@ -1696,6 +1734,9 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
 
         # Initialize children to mirror model and geom children
         self._children = {**self.model.children, **self.geom.children}
+
+        # Special data recording, only used by XDMFHandler
+        self._runtimeInfo = nutils.RecursiveDefaultDict()
 
     @property
     def model(self):
@@ -1896,7 +1937,49 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         group, self._resultSelectors = dbh._newGroup(self, uid, self._resultSelectors, **kwargs)
         for rs in self._resultSelectors:
             rs._toDB(dbh)
+        # Clear the runtime information
+        self._runtimeInfo.clear()
         return group if MPI._shouldWrite else None
+
+    def saveTetWeights(self, prefix=''):
+        """Records tetrahedron computational weights to a file, for usage with :py:func:`steps.API_2.geom.TetWeightPartition`.
+
+        Weights for a tetrahedron are calculated according to the number of reactions
+        and diffusions that have occured in that tetrahedron throughout the simulation. 
+        Therefore, it is only necessary to collect weights a single time at the end of the simulation.
+
+        Logs will be saved to a file called ``'{prefix}weights.log'``.
+
+        :param prefix: An optional prefix to the log filename
+        :type prefix: str
+        """
+        if not isinstance(prefix, str):
+            raise TypeError(f'Expected a string for prefix parameter, got {prefix} instead.')
+        if self._isDistributed():
+            raise Exception('Tetrahedron weight logging is not available for DistMesh')
+        
+        weights = {}
+        all_tets = self.geom.tets
+        all_tris = ngeom.TriList([], mesh=self.geom) # Collect only patch triangles
+        for patch in self.geom.ALL(ngeom.Patch):
+            all_tris += patch.tris
+        weights = self.stepsSolver.getBatchTetWeightedExtent(all_tets.indices)
+        tri_weights = self.stepsSolver.getBatchTriWeightedExtent(all_tris.indices)
+        if MPI.rank == 0:
+            for tri, w in zip(all_tris, tri_weights): # Add tri contributions to tets
+                if w == 0.0:
+                    continue
+                tet_neighbs = tri.tetNeighbs # Could neighbor 1 to 2 tets, split weight equally
+                added_weight = w / len(tet_neighbs)
+                for tet in tet_neighbs:
+                    weights[tet.idx] += added_weight
+            with open(f'{prefix}weights.log', 'w') as f: # Overwrite previous extents
+                assert(
+                    len(weights) == len(all_tets),
+                    f"Number of weights ({len(weights)}) does not match number of tets ({len(all_tets)})"
+                )
+                for prop in weights:
+                    f.write(f'{prop}\n')
 
     def autoCheckpoint(self, period, prefix='', onlyLast=False):
         """Activates automatic checkpointing
@@ -1925,7 +2008,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         if self._nextSave is not None:
             self._initNextSave()
 
-    def addVesiclePath(self, name):
+    def addVesiclePath(self, name, bind_to_start=True):
         """Add a 3D vesicle path to the simulation
 
         Paths can be used to transport vesicles.
@@ -1937,6 +2020,8 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
 
         :param name: The name given to the path to identify it
         :type name: str
+        :param bind_to_start: Whether vesicles should automatically bind to the path if they overlap
+            the starting point of the path.
 
         :returns: A reference to the empty path that was added to the simulation
         :rtype: :py:class:`VesiclePathReference`
@@ -1944,7 +2029,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         if not isinstance(name, str):
             raise TypeError('Expected a string, got {name} instead.')
 
-        self.solver.createPath(name)
+        self.solver.createPath(name, bind_to_start)
         return VesiclePathReference(self, name=name)
 
     def addVesicleDiffusionGroup(self, ves, comps):
@@ -2057,6 +2142,14 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         if solverStr == 'TetVesicle':
             # Activate output sync by default, only deactivate it for automatic saving
             solver.setOutputSync(True, MPI._RETURN_RANK)
+
+        if self._isDistributed() and self.geom.redistributed:
+            # If the mesh was redistributed, we need to invalidate all caches that hold local lists
+            import gc
+            for obj in gc.get_objects():
+                if isinstance(obj, ngeom._DistRefList):
+                    # Reset the whole cache, to be sure
+                    obj._optimCM = ngeom.RefList._OptimizationCM(obj)
 
         return solver
 
@@ -2236,6 +2329,339 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         """
         self.stepsSolver.setTolerances(atol, rtol)
 
+    def getDiffusionTolerance(self):
+        """Get the tolerance parameter for diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+
+        :returns: The tolerance parameter (desired maximum relative change in species populations
+            during a diffusion event, a lower value means higher accuracy and slower simulation)
+        :rtype: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getDiffusionTolerance()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setDiffusionTolerance(self, tolerance):
+        """Set the tolerance parameter for diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+        It defaults to 0.1.
+
+        :param tolerance: Tolerance parameter (desired maximum relative change in species populations
+            during a diffusion event, a lower value means higher accuracy and slower simulation)
+        :type tolerance: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setDiffusionTolerance(tolerance)
+
+    def getDiffusionNormalApproximationThreshold(self):
+        """Get the normal approximation threshold for skellam distribution sampling during diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+
+        :returns: The threshold (average number of species movement from one tetrahedron to another
+            during a diffusion period) above which a normal approximation is used to sample values
+            that are Skellam-distributed
+        :rtype: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getDiffusionNormalApproximationThreshold()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setDiffusionNormalApproximationThreshold(self, threshold):
+        """Set the normal approximation threshold for skellam distribution sampling during diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+        It defaults to 1.0.
+
+        :param threshold: The threshold (average number of species movement from one tetrahedron to another
+            during a diffusion period) above which a normal approximation is used to sample values
+            that are Skellam-distributed
+        :type threshold: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setDiffusionNormalApproximationThreshold(threshold)
+
+    def getDiffusionCrankNicolsonThreshold(self):
+        """Get the Crank-Nicolson threshold for diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+
+        :returns: The threshold (fraction of the default diffusion dt) above which the Crank-Nicolson
+            scheme is used to compute net diffusive fluxes
+        :rtype: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getDiffusionCrankNicolsonThreshold()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setDiffusionCrankNicolsonThreshold(self, threshold):
+        """Set the Crank-Nicolson threshold for diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+        It defaults to 2.0.
+
+        :param threshold: The threshold (fraction of the default diffusion dt) above which the Crank-Nicolson
+            scheme is used to compute net diffusive fluxes
+        :type threshold: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setDiffusionCrankNicolsonThreshold(threshold)
+
+    def getDiffusionLeapThreshold(self):
+        """Get the minimum number of species for leaping with TAU_LEAPING_DT diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+
+        :returns: The minimum number of species (in any tetrahedron) required for diffusion leaping to happen
+        :rtype: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getDiffusionLeapThreshold()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setDiffusionLeapThreshold(self, leap_threshold):
+        """Set the minimum number of species for leaping with TAU_LEAPING_DT diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+        It defaults to 10.
+
+        :param leap_threshold: The minimum number of species (in any tetrahedron) required for diffusion
+            leaping to happen
+        :type leap_threshold: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setDiffusionLeapThreshold(leap_threshold)
+
+    def getDiffusionMaxDtSkips(self):
+        """Get the maximum number of skips for TAU_LEAPING_DT diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+
+        :returns: The maximum number of time that default diffusion dt should be used when the tau
+            leaping dt was found to be lower than the default dt
+        :rtype: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getDiffusionMaxDtSkips()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setDiffusionMaxDtSkips(self, max_skips):
+        """Set the maximum number of skips for TAU_LEAPING_DT diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+        It defaults to 5.
+
+        :param max_skips: The maximum number of time that default diffusion dt should be used when the tau
+            leaping dt was found to be lower than the default dt
+        :type max_skips: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setDiffusionMaxDtSkips(max_skips)
+
+    def getDiffusionMinDtFactor(self):
+        """Get the factor for computing the minimum diffusion dt for TAU_LEAPING_DT diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+
+        :returns: The factor that determines how the minimum diffusion dt is computed. 0 means that the lowest
+            diffusion propensity out of all tetrahedron is used to compute the diffusion dt. 1 means that
+            the highest value is used, and 0.5 means that the average value is used. Values between 0 and
+            0.5 are linearly interpolated, values between 0.5 and 1 are also linearly interpolated.
+        :rtype: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getDiffusionMinDtFactor()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setDiffusionMinDtFactor(self, factor):
+        """Set the factor for computing the minimum diffusion dt for TAU_LEAPING_DT diffusion
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        TAU_LEAPING_DT diffusion scheme.
+        It defaults to 1 (same behavior as for the CONSTANT_DT diffusion operator).
+
+        :param factor: The factor that determines how the minimum diffusion dt is computed. 0 means that the lowest
+            diffusion propensity out of all tetrahedron is used to compute the diffusion dt. 1 means that
+            the highest value is used, and 0.5 means that the average value is used. Values between 0 and
+            0.5 are linearly interpolated, values between 0.5 and 1 are also linearly interpolated.
+        :type factor: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setDiffusionMinDtFactor(factor)
+
+    def getReactionSSAThreshold(self):
+        """Get the minimum leap size for using R-leaping
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+
+        :returns: The minimum leap size for an R-leaping step. Below that number, a series of SSA
+            steps are applied instead.
+        :rtype: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getReactionSSAThreshold()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setReactionSSAThreshold(self, threshold):
+        """Set the minimum leap size for using R-leaping
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+        It defaults to 50.
+
+        :param threshold: The minimum leap size for an R-leaping step. Below that number, a series of SSA
+            steps are applied instead.
+        :type threshold: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setReactionSSAThreshold(threshold)
+
+    def getReactionSSASteps(self):
+        """Get the number of standard SSA steps to run in a row when the reaction leaps are below threshold
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+
+        :returns: The number of SSA steps to run in a row when the reaction leaps are below threshold
+        :rtype: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getReactionSSASteps()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setReactionSSASteps(self, steps):
+        """Set the number of standard SSA steps to run in a row when the reaction leaps are below threshold
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+        It defaults to 100.
+
+        :param steps: The number of SSA steps to run in a row when the reaction leaps are below threshold
+        :type steps: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setReactionSSASteps(steps)
+
+    def getReactionLComputePeriod(self):
+        """Get the period at which L is computed
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+
+        :returns: The the period at which L is computed
+        :rtype: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getReactionLComputePeriod()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setReactionLComputePeriod(self, period):
+        """Set the period at which L is computed
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+        It defaults to 10.
+
+        When set to 1, it means that L is computed after every leap.
+
+        :param period: The period at which L is computed
+        :type period: int
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setReactionLComputePeriod(period)
+
+    def getReactionTolerance(self):
+        """Get the tolerance parameter for the reaction operator
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+
+        :returns: The tolerance parameter (desired maximum relative change in species populations
+            during a reaction leaping step, a lower value means higher accuracy and slower simulation)
+        :rtype: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getReactionTolerance()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setReactionTolerance(self, tolerance):
+        """Set the tolerance parameter for the reaction operator
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+        It defaults to 0.05.
+
+        :param tolerance: Tolerance parameter (desired maximum relative change in species populations
+            during a reaction leaping step, a lower value means higher accuracy and slower simulation)
+        :type tolerance: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setReactionTolerance(tolerance)
+
+    def getReactionTheta(self):
+        """Get the theta parameter for the reaction operator
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+
+        :returns: The theta parameter (controls the appearance of negative species, a lower value
+            means less negative species but slower simulation)
+        :rtype: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getReactionTheta()
+
+    @nutils.AdvancedParameterizedObject.SpecifyUnits(None, nutils.Units(''))
+    def setReactionTheta(self, theta):
+        """Set the theta parameter for the reaction operator
+
+        This is only available with ``DistTetOpSplit`` simulations that use the
+        RLEAPING reaction operator.
+        It defaults to 0.1.
+
+        :param theta: The theta parameter (controls the appearance of negative species, a lower value
+            means less negative species but slower simulation)
+        :type theta: float
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        self.stepsSolver.setReactionTheta(theta)
+
     def checkpoint(self, fname):
         """Checkpoint the current simulation state to a file
 
@@ -2253,7 +2679,7 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
         :type fname: str
         """
         self.stepsSolver.restore(fname)
-
+       
     def saveMembOpt(self, fname):
         """Saves the vertex optimization in the Efield structure
 
@@ -2271,6 +2697,32 @@ class Simulation(nutils.NamedObject, nutils.StepsWrapperObject, nutils.AdvancedP
             path += ".dot"
 
         self.stepsSolver.dumpDepGraphToFile(path)
+
+    def _getReactionDebugInfo(self, local=False):
+        """Get the debug information for the reaction operator in DistTetOpSplit
+
+        :param local: If true, only information relative to the current rank is given.
+        :type local: bool
+
+        :returns: A dictionary of named values
+        :rtype: Dict[str, float]
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getReactionDebugInfo(local)
+
+    def _getDiffusionDebugInfo(self, local=False):
+        """Get the debug information for the diffusion operator in DistTetOpSplit
+
+        :param local: If true, only information relative to the current rank is given.
+        :type local: bool
+
+        :returns: A dictionary of named values
+        :rtype: Dict[str, float]
+        """
+        if self._solverStr != 'DistTetOpSplit':
+            raise Exception('This method can only be called when using the DistTetOpSplit solver')
+        return self.stepsSolver.getDiffusionDebugInfo(local)
 
 
 ###################################################################################################
@@ -2456,6 +2908,11 @@ class VesiclePathReference(_SimObjectReference):
     An object from this class represents a vesicle path that was added to a simulation. Users should
     usually instantiate it by calling :py:meth:`Simulation.addVesiclePath`.
 
+    In STEPS, a vesicle path is a directed graph composed of points (graph vertices with a 3D position
+    in space), and edges (directed links between two points of the graph). Vesicles can be transported
+    along the edges of the graph after binding to the first added point of the graph, or to edges
+    themselves, depending on the parameters given to :py:func:`addVesicle`.
+
     :param sim: The simulation in which the vesicle path was created
     :type sim: :py:class:`Simulation`
     :param name: Name of the vesicle path
@@ -2480,6 +2937,29 @@ class VesiclePathReference(_SimObjectReference):
         self._sim.solver.addPathPoint(self._id, self._currIndex, list(position))
         return self._currIndex
 
+    def addEdge(self, source, destination, weight=1, allow_binding=False):
+        """Create a directed edge between two points of the path
+
+        Vesicles will be transported along the segment that goes from `source` to `destination`.
+
+        :param source: An index for the source point, positive integer
+        :type source: int
+        :param destination: An index for the destination point, positive integer
+        :type destination: int
+        :param weight: Weight of the edge when determining which path a vesicle takes. When a
+            vesicle reaches the end of an edge, it checks the weights of the next edges, if any,
+            and randomly selects the next edge to walk along with a probability that is proportional
+            to its weight.
+        :type weight: float
+        :param allow_binding: Whether vesicles can bind to that part of the path. By default
+            vesicles cannot bind to path segments, and can only bind to the first point of a
+            path. When ``allow_binding`` is set to ``True``, vesicles that have been added with
+            a non-None ``binding_rate`` can bind to the segment.
+            See :py:meth:`VesiclePathReference.addVesicle`.
+        :type allow_binding: bool
+        """
+        self._sim.solver.addPathEdge(self._id, source, destination, weight, allow_binding)
+
     def addBranch(self, source, destPoints):
         """Create branching in the path from a point
 
@@ -2487,10 +2967,20 @@ class VesiclePathReference(_SimObjectReference):
         :type source: int
         :param destPoints: A dictionary addociating each destination point with a float
         :type destPoints: Dict[int, float]
+
+        .. warning::
+            This method is deprecated in favor of :py:meth:`VesiclePathReference.addEdge` and will be
+            removed in subsequent versions of STEPS.
         """
+        warnings.warn(
+            'The addbranch method is deprecated in favor of addEdge and will be removed in later STEPS '
+            'versions', DeprecationWarning
+        )
         self._sim.solver.addPathBranch(self._id, source, destPoints)
 
-    def addVesicle(self, ves, speed, dependencies=None, stoch_stepsize=1e-9):
+    def addVesicle(self, ves, speed, dependencies=None, stoch_stepsize=1e-9,
+                   binding_rate=None, min_binding_radius=0, max_binding_radius=-1,
+                   unbinding_rate=None, allow_path_intersection=True):
         """Add a vesicle to this path
 
         This means a vesicle of this type can interact with this path upon overlapping it.
@@ -2499,12 +2989,35 @@ class VesiclePathReference(_SimObjectReference):
         :type ves: Union[:py:class:`steps.API_2.model.Vesicle`, str]
         :param speed: Speed of the vesicle on this path in m/s
         :type speed: float
-        :param dependencies: Optional species dependencies
+        :param dependencies: Optional species dependencies that should be present on the surface of the
+            vesicle in order to have the possibility to bind to the path.
         :type dependencies: Union[None, :py:class:`steps.API_2.ReactionSide`]
         :param stoch_stepsize: Stochastic step length. This may be a single float
             value where a single-exponential will be applied. If a list of length 2, a double-exponential
             will be applied by the proportionality specified in the 2nd element.
         :type stoch_stepsize: Union[float, List[float]]
+        :param binding_rate: Binding rate in 1/s at which the vesicle can bind to branches of the path.
+            If ``None``, the vesicle cannot bind to segments of the path. Vesicles can only bind to
+            path segments that have been created with ``allow_binding=True`` (see
+            :py:meth:`VesiclePathReference.addEdge`). The binding rate corresponds to the rate at which the
+            vesicle should bind to a path segment when its binding volume overlaps the path segment.
+            The binding volume consists in the zone between the sphere of radius ``max_binding_radius``
+            and the sphere of radius ``min_binding_radius``, both centered on the vesicle center.
+        :type binding_rate: Union[float, None]
+        :param min_binding_radius: The minimum distance (in m) at which a vesicle can bind to a path segment
+            (see the ``binding_rate`` parameter). It defaults to 0 (no minimum binding radius). Negative values
+            are interpreted as being relative to the vesicle radius (-0.5 means a minimum binding radius of half
+            the vesicle radius)
+        :type min_binding_radius: float
+        :param max_binding_radius: The maximum distance (in m) at which a vesicle can bind to a path segment
+            (see the ``binding_rate`` parameter). Negative values are interpreted as being relative to the
+            vesicle radius (-2 means a maximum binding radius of twice the vesicle radius). Defaults to -1.
+        :type max_binding_radius: Union[float, None]
+        :param unbinding_rate: Unbinding rate from the path in 1/s. If ``None``, the vesicles cannot unbind
+            from the path until they reach an end.
+        :type unbinding_rate: Union[float, None]
+        :param allow_path_intersection: Whether the vesicle can intersect the path in the course of its travel.
+        :type allow_path_intersection: bool
         """
         if isinstance(ves, nmodel.Vesicle):
             ves = ves.name
@@ -2520,7 +3033,14 @@ class VesiclePathReference(_SimObjectReference):
                 deps.setdefault(s.getID(), 0)
                 deps[s.getID()] += 1
 
-        self._sim.solver.addPathVesicle(self._id, ves, speed, deps, stoch_stepsize)
+        if binding_rate is None:
+            binding_rate = -1
+        if unbinding_rate is None:
+            unbinding_rate = -1
+        self._sim.solver.addPathVesicle(
+            self._id, ves, speed, deps, stoch_stepsize, binding_rate, min_binding_radius, max_binding_radius,
+            unbinding_rate, allow_path_intersection
+        )
 
 
 class _TypedSimObjectReference(_SimObjectReference):
@@ -2596,7 +3116,7 @@ class VesicleReference(_TypedSimObjectReference):
     def setPos(self, pos, force=False):
         """Move the vesicle to a 3D position
 
-        :param pos: The destination position
+        :param pos: The destination position (in m)
         :type pos: :py:class:`steps.API_2.geom.Point`
         :param force: When True, If another vesicle is already occupying this position, this method will
             swap the positions of both vesicles. If False, the position will not be changed and a warning
@@ -2610,6 +3130,7 @@ class VesicleReference(_TypedSimObjectReference):
         pos = list(pos)
         if len(pos) != 3:
             raise Exception(f'Expected a 3D position, got {pos} instead.')
+        pos = nutils.Parameter._checkValue(pos)
         self._sim.solver.setSingleVesiclePos(self._type, self._id, pos, force)
 
     def _solverStr(self):

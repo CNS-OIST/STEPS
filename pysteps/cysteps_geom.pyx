@@ -2,21 +2,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -1478,6 +1478,25 @@ cdef class _py_Tetmesh(_py_Geom):
         """
         return self.ptrx().getSurfTris()
 
+    def getWeightedPartition(self, uint seed, uint nparts, std.vector[int] weights):
+        """
+        Partition the tetmesh into nparts using METIS library.
+
+        Syntax::
+
+            metis_part_graph(seed, nparts, weights)
+
+        Arguments:
+        uint seed
+        uint nparts
+        list<uint> weights
+
+        Return:
+        list<index_t, length = number of tetrahedrons>
+
+        """
+        return self.ptrx().getWeightedPartition(seed, nparts, weights)
+    
     ## Batch related
     def getBatchVertices(self, std.vector[index_t] verts):
         """
@@ -3385,7 +3404,6 @@ cdef class _py_SDiffBoundary(_py__base):
         None
 
         """
-
         self.ptr().setID(to_std_string(id))
 
     def getContainer(self, ):

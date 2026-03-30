@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -58,6 +58,8 @@ class VDepSReac {
     /// \param orhs Volume species in the outer compartment
     ///             and on the right hand side of the reaction.
     /// \param ktab A table of the voltage-dependent reaction parameter.
+    /// \params vmin, vmax, dv, tabelsize Parameters to set the voltage calculation table.
+    /// \param charge Charge carried by the reaction across an efield membrane.
     ///
 
     VDepSReac(std::string const& id,
@@ -72,7 +74,8 @@ class VDepSReac {
               double vmin = 0.0,
               double vmax = 0.0,
               double dv = 0.0,
-              uint tablesize = 0);
+              uint tablesize = 0,
+              int charge = 0);
 
     VDepSReac(const VDepSReac&) = delete;
     VDepSReac& operator=(const VDepSReac&) = delete;
@@ -216,6 +219,18 @@ class VDepSReac {
         return pK;
     }
 
+    /// Get the charge carried by the reaction across the membrane.
+    ///
+    /// \return Charge carried by the reaction.
+    inline int getCharge() const noexcept {
+        return pCharge;
+    }
+
+    /// Set the charge carried by the reaction across the membrane.
+    ///
+    /// \param Charge carried by the reaction.
+    void setCharge(int charge);
+
     /// Get a list of all species.
     ///
     /// Returns a list of all species involved in this
@@ -283,10 +298,14 @@ class VDepSReac {
     double pVMax;
     double pDV;
     uint pTablesize;
+    int pCharge;
 
     ////////////////////////////////////////////////////////////////////////
 };
 
+inline bool operator<(const VDepSReac& lhs, const VDepSReac& rhs) {
+    return lhs.getID() < rhs.getID();
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 }  // namespace steps::model

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -60,6 +60,7 @@ class SReac {
     /// \param orhs Volume species in the outer compartment
     ///             and on the right hand side of the reaction.
     /// \param kcst Rate constant of the reaction.
+    /// \param charge Charge carried by the reaction across an efield membrane.
     ///
     /// \warning By default, the vlhs are defined in the outer compartment.
     ///          call setInner and SetOuter to change this default setting.
@@ -72,7 +73,8 @@ class SReac {
           std::vector<Spec*> const& irhs = {},
           std::vector<Spec*> const& srhs = {},
           std::vector<Spec*> const& orhs = {},
-          double kcst = 0.0);
+          double kcst = 0.0,
+          int charge = 0);
 
     SReac(const SReac&) = delete;
     SReac& operator=(const SReac&) = delete;
@@ -222,6 +224,18 @@ class SReac {
     /// \param Rate constant of the surface reaction.
     void setKcst(double kcst);
 
+    /// Get the charge carried by the surface reaction across the membrane.
+    ///
+    /// \return Charge carried by the surface reaction.
+    inline int getCharge() const noexcept {
+        return pCharge;
+    }
+
+    /// Set the charge carried by the surface reaction across the membrane.
+    ///
+    /// \param Charge carried by the surface reaction.
+    void setCharge(int charge);
+
     /// Get a list of all species.
     ///
     /// Returns a list of all species involved in this
@@ -258,6 +272,7 @@ class SReac {
     std::vector<Spec*> pORHS;
     uint pOrder;
     double pKcst;
+    int pCharge;
 };
 
 inline bool operator<(const SReac& lhs, const SReac& rhs) {

@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,6 +33,7 @@ import numpy as np
 import os
 import sys
 from typing import Annotated
+import warnings
 
 from . import groups
 from . import objects
@@ -40,6 +41,13 @@ from . import state
 from . import utils
 
 from .utils import Orders, Loc
+
+
+# Update these bounds as new Blender versions are released but make sure to test it
+# with the validation test in STEPS_Validation before doing so, because Blender frequently
+# breaks its python API.
+MINIMUM_BLENDER_VERSION = (3, 0, 1)
+MAXIMUM_BLENDER_VERSION = (5, 0, 1)
 
 
 class QueueManager(BaseManager):
@@ -72,7 +80,7 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
     renderStart: Annotated[int,
                            'Start frame for rendering. If -1, will use the start frame from the file'] = -1
     renderEnd: Annotated[
-        int, 'End frame for rendering (exclusive). Iif -1, will use the end frame from the file'] = -1
+        int, 'End frame for rendering (exclusive). If -1, will use the end frame from the file'] = -1
     renderStep: Annotated[int,
                           'Frame step for rendering, allows to skip some frames if it is higher than 1'] = 1
     outputPath: Annotated[
@@ -90,6 +98,8 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
     specScaleFactor: Annotated[float, 'Size of species compared to the mean tetrahedron size'] = 0.025
     background_color: Annotated[utils.colorType, 'Color of the background'] = (0.025, 0.025, 0.025, 1)
     cycles_shadows: Annotated[bool, 'Make global light cast shadows with the cycles render engine'] = False
+    addSubPatches: Annotated[bool, 'Add subparts of patches, like regions of interest, as surface meshes.'] = False
+    ignore_version: Annotated[bool, 'Ignore the Blender version checks.'] = False
 
     Meshes: groups.MeshGroup = None
     Species: groups.SpeciesGroup = None
@@ -169,7 +179,10 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
             # Change light to sun
             bpy.data.lights['Light'].type = 'SUN'
             bpy.data.lights['Light'].energy = 3
-            bpy.data.lights['Light'].cycles.cast_shadow = self.cycles_shadows
+            if bpy.app.version < (4, 2, 0):
+                bpy.data.lights['Light'].cycles.cast_shadow = self.cycles_shadows
+            else:
+                bpy.data.lights['Light'].use_shadow = self.cycles_shadows
             bpy.data.objects['Light'].rotation_euler = (0, 0, 0)
 
             # Set animation start and end frames
@@ -183,11 +196,14 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
                 mesh.blenderObj.select_set(False)
 
     def _getAndAddMesh(self):
-        self._queue_snd.put((Orders.GET_MESH, ))
+        self._queue_snd.put((Orders.GET_MESH, self.addSubPatches))
         self._allElems, triGrids, compSurfaces, avgTetSize, bbox = self._queue_rcv.get()
 
-        self._tetSize = avgTetSize
-        self._bbox = bbox
+        self._tetSize = avgTetSize if avgTetSize is not None else 0.1e-6
+        if all(v is None for v in bbox):
+            self._bbox = (np.array([-0.5e-6] * 3), np.array([0.5e-6] * 3))
+        else:
+            self._bbox = bbox
 
         # Auto set scale
         if self.scale is None:
@@ -260,6 +276,10 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
 
     def _getVesPositions(self, ves, tind):
         self._queue_snd.put((Orders.GET_VES_POS.value, ves, tind))
+        return self._queue_rcv.get()
+
+    def _getVesOnPath(self, ves, tind):
+        self._queue_snd.put((Orders.GET_VES_ON_PATH.value, ves, tind))
         return self._queue_rcv.get()
 
     def _getVesEvents(self, ves, tind):
@@ -337,7 +357,22 @@ class HDF5BlenderLoader(objects.BlenderCollection, state.State):
         if self.isFromScratch and 'Cube' in bpy.data.meshes:
             bpy.data.meshes.remove(bpy.data.meshes['Cube'])
 
+    def _initialChecks(self):
+        if bpy.app.version < MINIMUM_BLENDER_VERSION or bpy.app.version > MAXIMUM_BLENDER_VERSION:
+            msg = (
+                f"stepsblender requires a Blender version between "
+                f"{'.'.join(map(str, MINIMUM_BLENDER_VERSION))} and "
+                f"{'.'.join(map(str, MAXIMUM_BLENDER_VERSION))}. You are currently using "
+                f"Blender {'.'.join(map(str, bpy.app.version))}. You can ignore this by adding the "
+                f"--ignore_version command line argument. It might still work but if you "
+                f"encounter issues, try to use a compatible Blender version.")
+            if not self.ignore_version:
+                raise Exception(msg)
+                sys.exit(1)
+
     def _load(self):
+        self._initialChecks()
+
         self._cleanBlendFile()
 
         self._getAndAddMesh()

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -128,6 +128,12 @@ util::flat_set<model::Spec*> Patch::getAllSpecs(const model::Model& model) const
             const auto& cplxsreac_specs_srhs = cplxsreac->getSRHS();
             specs.insert(cplxsreac_specs_srhs.begin(), cplxsreac_specs_srhs.end());
         }
+        for (auto const& cplxsreac: surfsys.getAllVDepComplexSReacs()) {
+            const auto& cplxsreac_specs_slhs = cplxsreac->getSLHS();
+            specs.insert(cplxsreac_specs_slhs.begin(), cplxsreac_specs_slhs.end());
+            const auto& cplxsreac_specs_srhs = cplxsreac->getSRHS();
+            specs.insert(cplxsreac_specs_srhs.begin(), cplxsreac_specs_srhs.end());
+        }
         for (auto const& oc: surfsys.getAllOhmicCurrs()) {
             specs.insert(&oc->getChanState());
         }
@@ -166,6 +172,19 @@ util::flat_set<model::Spec*> Patch::getAllSpecs(const model::Model& model) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+util::flat_set<model::Diff*> Patch::getAllDiffs(const model::Model& model) const {
+    util::flat_set<model::Diff*> pDiffs;
+    for (const auto& surfsys_id: pSurfsys) {
+        model::Surfsys& surfsys = model.getSurfsys(surfsys_id);
+        const auto& diffs = surfsys.getAllDiffs();
+        pDiffs.insert(diffs.begin(), diffs.end());
+    }
+
+    return pDiffs;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 util::flat_set<model::SReac*> Patch::getAllSReacs(const model::Model& model) const {
     util::flat_set<model::SReac*> pSReacs;
     for (const auto& id: pSurfsys) {
@@ -175,6 +194,43 @@ util::flat_set<model::SReac*> Patch::getAllSReacs(const model::Model& model) con
     }
 
     return pSReacs;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+util::flat_set<model::VDepSReac*> Patch::getAllVDepSReacs(const model::Model& model) const {
+    util::flat_set<model::VDepSReac*> vdepSReacs;
+    for (const auto& id: pSurfsys) {
+        model::Surfsys& surfsys = model.getSurfsys(id);
+        const auto& vdepsreacs = surfsys.getAllVDepSReacs();
+        vdepSReacs.insert(vdepsreacs.begin(), vdepsreacs.end());
+    }
+    return vdepSReacs;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+util::flat_set<model::ComplexSReac*> Patch::getAllComplexSReacs(const model::Model& model) const {
+    util::flat_set<model::ComplexSReac*> pReacs;
+    for (const auto& id: pSurfsys) {
+        model::Surfsys& surfsys = model.getSurfsys(id);
+        const auto& reacs = surfsys.getAllComplexSReacs();
+        pReacs.insert(reacs.begin(), reacs.end());
+    }
+    return pReacs;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+util::flat_set<model::VDepComplexSReac*> Patch::getAllVDepComplexSReacs(
+    const model::Model& model) const {
+    util::flat_set<model::VDepComplexSReac*> pReacs;
+    for (const auto& id: pSurfsys) {
+        model::Surfsys& surfsys = model.getSurfsys(id);
+        const auto& reacs = surfsys.getAllVDepComplexSReacs();
+        pReacs.insert(reacs.begin(), reacs.end());
+    }
+    return pReacs;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

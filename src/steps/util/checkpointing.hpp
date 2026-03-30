@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -88,6 +88,13 @@ template <typename T>
 void checkpoint(std::ostream& ostr, const std::vector<T>& v, bool with_size = true);
 template <typename T>
 void restore(std::istream& istr, size_t nelems, std::vector<T>& v);
+template <typename T>
+void checkpoint(std::ostream& ostr, const std::shared_ptr<T>& v);
+template <typename T,
+          typename std::enable_if_t<std::is_constructible_v<T, std::istream&>, bool> = true>
+void restore(std::istream& istr, std::shared_ptr<T>& v);
+template <typename T>
+void restore(std::istream& istr, std::shared_ptr<T>& v);
 template <typename T, typename V>
 void checkpoint(std::ostream& ostr, const std::pair<T, V>& v);
 template <typename T, typename V>
@@ -184,6 +191,27 @@ void restore(std::istream& istr, std::vector<T>& v) {
     size_t nelems;
     restore(istr, nelems);
     restore(istr, nelems, v);
+}
+
+// std::shared_ptr
+
+template <typename T>
+void checkpoint(std::ostream& ostr, const std::shared_ptr<T>& v) {
+    checkpoint(ostr, *v);
+}
+
+template <typename T, typename std::enable_if_t<std::is_constructible_v<T, std::istream&>, bool>>
+void restore(std::istream& istr, std::shared_ptr<T>& v) {
+    // Directly build from stream constructor
+    v = std::make_shared<T>(istr);
+}
+
+template <typename T>
+void restore(std::istream& istr, std::shared_ptr<T>& v) {
+    assert(v == nullptr);
+    // Build with default constructor and restore after
+    v = std::make_shared<T>();
+    restore(istr, *v);
 }
 
 // std::pair

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -85,11 +85,13 @@ TetOpSplitP::TetOpSplitP(model::Model* m,
                          wm::Geom* g,
                          const rng::RNGptr& r,
                          int calcMembPot,
+                         bool calcMembPot_lenient,
                          std::vector<int> const& tet_hosts,
                          const std::map<triangle_global_id, int>& tri_hosts,
                          std::vector<int> const& wm_hosts)
     : API(*m, *g, r)
     , pEFoption(static_cast<EF_solver>(calcMembPot))
+    , pEField_lenient(calcMembPot_lenient)
     , gen(rd()) {
     if (rng() == nullptr) {
         std::ostringstream os;
@@ -313,6 +315,9 @@ void TetOpSplitP::checkpoint(std::string const& file_name) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void TetOpSplitP::restore(std::string const& file_name) {
+    // First reset the solver
+    reset();
+
     std::fstream cp_file;
 
     cp_file.open(file_name.c_str(), std::fstream::in | std::fstream::binary);
@@ -1268,6 +1273,7 @@ void TetOpSplitP::_setupEField() {
     pEField->initMesh(EFVerts,
                       EFTris,
                       EFTets,
+                      pEField_lenient,
                       memb->_getOpt_method(),
                       memb->_getOpt_file_name(),
                       memb->_getSearch_percent());
@@ -1447,21 +1453,21 @@ void TetOpSplitP::reset() {
     }
 
     for (auto const& tet: pTets) {
-        if (tet == nullptr or !tet->getInHost()) {
+        if (tet == nullptr) {
             continue;
         }
         tet->reset();
     }
 
     for (auto const& wmvol: pWmVols) {
-        if (wmvol == nullptr or !wmvol->getInHost()) {
+        if (wmvol == nullptr) {
             continue;
         }
         wmvol->reset();
     }
 
     for (auto const& tri: pTris) {
-        if (tri == nullptr or !tri->getInHost()) {
+        if (tri == nullptr) {
             continue;
         }
         tri->reset();
@@ -2167,21 +2173,7 @@ bool TetOpSplitP::_getCompSpecClamped(solver::comp_global_id cidx,
         ArgErrLog(os.str());
     }
 
-    bool local_clamped = true;
-    for (auto const& t: comp->tets()) {
-        if (!t->getInHost()) {
-            continue;
-        }
-        if (!t->clamped(lsidx)) {
-            local_clamped = false;
-        }
-    }
-
-    bool global_clamped = false;
-
-    MPI_Allreduce(&local_clamped, &global_clamped, 1, MPI_C_BOOL, MPI_LAND, MPI_COMM_WORLD);
-
-    return global_clamped;
+    return comp->def()->clamped(lsidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2201,21 +2193,7 @@ void TetOpSplitP::_setCompSpecClamped(solver::comp_global_id cidx,
         ArgErrLog(os.str());
     }
 
-    // Set the flag in def object, though this may not be necessary
     comp->def()->setClamped(lsidx, b);
-
-    for (auto const& t: comp->tets()) {
-        if (!t->getInHost()) {
-            continue;
-        }
-        t->setClamped(lsidx, b);
-    }
-
-    for (auto const& t: boundaryTets) {
-        if (t->compdef() == comp->def()) {
-            t->setClamped(lsidx, b);
-        }
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2605,21 +2583,7 @@ bool TetOpSplitP::_getPatchSpecClamped(solver::patch_global_id pidx,
         ArgErrLog(os.str());
     }
 
-    bool local_clamped = true;
-
-    for (auto const& t: patch->tris()) {
-        if (!t->getInHost()) {
-            continue;
-        }
-        if (t->clamped(lsidx) == false) {
-            local_clamped = false;
-        }
-    }
-    bool global_clamped = false;
-
-    MPI_Allreduce(&local_clamped, &global_clamped, 1, MPI_C_BOOL, MPI_LAND, MPI_COMM_WORLD);
-
-    return global_clamped;
+    return patch->def()->clamped(lsidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2639,22 +2603,7 @@ void TetOpSplitP::_setPatchSpecClamped(solver::patch_global_id pidx,
         ArgErrLog(os.str());
     }
 
-    // Set the flag in def object for consistency, though this is not
-    // entirely necessary
     patch->def()->setClamped(lsidx, buf);
-
-    for (auto const& t: patch->tris()) {
-        if (!t->getInHost()) {
-            continue;
-        }
-        t->setClamped(lsidx, buf);
-    }
-
-    for (auto const& t: boundaryTris) {
-        if (t->patchdef() == patch->def()) {
-            t->setClamped(lsidx, buf);
-        }
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -3744,6 +3693,41 @@ unsigned long long TetOpSplitP::_getPatchSReacExtent(solver::patch_global_id pid
 
 ////////////////////////////////////////////////////////////////////////////////
 
+unsigned long long TetOpSplitP::_getPatchVDepSReacExtent(solver::patch_global_id pidx,
+                                                         solver::vdepsreac_global_id vsridx) const {
+    AssertLog(pidx < statedef().countPatches());
+    AssertLog(vsridx < statedef().countVDepSReacs());
+    const auto& patch = statedef().patchdef(pidx);
+    solver::vdepsreac_local_id lvsridx = patch.vdepsreacG2L(vsridx);
+    if (lvsridx.unknown()) {
+        std::ostringstream os;
+        os << "Voltage-dependent surface reaction undefined in patch.\n";
+        ArgErrLog(os.str());
+    }
+
+    // The 'local' Patch object has same index as solver::Patchdef object
+    Patch* lpatch = pPatches[pidx];
+    AssertLog(lpatch->def() == &patch);
+
+    if (lpatch->tris().empty()) {
+        return 0;
+    }
+
+    unsigned long long local_x = 0;
+    for (auto t: lpatch->tris()) {
+        if (!t->getInHost()) {
+            continue;
+        }
+        VDepSReac& sreac = t->vdepsreac(lvsridx);
+        local_x += sreac.getExtent();
+    }
+    unsigned long long global_x = 0.0;
+    MPI_Allreduce(&local_x, &global_x, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+    return global_x;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void TetOpSplitP::_resetPatchSReacExtent(solver::patch_global_id pidx,
                                          solver::sreac_global_id ridx) {
     AssertLog(pidx < statedef().countPatches());
@@ -4269,6 +4253,212 @@ double TetOpSplitP::_getTetDiffA(tetrahedron_global_id tidx, solver::diff_global
     }
     MPI_Bcast(&a, 1, MPI_DOUBLE, host, MPI_COMM_WORLD);
     return a;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetOpSplitP::_getTetA(tetrahedron_global_id tetid) const {
+    int host_rank = getTetHostRank(tetid);
+    double prop;
+    if (host_rank == myRank) {
+        Tet* tet = pTets[tetid];
+        prop = tet->getA();
+    }
+    MPI_Bcast(&prop, 1, MPI_DOUBLE, host_rank, MPI_COMM_WORLD);
+    return prop;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint TetOpSplitP::_getTetExtent(tetrahedron_global_id tetid) const {
+    int host_rank = getTetHostRank(tetid);
+    uint ext;
+    if (host_rank == myRank) {
+        Tet* tet = pTets[tetid];
+        ext = tet->getExtent();
+    }
+    MPI_Bcast(&ext, 1, MPI_UNSIGNED, host_rank, MPI_COMM_WORLD);
+    return ext;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint TetOpSplitP::_getTetWeightedExtent(tetrahedron_global_id tetid) const {
+    int host_rank = getTetHostRank(tetid);
+    uint total_degree = 0;
+    if (host_rank == myRank) {
+        for (auto kp: pTets[tetid]->kprocs()) {
+            uint kp_degree = kp->getLocalUpdVec().size() + kp->getRemoteUpdVec().size();
+            uint extent = kp->getExtent();
+            total_degree += kp_degree * extent;
+        }
+    }
+    MPI_Bcast(&total_degree, 1, MPI_UNSIGNED, host_rank, MPI_COMM_WORLD);
+    return total_degree;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<double> TetOpSplitP::getBatchTetA(std::vector<index_t> tetids) const {
+    std::vector<double> input_vec;
+    std::vector<double> output_vec;
+    for (auto& tidx: tetids) {
+        input_vec.push_back(pTets[tetrahedron_global_id(tidx)]->getA());
+    }
+    MPI_Reduce(
+        input_vec.data(), output_vec.data(), tetids.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetOpSplitP::_getTriA(triangle_global_id triid) const {
+    int host_rank = getTriHostRank(triid);
+    double prop;
+    if (host_rank == myRank) {
+        Tri* tri = pTris[triid];
+        prop = tri->getA();
+    }
+    MPI_Bcast(&prop, 1, MPI_DOUBLE, host_rank, MPI_COMM_WORLD);
+    return prop;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint TetOpSplitP::_getTriExtent(triangle_global_id triid) const {
+    int host_rank = getTriHostRank(triid);
+    uint ext;
+    if (host_rank == myRank) {
+        Tri* tri = pTris[triid];
+        ext = tri->getExtent();
+    }
+    MPI_Bcast(&ext, 1, MPI_UNSIGNED, host_rank, MPI_COMM_WORLD);
+    return ext;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetOpSplitP::getBatchTetExtent(std::vector<index_t> tetids) const {
+    std::vector<uint> local_vec(tetids.size());
+    std::vector<uint> output_vec(tetids.size());
+    for (uint i = 0; i < tetids.size(); i++) {
+        auto tidx = tetids[i];
+        int host_rank = getTetHostRank(tetrahedron_global_id(tidx));
+        if (host_rank == myRank) {
+            local_vec[i] = pTets[tetrahedron_global_id(tidx)]->getExtent();
+        } else {
+            local_vec[i] = 0;
+        }
+    }
+    MPI_Reduce(local_vec.data(),
+               output_vec.data(),
+               tetids.size(),
+               MPI_UNSIGNED,
+               MPI_SUM,
+               0,
+               MPI_COMM_WORLD);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetOpSplitP::getBatchTetWeightedExtent(std::vector<index_t> tetids) const {
+    std::vector<uint> local_vec(tetids.size());
+    std::vector<uint> output_vec(tetids.size(), 0);
+    for (uint i = 0; i < tetids.size(); i++) {
+        auto tetid = tetids[i];
+        int host_rank = getTetHostRank(tetrahedron_global_id(tetid));
+        uint total_degree = 0;
+        if (host_rank == myRank) {
+            for (auto kp: pTets[tetrahedron_global_id(tetid)]->kprocs()) {
+                uint kp_degree = kp->getLocalUpdVec().size() + kp->getRemoteUpdVec().size();
+                uint extent = kp->getExtent();
+                total_degree += kp_degree * extent;
+            }
+        }
+        local_vec[i] = total_degree;
+    }
+    MPI_Reduce(local_vec.data(),
+               output_vec.data(),
+               tetids.size(),
+               MPI_UNSIGNED,
+               MPI_SUM,
+               0,
+               MPI_COMM_WORLD);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<double> TetOpSplitP::getBatchTriA(std::vector<index_t> triids) const {
+    std::vector<double> local_vec(triids.size());
+    std::vector<double> output_vec(triids.size());
+    for (uint i = 0; i < triids.size(); i++) {
+        auto tidx = triids[i];
+        auto host_result = triHosts.find(triangle_global_id(tidx));
+        if (host_result == triHosts.end()) {
+            local_vec[i] = 0.0;
+        } else {
+            local_vec[i] = pTris[triangle_global_id(tidx)]->getA();
+        }
+    }
+    MPI_Reduce(
+        local_vec.data(), output_vec.data(), triids.size(), MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetOpSplitP::getBatchTriExtent(std::vector<index_t> triids) const {
+    std::vector<uint> local_vec(triids.size());
+    std::vector<uint> output_vec(triids.size());
+    for (uint i = 0; i < triids.size(); i++) {
+        auto tidx = triids[i];
+        auto host_result = triHosts.find(triangle_global_id(tidx));
+        if (host_result == triHosts.end()) {
+            local_vec[i] = 0;
+        } else {
+            local_vec[i] = pTris[triangle_global_id(tidx)]->getExtent();
+        }
+    }
+    MPI_Reduce(local_vec.data(),
+               output_vec.data(),
+               triids.size(),
+               MPI_UNSIGNED,
+               MPI_SUM,
+               0,
+               MPI_COMM_WORLD);
+    return output_vec;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<uint> TetOpSplitP::getBatchTriWeightedExtent(std::vector<index_t> triids) const {
+    std::vector<uint> local_vec(triids.size());
+    std::vector<uint> output_vec(triids.size(), 0);
+    for (uint i = 0; i < triids.size(); i++) {
+        auto tidx = triids[i];
+        auto host_result = triHosts.find(triangle_global_id(tidx));
+        if (host_result == triHosts.end()) {
+            local_vec[i] = 0;
+        } else {
+            uint total_degree = 0;
+            for (auto kp: pTris[triangle_global_id(tidx)]->kprocs()) {
+                uint kp_degree = kp->getLocalUpdVec().size() + kp->getRemoteUpdVec().size();
+                uint extent = kp->getExtent();
+                total_degree += kp_degree * extent;
+            }
+            local_vec[i] = total_degree;
+        }
+    }
+    MPI_Reduce(local_vec.data(),
+               output_vec.data(),
+               triids.size(),
+               MPI_UNSIGNED,
+               MPI_SUM,
+               0,
+               MPI_COMM_WORLD);
+    return output_vec;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5098,8 +5288,116 @@ double TetOpSplitP::_getTriGHKI(triangle_global_id tidx, solver::ghkcurr_global_
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double TetOpSplitP::_getTriSReacI(triangle_global_id tidx) const {
+    if (!efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in "
+              "simulation.";
+        ArgErrLog(os.str());
+    }
+
+    auto& tri = _getTri(tidx);
+    auto host = _getHost(tidx);
+
+    double cur = 0.0;
+    if (tri.getInHost()) {
+        cur = tri.getSReacI();
+    }
+    MPI_Bcast(&cur, 1, MPI_DOUBLE, host, MPI_COMM_WORLD);
+    return cur;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetOpSplitP::_getTriSReacI(triangle_global_id tidx, solver::sreac_global_id sridx) const {
+    if (!efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in "
+              "simulation.";
+        ArgErrLog(os.str());
+    }
+
+    auto& tri = _getTri(tidx);
+    auto host = _getHost(tidx);
+
+    solver::sreac_local_id locidx = tri.patchdef()->sreacG2L(sridx);
+    if (locidx.unknown()) {
+        std::ostringstream os;
+        os << "Surface reaction undefined in triangle.\n";
+        ArgErrLog(os.str());
+    }
+
+    double cur = 0.0;
+
+    if (tri.getInHost()) {
+        solver::sreac_charge_local_id locchidx = tri.sreac(locidx).getChargeLidx();
+        if (locchidx.valid()) {
+            cur = tri.getSReacI(locchidx);
+        }
+    }
+    MPI_Bcast(&cur, 1, MPI_DOUBLE, host, MPI_COMM_WORLD);
+    return cur;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetOpSplitP::_getTriVDepSReacI(triangle_global_id tidx) const {
+    if (!efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in "
+              "simulation.";
+        ArgErrLog(os.str());
+    }
+
+    auto& tri = _getTri(tidx);
+    auto host = _getHost(tidx);
+
+    double cur = 0.0;
+
+    if (tri.getInHost()) {
+        cur = tri.getVDepSReacI();
+    }
+    MPI_Bcast(&cur, 1, MPI_DOUBLE, host, MPI_COMM_WORLD);
+    return cur;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double TetOpSplitP::_getTriVDepSReacI(triangle_global_id tidx,
+                                      solver::vdepsreac_global_id vdsridx) const {
+    if (!efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in "
+              "simulation.";
+        ArgErrLog(os.str());
+    }
+
+    auto& tri = _getTri(tidx);
+    auto host = _getHost(tidx);
+
+    solver::vdepsreac_local_id locidx = tri.patchdef()->vdepsreacG2L(vdsridx);
+    if (locidx.unknown()) {
+        std::ostringstream os;
+        os << "Voltage-depndent surface reaction undefined in triangle.\n";
+        ArgErrLog(os.str());
+    }
+
+    double cur = 0.0;
+
+    if (tri.getInHost()) {
+        solver::vdepsreac_charge_local_id locchidx = tri.vdepsreac(locidx).getChargeLidx();
+        if (locchidx.valid()) {
+            cur = tri.getVDepSReacI(locchidx);
+        }
+    }
+    MPI_Bcast(&cur, 1, MPI_DOUBLE, host, MPI_COMM_WORLD);
+    return cur;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double TetOpSplitP::_getTriI(triangle_global_id tidx) const {
-    return _getTriGHKI(tidx) + _getTriOhmicI(tidx);
+    return _getTriGHKI(tidx) + _getTriOhmicI(tidx) + _getTriSReacI(tidx) + _getTriVDepSReacI(tidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

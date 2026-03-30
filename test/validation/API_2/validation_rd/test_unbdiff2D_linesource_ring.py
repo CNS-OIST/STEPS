@@ -118,6 +118,7 @@ class TestRDUnbdiff2DLinesourceRing(unittest.TestCase):
             sim.newRun()
 
             sim.TRIS(inject_tris).X.Count = float(NINJECT) / len(inject_tris)
+            sim.patch.X.Clamped = True
 
             sim.run(INT)
 

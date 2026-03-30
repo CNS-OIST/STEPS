@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -451,6 +451,61 @@ double API::getTriGHKI(triangle_global_id tidx, const std::string& ghk) const {
         NotImplErrLog("Method not available for this solver.");
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTriSReacI(triangle_global_id tidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+        return _getTriSReacI(tidx);
+    } else {
+        NotImplErrLog("Method not available for this solver.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTriSReacI(triangle_global_id tidx, const std::string& sreac) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+        // the following may raise exception if string is unknown
+        sreac_global_id sridx = pStatedef->getSReacIdx(sreac);
+
+        return _getTriSReacI(tidx, sridx);
+    } else {
+        NotImplErrLog("Method not available for this solver.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTriVDepSReacI(triangle_global_id tidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+        return _getTriVDepSReacI(tidx);
+    } else {
+        NotImplErrLog("Method not available for this solver.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTriVDepSReacI(triangle_global_id tidx, const std::string& vdepsreac) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+        // the following may raise exception if string is unknown
+        vdepsreac_global_id vdsridx = pStatedef->getVDepSReacIdx(vdepsreac);
+
+        return _getTriVDepSReacI(tidx, vdsridx);
+    } else {
+        NotImplErrLog("Method not available for this solver.");
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 double API::getTriI(triangle_global_id tidx) const {
@@ -539,6 +594,30 @@ void API::setTriVDepSReacActive(triangle_global_id tidx, const std::string& vsr,
         vdepsreac_global_id vsridx = pStatedef->getVDepSReacIdx(vsr);
 
         _setTriVDepSReacActive(tidx, vsridx, act);
+    } else {
+        NotImplErrLog("Method not available for this solver.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint API::getTriExtent(triangle_global_id tidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+        return _getTriExtent(tidx);
+    } else {
+        NotImplErrLog("Method not available for this solver.");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::getTriA(triangle_global_id tidx) const {
+    if (auto* mesh = dynamic_cast<tetmesh::Tetmesh*>(&geom())) {
+        ArgErrLogIf(tidx >= mesh->countTris(), "Triangle index out of range.");
+
+        return _getTriA(tidx);
     } else {
         NotImplErrLog("Method not available for this solver.");
     }
@@ -721,6 +800,30 @@ double API::_getTriGHKI(triangle_global_id /*tidx*/, ghkcurr_global_id /*ghkidx*
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double API::_getTriSReacI(triangle_global_id /*tidx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTriSReacI(triangle_global_id /*tidx*/, sreac_global_id /*ghkidx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTriVDepSReacI(triangle_global_id /*tidx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTriVDepSReacI(triangle_global_id /*tidx*/, vdepsreac_global_id /*ghkidx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double API::_getTriI(triangle_global_id /*tidx*/) const {
     NotImplErrLog("");
 }
@@ -761,6 +864,18 @@ bool API::_getTriVDepSReacActive(triangle_global_id /*tidx*/,
 void API::_setTriVDepSReacActive(triangle_global_id /*tidx*/,
                                  vdepsreac_global_id /*vsridx*/,
                                  bool /*act*/) {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double API::_getTriA(triangle_global_id /*tidx*/) const {
+    NotImplErrLog("");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+uint API::_getTriExtent(triangle_global_id /*tidx*/) const {
     NotImplErrLog("");
 }
 

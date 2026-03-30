@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -80,6 +80,8 @@ SReac::SReac(solver::SReacdef* srdef, TriRDEF* tri)
     solver::sreac_local_id lsridx = pTri->patchdef()->sreacG2L(pSReacdef->gidx());
     double kcst = pTri->patchdef()->kcst(lsridx);
     pKcst = kcst;
+
+    pChargeLidx = pTri->patchdef()->sreacL2Charge(lsridx);
 
     if (pSReacdef->surf_surf() == false) {
         double vol;
@@ -499,19 +501,19 @@ void SReac::apply(const rng::RNGptr& /*rng*/,
     for (auto oc: solver::ohmiccurr_local_id::range(nocs)) {
         // Patchdef returns local index
         solver::spec_local_id cs_lidx = pdef->ohmiccurr_chanstate(oc);
-        if (pTri->clamped(cs_lidx) == true) {
+        if (pTri->clamped(cs_lidx) || pdef->clamped(cs_lidx)) {
             continue;
         }
         int upd = upd_s_vec[cs_lidx];
         if (upd == 0) {
             continue;
         }  // Now here a channel state related to an ohmic current has changed
-        // it's number: tell the triangle
+        // its number: tell the triangle
         pTri->setOCchange(oc, cs_lidx, dt, simtime);
     }
 
     for (auto s: upd_s_vec.range()) {
-        if (pTri->clamped(s) == true) {
+        if (pTri->clamped(s) || pdef->clamped(s)) {
             continue;
         }
         int upd = upd_s_vec[s];
@@ -523,13 +525,19 @@ void SReac::apply(const rng::RNGptr& /*rng*/,
         pTri->setCount(s, static_cast<uint>(nc), period);
     }
 
+    const int charge = pSReacdef->charge();
+    if (charge) {
+        // Maintain convention that a positive inward current is a negative current
+        pTri->incECharge_sr(getChargeLidx(), -charge);
+    }
+
     // Update inner tet pools.
     TetRDEF* itet = pTri->iTet();
     if (itet != nullptr) {
         const auto& upd_i_vec = pdef->sreac_upd_I(lidx);
         const auto& cnt_i_vec = itet->pools();
         for (auto s: upd_i_vec.range()) {
-            if (itet->clamped(s) == true) {
+            if (itet->clamped(s) || itet->compdef()->clamped(s)) {
                 continue;
             }
             int upd = upd_i_vec[s];
@@ -548,7 +556,7 @@ void SReac::apply(const rng::RNGptr& /*rng*/,
         const auto& upd_o_vec = pdef->sreac_upd_O(lidx);
         const auto& cnt_o_vec = otet->pools();
         for (auto s: upd_o_vec.range()) {
-            if (otet->clamped(s) == true) {
+            if (otet->clamped(s) || otet->compdef()->clamped(s)) {
                 continue;
             }
             int upd = upd_o_vec[s];

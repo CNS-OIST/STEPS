@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,6 +29,7 @@
 #include <string>
 
 #include "fwd.hpp"
+#include "math/constants.hpp"
 
 namespace steps::model {
 
@@ -49,7 +50,7 @@ class LinkSpec {
     /// \param id ID of the link species.
     /// \param model Reference to the parent model.
     /// \param dcst Default surface diffusion coefficient of the link species
-    LinkSpec(std::string const& id, Model& model, double dcst = 0.0);
+    LinkSpec(std::string const& id, Model& model, double dcst = 0.0, double max_angle = math::PI);
 
     LinkSpec(const LinkSpec&) = delete;
     LinkSpec& operator=(const LinkSpec&) = delete;
@@ -84,6 +85,13 @@ class LinkSpec {
         return pDcst;
     }
 
+    inline double getMaxAngle() const noexcept {
+        return pMaxAngle;
+    }
+
+    // Signed
+    double getMinCos2() const noexcept;
+
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DELETION
     ////////////////////////////////////////////////////////////////////////
@@ -109,6 +117,7 @@ class LinkSpec {
     Model& pModel;
 
     double pDcst;
+    double pMaxAngle;
 };
 
 inline bool operator<(const LinkSpec& lhs, const LinkSpec& rhs) {

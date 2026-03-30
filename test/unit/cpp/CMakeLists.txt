@@ -93,8 +93,7 @@ endif()
 
 if(STEPS_USE_DIST_MESH)
   configure_file(test_common.hpp.in test_common.hpp @ONLY)
-
-  test_unit(TARGETS propensities mol_state kproc_event_queue distmesh
+  test_unit(TARGETS propensities mol_state kproc_event_queue distmesh kprocstate
             DEPENDENCIES stepsdist Catch2::Catch2WithMain)
 
   include_directories(${CMAKE_CURRENT_BINARY_DIR})

@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -38,7 +38,6 @@ from steps import stepslib
 import steps.API_1.utilities.meshio as smeshio
 import steps.API_1.utilities.geom_decompose as sgdecomp
 import steps.API_1.utilities.metis_support as smetis
-import steps.API_1.utilities.morph_support as smorph
 
 from . import utils as nutils
 from . import model as nmodel
@@ -59,6 +58,7 @@ __all__ = [
     'MetisPartition',
     'GmshPartition',
     'MorphPartition',
+    'TetWeightPartition',
     'Reference',
     'TetReference',
     'TriReference',
@@ -471,7 +471,7 @@ class _TetCompartment(_BaseTetCompartment):
 class _DistCompartment(_BaseTetCompartment):
     _FACADE_TITLE_STR = 'Only available for compartments defined in distributed tetrahedral meshes'
 
-    def __init__(self, *args, conductivity=0, physicalTag=None, **kwargs):
+    def __init__(self, *args, conductivity=1.0, physicalTag=None, **kwargs):
         self._physicalTag = physicalTag
 
         # Allow any ordering of vsys and tetLst
@@ -490,12 +490,6 @@ class _DistCompartment(_BaseTetCompartment):
             comp = stepslib._py_DistComp(self.name, geom.stepsMesh, None, self._physicalTag)
         else:
             tetLst = TetList._toRefList(self._tetLst, geom)
-            if tetLst.isLocal() and tetLst._owned != False:
-                raise Exception(
-                    f'The compartment is being created with a local tetrahedron list but without '
-                    f'including non-owned elements. It should instead be created inside a with '
-                    f'mesh.asLocal(owned=False) block.'
-                )
             comp = stepslib._py_DistComp(
                 self.name, geom.stepsMesh, tetLst.indices, self._physicalTag, local=tetLst.isLocal()
             )
@@ -520,7 +514,7 @@ class _DistCompartment(_BaseTetCompartment):
     @property
     @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('S m^-1'))
     def Conductivity(self):
-        """Conductivity of the compartment
+        """Conductivity of the compartment, defaults to 1 S/m
 
         :type: Union[float, :py:class:`steps.API_2.utils.Parameter`]
         """
@@ -880,12 +874,6 @@ class _DistPatch(_BaseTetPatch):
             patch = stepslib._py_DistPatch(self.name, geom.stepsMesh, None, icomp, ocomp, self._physicalTag)
         else:
             triLst = TriList._toRefList(self._triLst, geom)
-            if triLst.isLocal() and triLst._owned != False:
-                raise Exception(
-                    f'The patch is being created with a local triangle list but without '
-                    f'including non-owned elements. It should instead be created inside a with '
-                    f'mesh.asLocal(owned=False) block.'
-                )
             patch = stepslib._py_DistPatch(
                 self.name, geom.stepsMesh, triLst.indices, icomp, ocomp, self._physicalTag, local=triLst.isLocal()
             )
@@ -1141,10 +1129,8 @@ class _TetMembrane(Membrane):
 class _DistMembrane(Membrane, nutils.ParameterizedObject):
     _FACADE_TITLE_STR = 'Only available for membranes defined in distributed tetrahedral meshes'
 
-    def __init__(self, patches, capacitance=0, **kwargs):
+    def __init__(self, patches, capacitance=1e-2, **kwargs):
         super().__init__(patches, **kwargs)
-        if len(patches) != 1:
-            raise ValueError(f'Membranes in distributed meshes can only have a single patch.')
         self.Capacitance = capacitance
 
     def _createStepsObj(self, geom):
@@ -1166,13 +1152,26 @@ class _DistMembrane(Membrane, nutils.ParameterizedObject):
         self.stepsMemb.setCapacitance(v)
 
 
+def _redirect_to_inner_array(method, *args, **kwargs):
+    """This function will be called when instances of `Point` are used as a numpy array.
+    It just redirects the calls to the `_array` attribute of `Point`.
+    """
+    self, *args = args
+    res = method(self._array, *args, **kwargs)
+    if method.__name__ != '__array__' and isinstance(res, numpy.ndarray) and res.shape == self._array.shape:
+        return Point(_array=res)
+    return res
+
+
 @nutils.FreezeAfterInit
-class Point(numpy.ndarray):
+class Point(
+    # Do not intercept calls to __array_ufunc... etc, as it prevents numpy from working properly
+    metaclass=nutils.InterceptCallsTo(numpy.ndarray, _redirect_to_inner_array, ['__array_.*__'], ducktype=True)
+    ):
     """Convenience class for representing 3D points
 
-    This class inherits from :py:class:`numpy.ndarray` and can thus be used in the same way
-    as a numpy array. The only difference is the possibility to access invidual coordinates
-    through the *x*, *y*, and *z* properties.
+    This class can be used like a numpy array. In addition, it offers the possibility to access
+    invidual coordinates through the *x*, *y*, and *z* properties.
 
     :param x: x coordinate
     :type x: float
@@ -1182,13 +1181,11 @@ class Point(numpy.ndarray):
     :type z: float
     """
 
-    def __new__(cls, x, y, z):
-        arr = numpy.zeros(3)
-        arr[0:3] = x, y, z
-        return arr.view(cls)
-
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, x=numpy.nan, y=numpy.nan, z=numpy.nan, _array=None):
+        if _array is None:
+            self._array = numpy.array([x, y, z])
+        else:
+            self._array = _array
 
     @property
     def x(self):
@@ -1196,7 +1193,7 @@ class Point(numpy.ndarray):
 
         :type: float, read-only
         """
-        return self[0]
+        return self._array[0]
 
     @property
     def y(self):
@@ -1204,7 +1201,7 @@ class Point(numpy.ndarray):
 
         :type: float, read-only
         """
-        return self[1]
+        return self._array[1]
 
     @property
     def z(self):
@@ -1212,10 +1209,10 @@ class Point(numpy.ndarray):
 
         :type: float, read-only
         """
-        return self[2]
+        return self._array[2]
 
     def __hash__(self):
-        return hash(tuple(self))
+        return hash(tuple(self._array))
 
 
 @nutils.FreezeAfterInit
@@ -1882,7 +1879,7 @@ class DistMesh(_BaseTetMesh):
                 del self._callKwargs['owned']
             del self._lstArgs['_owned']
 
-    def intersect(self, points, sampling=-1, raw=False, local=True):
+    def intersect(self, points, sampling=-1, raw=False):
         """Computes the intersection of the current mesh and line segment(s), given their vertices
 
         :param points: A 2-D NumPy array (/memview) of 3D points where each element contains the 3 point
@@ -1893,26 +1890,15 @@ class DistMesh(_BaseTetMesh):
         :type sampling: int
         :param raw: If True, return raw integer tetrahedron indices.
         :type raw: bool
-        :param local: if False, return global tetrahedron identifiers instead of local ones.
-        :type local: bool
-
-        This method can only be called when `mesh.asLocal()` is used, and it will return local tetrahedron
-        references by default.
 
         :returns: A list of lists of tuples representing the intersected tetrahedrons, one element per line
             segment. Each tuple is made of 2 elements, a tetrahedron identifier (local or global depending
-            on `local`), and its respective intersection ratio.
+            on whether `mesh.asLocal()` is used), and its respective intersection ratio.
         :rtype: List[List[Tuple[Union[:py:class:`TetReference`, int], float]]]
         """
-        if not self._local:
-            raise Exception('Cannot use intersect method without using "with mesh.asLocal():".')
-        res = self.stepsMesh.intersect(points, sampling)
-        if not local:
-            res = [[(self.stepsMesh.getTetGlobalIndex(idx), rat) for idx, rat in seg] for seg in res]
-        if raw:
-            return res
-        else:
-            return [[(TetReference(idx, mesh=self, local=local), rat) for idx, rat in seg] for seg in res]
+
+        res = self.stepsMesh.intersect(points, sampling, self._local)
+        return res if raw else [[(TetReference(idx, mesh=self, local=self._local), rat) for idx, rat in seg] for seg in res]
 
     def intersectIndependentSegments(self, points, sampling=-1, raw=False, local=True):
         """Similar to the intersect method but here we deal with independent segments, i.e.
@@ -1927,26 +1913,22 @@ class DistMesh(_BaseTetMesh):
         :type sampling: int
         :param raw: If True, return raw integer tetrahedron indices.
         :type raw: bool
-        :param local: if False, return global tetrahedron identifiers instead of local ones.
-        :type local: bool
-
-        This method can only be called when `mesh.asLocal()` is used, and it will return local tetrahedron
-        references by default.
 
         :returns: A list of lists of tuples representing the intersected tetrahedrons, one element per line
             segment. Each tuple is made of 2 elements, a tetrahedron identifier (local or global depending
             on `local`), and its respective intersection ratio.
         :rtype: List[List[Tuple[Union[:py:class:`TetReference`, int], float]]]
         """
-        if not self._local:
-            raise Exception('Cannot use intersectIndependentSegments method without using "with mesh.asLocal():".')
-        res = self.stepsMesh.intersectIndependentSegments(points, sampling)
-        if not local:
-            res = [[(self.stepsMesh.getTetGlobalIndex(idx), rat) for idx, rat in seg] for seg in res]
-        if raw:
-            return res
-        else:
-            return [[(TetReference(idx, mesh=self, local=local), rat) for idx, rat in seg] for seg in res]
+        res = self.stepsMesh.intersectIndependentSegments(points, sampling, self._local)
+        return res if raw else [[(TetReference(idx, mesh=self, local=self._local), rat) for idx, rat in seg] for seg in res]
+
+    @property
+    def redistributed(self):
+        """Whether the mesh was redistributed after the solver was created
+
+        :type: bool, read-only
+        """
+        return self.stepsMesh.redistributed()
 
     @_BaseTetMesh.tets.getter
     def tets(self):
@@ -2550,8 +2532,24 @@ class _DistBarReference(BarReference, _DistReference):
 BarReference._distCls = _DistBarReference
 
 
+def _intercept_point_callback(method, *args, **kwargs):
+    """This function will be called when users try to call Point or numpy array methods on a VertReference.
+    It will make sure that the position of the vertex will be loaded from the mesh.
+    """
+    self, *args = args
+    self._loadData()
+    for arg in args:
+        if isinstance(arg, self.__class__):
+            arg._loadData()
+    return method(self, *args, **kwargs)
+
+
 @nutils.FreezeAfterInit
-class VertReference(Reference, Point):
+class VertReference(
+        Reference, Point,
+        # VertReferences use a metaclass to only load the position data when it is required.
+        metaclass=nutils.InterceptCallsTo(Point, _intercept_point_callback, ['__freezeCounter'])
+    ):
     """Convenience class for accessing properties of a vertex
 
     Can be used in the same way as a :py:class:`Point`.
@@ -2582,29 +2580,43 @@ class VertReference(Reference, Point):
         if not isinstance(mesh, _BaseTetMesh):
             raise TypeError(f'Expected a TetMesh or DistMesh object, got {mesh} instead.')
         idx = cls._getActualIdx(idx, mesh)
-        return Point.__new__(cls, numpy.nan, numpy.nan, numpy.nan)
+        return Point.__new__(cls)
 
     def __init__(self, idx, mesh=None, *args, _getData=True, **kwargs):
         super().__init__(idx, mesh=mesh, *args, **kwargs)
-        if _getData:
-            self[0:3] = self.mesh.stepsMesh.getVertex(self._idx, **self._callKwargs)
+        Point.__init__(self)
+        self._data_set = False
+
+    def _loadData(self):
+        if not self._data_set:
+            self._data_set = True
+            self._array[0:3] = self.mesh.stepsMesh.getVertex(self._idx, **self._callKwargs)
 
     # Need to redefine __hash__ and __eq__ to be sure the Reference version of these methods
     # is called.
     def __hash__(self):
-        return super().__hash__()
+        if hasattr(self, '_idx'):
+            return super().__hash__()
+        else:
+            return Point.__hash__(self)
 
     def __eq__(self, other):
-        return super().__eq__(other)
+        if hasattr(self, '_idx'):
+            return super().__eq__(other)
+        else:
+            return Point.__eq__(self, other)
 
     def __ne__(self, other):
-        return not super().__eq__(other)
+        return not self.__eq__(other)
 
     def __repr__(self):
-        return super().__repr__()
+        if hasattr(self, '_idx'):
+            return super().__repr__()
+        else:
+            return Point.__repr__(self)
 
     def __str__(self):
-        return super().__repr__()
+        return self.__repr__()
 
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
@@ -3119,6 +3131,7 @@ class RefList(nutils.UsingObjects(nutils.Optional(_BaseTetMesh)), nutils.SolverP
 
     def __repr__(self):
         if self._autoNamed:
+            return f'{self.__class__.__name__}({self.indices}, {nutils.args2str(**self._cloneArgs)})'
             # If the list does not have a given name, represent the list with a hash of its contents
             return f'{self.__class__.__name__}#{hash(self)}'
         else:
@@ -4232,6 +4245,7 @@ def GmshPartition(mesh, default_tris=None):
     tri_hosts = _getTriPartitionFromTet(mesh, tet_hosts, default_tris)
     return MeshPartition(mesh, tet_hosts=tet_hosts, tri_hosts=tri_hosts)
 
+
 def MorphPartition(mesh, morph, scale=1e-6, default_tris=None):
     """Partition the mesh using morphological sectioning data
 
@@ -4254,6 +4268,8 @@ def MorphPartition(mesh, morph, scale=1e-6, default_tris=None):
         section name
     :rtype: Tuple[:py:class:`MeshPartition`, Dict[int, str]]
     """
+    # Only import the module here to avoid that neuron prints to stdout on STEPS import
+    import steps.API_1.utilities.morph_support as smorph
     tet_map = smorph.mapMorphTetmesh(morph._sections, mesh.stepsMesh, scale)
     tet_hosts = []
     ind2sec = {}
@@ -4269,6 +4285,98 @@ def MorphPartition(mesh, morph, scale=1e-6, default_tris=None):
     tri_hosts = _getTriPartitionFromTet(mesh, tet_hosts, default_tris)
     return MeshPartition(mesh, tet_hosts=tet_hosts, tri_hosts=tri_hosts), ind2sec
 
+
+def WeightedPartition(mesh, weights, solver, default_tris=None, seed=0):
+    """Partition the mesh using weighted values for tetrahedrons. Partition done by METIS.
+
+    :param mesh: The mesh to be partitioned
+    :type mesh: :py:class:`TetMesh`
+    :param weights: List of weights for each tetrahedron
+    :type weights: List[int]
+    :param solver: STEPS solver being used for the simulation
+    :type solver: str
+    :param default_tris: Optional list of triangles that should be partitioned even if they are
+        not part of any patch
+    :type default_tris: :py:class:`TriList`
+    :param seed: Random seed for the partitioning algorithm, defaults to 0
+    :type seed: int
+
+    :returns: The partition object
+    :rtype: :py:class:`MeshPartition`
+    """
+
+    # Check solver type and set starting host index
+    if solver == 'TetVesicle':
+        start_host = 1
+    elif solver == 'TetOpSplit':
+        start_host = 0
+    else:
+        raise ValueError(
+            f'Unsupported solver {solver} for weighted partitioning. Supported solvers are '
+            f'"TetVesicle" and "TetOpSplit".'
+        )
+
+    # Get number of hosts
+    from . import sim
+    n_hosts = sim.MPI.nhosts
+
+    # Perform weighted partitioning
+    if n_hosts - start_host == 1:
+        # This case is necessary as METIS will return all 1's (instead of all 0's) if number of hosts is 1
+        tet_hosts = [start_host] * len(mesh.tets)
+        tri_hosts = _getTriPartitionFromTet(mesh, tet_hosts, default_tris)
+        return MeshPartition(mesh, tet_hosts=tet_hosts, tri_hosts=tri_hosts)
+    elif n_hosts - start_host <= 0:
+        raise ValueError(f'Number of hosts ({n_hosts}) is not larger than start_host ({start_host})')
+    else:
+        tet_hosts = mesh.stepsMesh.getWeightedPartition(seed, n_hosts-start_host, weights)
+        for i in range(len(tet_hosts)):
+            tet_hosts[i] += start_host
+        tri_hosts = _getTriPartitionFromTet(mesh, tet_hosts, default_tris)
+        return MeshPartition(mesh, tet_hosts=tet_hosts, tri_hosts=tri_hosts)
+
+
+def TetWeightPartition(mesh, prefix, solver, default_tris=None, seed=0):
+    """Partition the mesh using logged tetrahedron weights
+
+    Logging of weights can be done by calling :py:meth:`steps.API_2.sim.Simulation.saveTetWeights`
+    at the end of the simulation. Set the prefix argument in both functions to the same value.
+
+    Partition done using METIS.
+
+    :param mesh: The mesh to be partitioned
+    :type mesh: :py:class:`TetMesh`
+    :param prefix: Location/name of the weight log files
+    :type prefix: str
+    :param solver: STEPS solver being used for the simulation
+    :type solver: str
+    :param default_tris: Optional list of triangles that should be partitioned even if they are
+        not part of any patch
+    :type default_tris: :py:class:`TriList`
+    :param seed: Random seed for the partitioning algorithm, defaults to 0
+    :type seed: int
+
+    :returns: The partition object
+    :rtype: :py:class:`MeshPartition`
+    """
+
+    # Load weights from file
+    weights = []
+    with open(f'{prefix}weights.log', 'r') as f:
+        for line in f:
+            weights.append(float(line))
+
+    # Normalize weight range
+    norm_weights = []
+    norm_min = 0
+    norm_max = 2**16 # 1/2 of max int32; avoid overflow but still keep a high resolution
+    w_min = min(weights)
+    w_max = max(weights)
+    for w in weights:
+        norm_prop = (w - w_min) / (w_max - w_min)
+        norm_weights.append(int(round(norm_min + (norm_max - norm_min) * norm_prop)))
+
+    return WeightedPartition(mesh, norm_weights, solver, default_tris, seed)
 
 ###################################################################################################
 # Morph sectioning
@@ -4310,6 +4418,7 @@ class Morph:
         :returns: The morphological sectioning data
         :rtype: :py:class:`Morph`
         """
+        import steps.API_1.utilities.morph_support as smorph
         return Morph(smorph.hoc2morph(path))
 
     @classmethod
@@ -4322,6 +4431,7 @@ class Morph:
         :returns: The morphological sectioning data
         :rtype: :py:class:`Morph`
         """
+        import steps.API_1.utilities.morph_support as smorph
         return Morph(smorph.swc2morph(path))
 
     def Save(self, path):

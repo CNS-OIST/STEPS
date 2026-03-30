@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -133,6 +133,7 @@ def linearPartition(mesh, partition_info):
 def partitionTris(mesh, tet_partitions, tri_list):
     """
     Partition trangles according to partitioning information of their attached tetrahedrons.
+    Partitioning of tetrahedrons (tet_partitions) may be modified to ensure proper partitioning of triangles.
         
     Parameters:
         * mesh                STEPS Tetmesh object
@@ -144,23 +145,35 @@ def partitionTris(mesh, tet_partitions, tri_list):
     """
     
     tri_partitions = {}
-    for tri in tri_list:
-        neigh_tets = mesh.getTriTetNeighb(tri)
-        if neigh_tets[0] == UNKNOWN_TET and neigh_tets[0] == UNKNOWN_TET:
-            print("Triangle ", tri, " has no attatched tetrahedron, which is unlikely. Please check your mesh.\n")
-            continue
-        if neigh_tets[0] == UNKNOWN_TET:
-            tri_partitions[tri] = tet_partitions[neigh_tets[1]]
-            continue
-        if neigh_tets[1] == UNKNOWN_TET:
-            tri_partitions[tri] = tet_partitions[neigh_tets[0]]
-            continue
-        if tet_partitions[neigh_tets[0]] == tet_partitions[neigh_tets[1]]:
-            tri_partitions[tri] = tet_partitions[neigh_tets[0]]
-            continue
-        print("Neighbor tetrahedrons of triangle ", tri, " are assigned to different hosts, try to rearrange hosts for them.\n")
-        tri_partitions[tri] = tet_partitions[neigh_tets[0]]
-        tet_partitions[neigh_tets[1]] = tet_partitions[neigh_tets[0]]
+    done = False
+    while not done:
+        done = True
+        for tri in tri_list:
+            neigh_tets = mesh.getTriTetNeighb(tri)
+
+            # Check if triangle has two tets assigned to different hosts
+            # If the same, continue to next triangle
+            if neigh_tets[0] == UNKNOWN_TET and neigh_tets[1] == UNKNOWN_TET:
+                print("Triangle ", tri, " has no attatched tetrahedron, which is unlikely. Please check your mesh.\n")
+                continue
+            if neigh_tets[0] == UNKNOWN_TET:
+                tri_partitions[tri] = tet_partitions[neigh_tets[1]]
+                continue
+            if neigh_tets[1] == UNKNOWN_TET:
+                tri_partitions[tri] = tet_partitions[neigh_tets[0]]
+                continue
+            if tet_partitions[neigh_tets[0]] == tet_partitions[neigh_tets[1]]:
+                tri_partitions[tri] = tet_partitions[neigh_tets[0]]
+                continue
+
+            # If tets assigned to different hosts, change to same host (whichever rank is smaller)
+            done = False
+            if tet_partitions[neigh_tets[0]] < tet_partitions[neigh_tets[1]]:
+                tri_partitions[tri] = tet_partitions[neigh_tets[0]]
+                tet_partitions[neigh_tets[1]] = tet_partitions[neigh_tets[0]]
+            else:
+                tri_partitions[tri] = tet_partitions[neigh_tets[1]]
+                tet_partitions[neigh_tets[0]] = tet_partitions[neigh_tets[1]]
 
     for tri in tri_list:
         neigh_tets = mesh.getTriTetNeighb(tri)

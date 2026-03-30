@@ -1,5 +1,43 @@
 Release Notes
 
+Version 5.1.0 (2026-03)
+==========================
+
+New Features
+------------
+1. Added network-free simulation of multi-state complexes for `DistTetOpSplit`.
+2. Added reaction-diffusion leaping methods for `DistTetOpSplit`.
+3. Added optional binding of vesicles to vesicle paths anywhere along the path, and not only to the first point of the path. See [VesiclePathReference.addVesicle](https://steps.sourceforge.net/manual/API_2/API_sim.html#steps.API_2.sim.VesiclePathReference.addVesicle).
+4. Added an optional maximum angle for link species (see [LinkSpecies.MaxAngle](https://steps.sourceforge.net/manual/API_2/API_model.html#steps.API_2.model.LinkSpecies.MaxAngle)).
+5. Added weighted partitioning for `TetOpSplit` and `TetVesicle` solvers.
+6. Added an optional charge transfer to surface reactions (see [Reaction.Charge](https://steps.sourceforge.net/manual/API_2/API_model.html#steps.API_2.model.Reaction.Charge)).
+
+Build and Packaging
+-------------------
+1. STEPS can now be installed with `pip` (see [instructions](https://steps.sourceforge.net/manual/getting_started.html)).
+
+Python API
+----------
+1. The minimum python version was bumped from 3.8 to 3.9.
+2. Added the possibility to access result selectors from their description when loading HDF5 files.
+3. Allow multiple patches per membrane as well as internal patches in `DistTetOpSplit`.
+4. Vesicle diffusion coefficient can now be set per individual vesicle (`vesref.Dcst = ...`, see [SimPath.addVesicle](https://steps.sourceforge.net/manual/API_2/API_sim.html#steps.API_2.sim.SimPath.addVesicle)).
+5. Add missing data getting / setting methods to `DistTetOpSplit`.
+
+Functional changes and improvements
+-----------------------------------
+1. Modified spatial solvers so that diffusion still proceeds if a Compartment or Patch species clamp is applied (since species count does not change via diffusion). Previously, a species clamp was applied to each tetrahedron or triangle within that Compartment or Patch, which effectively turned off diffusion for that species. If such behavior is still desired, the clamp can be set at the tetrahedron or triangle level.
+
+Bugfixes
+--------
+1. Fixed user-defined metadata, labels, and description for result selectors being improperly distributed when using the `DistTetOpSplit` solver.
+2. Updated `stepsblender` to be usable with Blender 5.0.0.
+3. Fixed potential freezes when manipulating `VertReference` objects in a single MPI rank with `DistTetOpSplit`.
+4. Fixed erroneous diffusion boundary check in `DistTetOpSplit`.
+5. Fixed tet-based KProcs not being updated upon user-triggered changes in species counts in `TetVesicle`.
+6. Fixed incorrect triangle partitioning under some conditions.
+
+
 Version 5.0.4 (2025-05)
 ==========================
 
@@ -26,9 +64,7 @@ Bugfixes
 
 Dependencies
 ------------
-
 1. Updated the [overlap](https://github.com/severinstrobl/overlap) library to [d2a165e](https://github.com/severinstrobl/overlap/commits/d2a165e1e3ac3519fc18b9c260811f15ffe3aa5b) (development version)
-
 
 Version 5.0.2 (2024-06)
 ==========================

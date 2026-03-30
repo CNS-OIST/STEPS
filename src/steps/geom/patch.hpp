@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -153,8 +153,21 @@ class Patch {
     /// Return all spec in the patch giving a model.
     util::flat_set<model::Spec*> getAllSpecs(const model::Model& model) const;
 
+    /// Return all Diffs in the patch giving a model.
+    util::flat_set<model::Diff*> getAllDiffs(const model::Model& model) const;
+
     /// Return all SReac in the patch giving a model.
     util::flat_set<model::SReac*> getAllSReacs(const model::Model& model) const;
+
+    /// Return all VDepSReac in the patch giving a model.
+    util::flat_set<model::VDepSReac*> getAllVDepSReacs(const model::Model& model) const;
+
+    /// Return all ComplexSReac in the patch giving a model.
+    util::flat_set<model::ComplexSReac*> getAllComplexSReacs(const model::Model& model) const;
+
+    /// Return all ComplexSReac in the patch giving a model.
+    util::flat_set<model::VDepComplexSReac*> getAllVDepComplexSReacs(
+        const model::Model& model) const;
 
     ////////////////////////////////////////////////////////////////////////
     // DATA ACCESS (EXPOSED TO PYTHON): COMPARTMENTS

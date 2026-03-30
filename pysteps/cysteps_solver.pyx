@@ -2,21 +2,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -975,11 +975,11 @@ cdef class _py_Tetexact(_py_TetAPI):
     cdef Tetexact *ptrx(self):
         return <Tetexact*> self._ptr
 
-    def __init__(self, _py_Model m, _py_Geom g, _py_RNG r, int calcMembPot=0):
+    def __init__(self, _py_Model m, _py_Geom g, _py_RNG r, int calcMembPot=0, bool calcMembPot_lenient=False):
         """
         Construction::
 
-            sim = steps.solver.Tetexact(model, geom, rng, calcMembPot = 0)
+            sim = steps.solver.Tetexact(model, geom, rng, calcMembPot = 0, calcMembPot_lenient=False)
 
         Create a spatial stochastic solver based on Gillespie's SSA, extended with diffusion across elements in a tetrahedral mesh.
         If voltage is to be simulated, argument calcMemPot=1 will set to the default solver. calcMembPot=0 means voltage will not be simulated.
@@ -989,6 +989,7 @@ cdef class _py_Tetexact(_py_TetAPI):
         steps.geom.Geom geom
         steps.rng.RNG rng
         int calcMemPot (default=0)
+        bool calcMembPot_lenient (default=False)
 
         """
         if m == None:
@@ -997,7 +998,7 @@ cdef class _py_Tetexact(_py_TetAPI):
             raise TypeError('The Geom object is empty.')
         if r == None:
             raise TypeError('The RNG object is empty.')
-        self._ptr = new Tetexact(m.ptr(), g.ptr(), r.ptr(), calcMembPot)
+        self._ptr = new Tetexact(m.ptr(), g.ptr(), r.ptr(), calcMembPot, calcMembPot_lenient)
         _py_API.__init__(self, m, g, r)
 
     def getSolverName(self, ):
@@ -1943,11 +1944,11 @@ cdef class _py_TetODE(_py_TetAPI):
     cdef TetODE *ptrx(self):
         return <TetODE*> self._ptr
 
-    def __init__(self, _py_Model m, _py_Geom g, _py_RNG r=None, int calcMembPot=0):
+    def __init__(self, _py_Model m, _py_Geom g, _py_RNG r=None, int calcMembPot=0, bool calcMembPot_lenient=False):
         """
         Construction::
 
-            sim = steps.solver.TetODE(model, geom, rng=None, calcMembPot = 0)
+            sim = steps.solver.TetODE(model, geom, rng=None, calcMembPot = 0, calcMembPot_lenient = False)
 
         Create a spatial determinstic solver based on the CVODE library.
         If voltage is to be simulated, argument calcMemPot=1 will set to the default solver. calcMembPot=0 means voltage will not be simulated.
@@ -1956,7 +1957,8 @@ cdef class _py_TetODE(_py_TetAPI):
         steps.model.Model model
         steps.geom.Geom geom
         steps.rng.RNG rng (default=None)
-        int calcMemPot (default=0)
+        int calcMembPot (default=0)
+        bool calcMembPot_lenient (default=False)
 
         """
         if m == None:
@@ -1964,7 +1966,7 @@ cdef class _py_TetODE(_py_TetAPI):
         if g == None:
             raise TypeError('The Geom object is empty.')
 
-        self._ptr = new TetODE(m.ptr(), g.ptr(), r.ptr() if r else shared_ptr[RNG](), calcMembPot)
+        self._ptr = new TetODE(m.ptr(), g.ptr(), r.ptr() if r else shared_ptr[RNG](), calcMembPot, calcMembPot_lenient)
         _py_API.__init__(self, m, g, r)
 
     def getSolverName(self, ):
@@ -4137,6 +4139,22 @@ cdef class _py_TetAPI(_py_API):
         """
         self.ptr().setCompDiffActive(to_std_string(c), to_std_string(d), act)
 
+    def getPatchVDepSReacExtent(self, str p, str r):
+        """
+        Returns the extent of voltage-dependent surface reaction r in patch p.
+        NOTE: in a mesh-based simulation, returns the sum of the extents in
+        all triangles of the patch.
+
+        :param p: Name of the patch.
+        :type p: str
+        :param r: Name of the voltage-dependent reaction.
+        :type r: str
+
+
+        :rtype: unsigned long long
+        """
+        return self.ptr().getPatchVDepSReacExtent(to_std_string(p), to_std_string(r))
+
     def getTetSpecDefined(self, index_t idx, str s):
         """
         Returns whether species with identifier string spec is defined
@@ -5230,7 +5248,7 @@ cdef class _py_TetAPI(_py_API):
 
         Syntax::
 
-            getTriGHKI(idx)
+            getTriGHKI(idx, ghk)
 
         Arguments:
         index_t idx
@@ -5243,6 +5261,46 @@ cdef class _py_TetAPI(_py_API):
         if ghk == '':
             return self.ptr().getTriGHKI(triangle_global_id(idx))
         return self.ptr().getTriGHKI(triangle_global_id(idx), to_std_string(ghk))
+
+    def getTriSReacI(self, index_t idx, str sreac=''):
+        """
+        Returns the surface reaction current of triangle element with index idx, in amps.
+
+        Syntax::
+
+            getTriSReacI(idx, sreac)
+
+        Arguments:
+        index_t idx
+        string ghk (default = '')
+
+        Return:
+        float
+
+        """
+        if sreac == '':
+            return self.ptr().getTriSReacI(triangle_global_id(idx))
+        return self.ptr().getTriSReacI(triangle_global_id(idx), to_std_string(sreac))
+
+    def getTriVDepSReacI(self, index_t idx, str vdsreac=''):
+        """
+        Returns the voltage-dependent surface reaction current of triangle element with index idx, in amps.
+
+        Syntax::
+
+            getTriVDepSReacI(idx, vdsreac)
+
+        Arguments:
+        index_t idx
+        string vdsreac (default = '')
+
+        Return:
+        float
+
+        """
+        if vdsreac == '':
+            return self.ptr().getTriVDepSReacI(triangle_global_id(idx))
+        return self.ptr().getTriVDepSReacI(triangle_global_id(idx), to_std_string(vdsreac))
 
     def getTriI(self, index_t idx):
         """

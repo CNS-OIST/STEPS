@@ -20,8 +20,10 @@ class Diffdef {
     Diffdef(const Compdef& compdef,
             container::kproc_id kproc,
             container::diffusion_id t_diffusion,
-            container::species_id species,
-            osh::Real t_dcst);
+            const steps::model::Diff& diff);
+
+    /// Reset the def-object values to model defaults
+    void reset();
 
     inline container::kproc_id getKProcContainerIdx() const noexcept {
         return kprocContainerIdx;
@@ -35,6 +37,9 @@ class Diffdef {
     }
     inline osh::Real getDcst() const noexcept {
         return dcst;
+    }
+    inline void setDcst(osh::Real d) noexcept {
+        dcst = d;
     }
 
     inline const Compdef& compdef() const noexcept {
@@ -52,6 +57,7 @@ class Diffdef {
     void report(std::ostream& ostr) const;
 
   private:
+    const steps::model::Diff& diff_;
     const Compdef& pCompdef;
     container::kproc_id kprocContainerIdx;
     container::diffusion_id diffusion;

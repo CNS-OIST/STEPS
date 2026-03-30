@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -120,17 +120,17 @@ class StateDependentObject(objects.BlenderObject, StateUser):
         - Use a small number of materials that are already declared in the Blender file;
         - Programatically customize the material of the object.
 
-    The first way is done by setting the `setMaterialFunc` parameter to a function with the following
+    The first way is done by setting the ``setMaterialFunc`` parameter to a function with the following
     signature::
 
         def myCustomMatSetFunc(scene, depg, state) -> str
 
-    The first two parameters are passed from the `bpy.app.handlers.frame_change_pre` callback function
+    The first two parameters are passed from the ``bpy.app.handlers.frame_change_pre`` callback function
     (see https://docs.blender.org/api/current/bpy.app.handlers.html). The third parameter contains the
     state of the object (see table in :py:class:`StateDependentMesh`). The function should return a
     string that is the name of a material in the Blender file.
 
-    The second way is done by setting the `updateMaterialFunc` parameter to a function with the
+    The second way is done by setting the ``updateMaterialFunc`` parameter to a function with the
     following signature::
 
         def myCustomMatUpdateFunc(scene, depg, material, state) -> None
@@ -160,25 +160,25 @@ class StateDependentObject(objects.BlenderObject, StateUser):
 class StateDependentSeparateObjects(objects.SeparateObjects, StateUser):
     """Base class for state-dependent objects like Vesicles or Rafts
 
-    This class can be used in place of `SeparateObjects` to customize the material of each object
+    This class can be used in place of ``SeparateObjects`` to customize the material of each object
     as a function of the state of the STEPS object (its position, the species on its surface, etc.).
 
     There are two possible ways to achieve this:
         - Use a small number of materials that are already declared in the Blender file;
         - Programatically customize the material of each object.
 
-    The first way is done by setting the `setMaterialFunc` parameter to a function with the following
+    The first way is done by setting the ``setMaterialFunc`` parameter to a function with the following
     signature::
 
         def myCustomMatSetFunc(scene, depg, state) -> str
 
-    The first two parameters are passed from the `bpy.app.handlers.frame_change_pre` callback function
+    The first two parameters are passed from the ``bpy.app.handlers.frame_change_pre`` callback function
     (see https://docs.blender.org/api/current/bpy.app.handlers.html). The third parameter contains the
     state of the object (see tables in :py:class:`StateDependentVesicle` or 
     :py:class:`StateDependentRaft`). The function should return a string that is the name of a
     material in the Blender file.
 
-    The second way is done by setting the `updateMaterialFunc` parameter to a function with the
+    The second way is done by setting the ``updateMaterialFunc`` parameter to a function with the
     following signature::
 
         def myCustomMatUpdateFunc(scene, depg, material, state) -> None

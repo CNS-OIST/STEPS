@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -45,7 +45,7 @@ TetCoupler::~TetCoupler() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void TetCoupler::coupleMesh() {
+void TetCoupler::coupleMesh(bool lenient) {
     typedef std::vector<double*> doublePVec;
 
     // For each vertex allocate space to accumulate coupling coefficients
@@ -161,11 +161,16 @@ void TetCoupler::coupleMesh() {
         ntot += 1;
     }
 
-    // should ndif > 0 throw an exception?
     if (ndif > 0) {
         std::ostringstream os;
         os << ndif << " out of " << ntot << " failed sym test. Nvert=" << pMesh->countVertices();
-        ProgErrLog(os.str());
+        if (lenient)
+            CLOG(WARNING, "general_log") << os.str();
+        else {
+            os << ". To allow this simulation to go ahead anyway, set calcMembPot_lenient=True "
+                  "when creating the solver. ";
+            ProgErrLog(os.str());
+        }
     }
 
     // Deallocate vccs.
@@ -178,7 +183,7 @@ void TetCoupler::coupleMesh() {
 ////////////////////////////////////////////////////////////////////////////////
 
 bool TetCoupler::dblsDiffer(double a, double b) {
-    return std::abs(a - b) > (std::abs(a + b) * 1.e-12) &&
+    return std::abs(a - b) > (std::abs(a + b) * 1.e-6) &&
            std::abs(a - b) > (4 * std::numeric_limits<double>::epsilon());
 }
 
@@ -289,7 +294,7 @@ void TetCoupler::fluxCoeficients(VertexElement* ve, VertexElement** ves, double*
         for (int i = 0; i < 3; i++) {
             ret[i] += (0.5 * wk[i]);
         }
-        delete wk;
+        delete[] wk;
     }
 
     // if we swapped the sense of the tetrahedron above, swap the results

@@ -8,6 +8,7 @@ class EFieldOperator;
 class DiffusionOperator;
 template <NextEventSearchMethod SearchMethod>
 class SSAOperator;
+class RLeapingOperator;
 class RSSAOperator;
 
 }  // namespace steps::dist

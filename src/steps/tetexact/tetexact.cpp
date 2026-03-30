@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -72,9 +72,14 @@ void schedIDXSet_To_Vec(SchedIDXSet const& s, SchedIDXVec& v) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Tetexact::Tetexact(model::Model* m, wm::Geom* g, const rng::RNGptr& r, int calcMembPot)
+Tetexact::Tetexact(model::Model* m,
+                   wm::Geom* g,
+                   const rng::RNGptr& r,
+                   int calcMembPot,
+                   bool calcMembPot_lenient)
     : API(*m, *g, r)
-    , pEFoption(static_cast<EF_solver>(calcMembPot)) {
+    , pEFoption(static_cast<EF_solver>(calcMembPot))
+    , pEField_lenient(calcMembPot_lenient) {
     if (rng() == nullptr) {
         std::ostringstream os;
         os << "No RNG provided to solver initializer function";
@@ -221,6 +226,9 @@ void Tetexact::checkpoint(std::string const& file_name) {
 ///////////////////////////////////////////////////////////////////////////////
 
 void Tetexact::restore(std::string const& file_name) {
+    // First reset the solver
+    reset();
+
     std::fstream cp_file;
 
     cp_file.open(file_name.c_str(), std::fstream::in | std::fstream::binary);
@@ -1116,6 +1124,7 @@ void Tetexact::_setupEField() {
     pEField->initMesh(pEFVerts,
                       pEFTris,
                       pEFTets,
+                      pEField_lenient,
                       memb->_getOpt_method(),
                       memb->_getOpt_file_name(),
                       memb->_getSearch_percent());
@@ -1649,13 +1658,7 @@ bool Tetexact::_getCompSpecClamped(solver::comp_global_id cidx, solver::spec_glo
     Comp* comp = _comp(cidx);
     solver::spec_local_id slidx = specG2L_or_throw(comp, sidx);
 
-    for (auto const& tet: comp->tets()) {
-        if (!tet->clamped(slidx)) {
-            return false;
-        }
-    }
-
-    return true;
+    return comp->def()->clamped(slidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1666,11 +1669,7 @@ void Tetexact::_setCompSpecClamped(solver::comp_global_id cidx,
     Comp* comp = _comp(cidx);
     solver::spec_local_id slidx = specG2L_or_throw(comp, sidx);
 
-    // Set the flag in def object, though this may not be necessary
     comp->def()->setClamped(slidx, b);
-    for (auto const& tet: comp->tets()) {
-        tet->setClamped(slidx, b);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1889,12 +1888,7 @@ bool Tetexact::_getPatchSpecClamped(solver::patch_global_id pidx,
     Patch* patch = _patch(pidx);
     solver::spec_local_id slidx = specG2L_or_throw(patch, sidx);
 
-    for (auto& tri: patch->tris()) {
-        if (!tri->clamped(slidx)) {
-            return false;
-        }
-    }
-    return true;
+    return patch->def()->clamped(slidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1905,13 +1899,7 @@ void Tetexact::_setPatchSpecClamped(solver::patch_global_id pidx,
     Patch* patch = _patch(pidx);
     solver::spec_local_id slidx = specG2L_or_throw(patch, sidx);
 
-    // Set the flag in def object for consistency, though this is not
-    // entirely necessary
     patch->def()->setClamped(slidx, buf);
-
-    for (auto& tri: patch->tris()) {
-        tri->setClamped(slidx, buf);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2600,6 +2588,20 @@ unsigned long long Tetexact::_getPatchSReacExtent(solver::patch_global_id pidx,
     unsigned long long x = 0;
     for (auto& tri: patch->tris()) {
         x += tri->sreac(lsridx).getExtent();
+    }
+    return x;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+unsigned long long Tetexact::_getPatchVDepSReacExtent(solver::patch_global_id pidx,
+                                                      solver::vdepsreac_global_id vsridx) const {
+    Patch* patch = pPatches[pidx];
+    solver::vdepsreac_local_id lvsridx = vdepsreacG2L_or_throw(patch, vsridx);
+
+    unsigned long long x = 0;
+    for (auto& tri: patch->tris()) {
+        x += tri->vdepsreac(lvsridx).getExtent();
     }
     return x;
 }
@@ -3709,8 +3711,85 @@ double Tetexact::_getTriGHKI(triangle_global_id tidx, solver::ghkcurr_global_id 
 
 ////////////////////////////////////////////////////////////////////////////////
 
+double Tetexact::_getTriSReacI(triangle_global_id tidx) const {
+    if (!efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in simulation.";
+        ArgErrLog(os.str());
+    }
+
+    return _getTri(tidx).getSReacI();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tetexact::_getTriSReacI(triangle_global_id tidx, solver::sreac_global_id sridx) const {
+    if (!efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in simulation.";
+        ArgErrLog(os.str());
+    }
+
+    auto& tri = _getTri(tidx);
+
+    solver::sreac_local_id locidx = tri.patchdef()->sreacG2L(sridx);
+    if (locidx.unknown()) {
+        std::ostringstream os;
+        os << "Surface reaction undefined in triangle.\n";
+        ArgErrLog(os.str());
+    }
+
+    solver::sreac_charge_local_id locchidx = tri.sreac(locidx).getChargeLidx();
+    if (locchidx.valid()) {
+        return tri.getSReacI(locchidx);
+    }
+
+    return 0.0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tetexact::_getTriVDepSReacI(triangle_global_id tidx) const {
+    if (!efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in simulation.";
+        ArgErrLog(os.str());
+    }
+
+    return _getTri(tidx).getVDepSReacI();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tetexact::_getTriVDepSReacI(triangle_global_id tidx,
+                                   solver::vdepsreac_global_id vdsridx) const {
+    if (!efflag()) {
+        std::ostringstream os;
+        os << "Method not available: EField calculation not included in simulation.";
+        ArgErrLog(os.str());
+    }
+
+    auto& tri = _getTri(tidx);
+
+    solver::vdepsreac_local_id locidx = tri.patchdef()->vdepsreacG2L(vdsridx);
+    if (locidx.unknown()) {
+        std::ostringstream os;
+        os << "Voltage-depndent surface reaction undefined in triangle.\n";
+        ArgErrLog(os.str());
+    }
+
+    solver::vdepsreac_charge_local_id locchidx = tri.vdepsreac(locidx).getChargeLidx();
+    if (locchidx.valid()) {
+        return tri.getVDepSReacI(locchidx);
+    }
+
+    return 0.0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 double Tetexact::_getTriI(triangle_global_id tidx) const {
-    return _getTriGHKI(tidx) + _getTriOhmicI(tidx);
+    return _getTriGHKI(tidx) + _getTriOhmicI(tidx) + _getTriSReacI(tidx) + _getTriVDepSReacI(tidx);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

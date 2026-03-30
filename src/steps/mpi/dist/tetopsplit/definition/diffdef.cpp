@@ -1,6 +1,8 @@
 #include "diffdef.hpp"
 
 #include "compdef.hpp"
+#include "model/diff.hpp"
+#include "model/spec.hpp"
 #include "statedef.hpp"
 
 
@@ -9,13 +11,21 @@ namespace steps::dist {
 Diffdef::Diffdef(const Compdef& compdef,
                  container::kproc_id kproc,
                  container::diffusion_id t_diffusion,
-                 container::species_id species,
-                 osh::Real t_dcst)
-    : pCompdef(compdef)
+                 const steps::model::Diff& diff)
+    : diff_(diff)
+    , pCompdef(compdef)
     , kprocContainerIdx(kproc)
     , diffusion(t_diffusion)
-    , specContainerIdx(species)
-    , dcst(t_dcst) {}
+    , dcst(diff.getDcst()) {
+    const model::species_name lig_name(diff.getLig().getID());
+    auto species = pCompdef.statedef().getSpecModelIdx(lig_name);
+    specContainerIdx = pCompdef.getSpecContainerIdx(species);
+    assert(specContainerIdx.valid());
+}
+
+void Diffdef::reset() {
+    dcst = diff_.getDcst();
+}
 
 void Diffdef::report(std::ostream& ostr) const {
     ostr << "Diffusion Report" << std::endl;

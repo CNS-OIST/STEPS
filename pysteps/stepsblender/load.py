@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -147,11 +147,7 @@ def addUnknownHierarchicalArgs(allParams, addedParams, params, unknown_args):
     hierarchicalDictUpdate(params, unknown_params)
 
 
-if __name__ == '__main__':
-    dirPath = os.path.dirname(os.path.abspath(__file__))
-    sitePackagesPath = os.path.join(dirPath, '..')
-    scriptPath = os.path.join(dirPath, 'blenderscript.py')
-
+def _get_parser(ret_vals = []):
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -163,26 +159,26 @@ can be used to set the properties of specific STEPS objects in the visualization
 The "sampleSpecies" part should be replaced by the STEPS name of the species in order
 to get a valid argument. For example, one can set the color of species S1 with:
 
-    --Species.S1.obj.material.color "(1, 0, 0, 1)"
+    ``--Species.S1.obj.material.color "(1, 0, 0, 1)"``
 
 But not all parts are required, it is also possible to set the same value with:
 
-    --S1.color "(1, 0, 0, 1)"
+    ``--S1.color "(1, 0, 0, 1)"``
 
 The class of objects used for visualization can also be changed with a similar syntax.
 For example, one can visualize membrane potential by using the StateDepMeshMaterial material
 class:
 
-    --Meshes.material.__class__ objects.StateDepMeshMaterial
+    ``--Meshes.material.__class__ objects.StateDepMeshMaterial``
 
 The class needs to be given with the module it is defined in (here it is objects). Additional
-parameters for setting the voltage range and colormap are listed in objects.ShaderNodeMathRescale
-and objects.ShaderNodeColorMap respectively.
+parameters for setting the voltage range and colormap are listed in ``objects.ShaderNodeMathRescale``
+and ``objects.ShaderNodeColorMap`` respectively.
 
 A higher degree of control over how data is visualized can be achieved by writing a custom
 python script instead of calling this command.
 
-For more details, see the documentation of stepsblender.HierarchicalParamReader.
+For more details, see the documentation of ``stepsblender.utils.HierarchicalParamReader``.
         """)
 
     # Ressource information
@@ -220,6 +216,24 @@ For more details, see the documentation of stepsblender.HierarchicalParamReader.
     allParams = HDF5BlenderLoader.listAllParameters()
     addedParams = addVisualizationParameters(parser, allParams)
 
+    # We use `retVals` to avoid returning these values as the sphinx plugin for generating documentation
+    # requires a function that returns only a parser.
+    ret_vals.append(allParams)
+    ret_vals.append(addedParams)
+
+    return parser
+
+if __name__ == '__main__':
+    dirPath = os.path.dirname(os.path.abspath(__file__))
+    sitePackagesPath = os.path.join(dirPath, '..')
+    scriptPath = os.path.join(dirPath, 'blenderscript.py')
+
+    ret_vals = []
+    parser = _get_parser(ret_vals)
+    # Remove backquotes that are only necessary for the sphinx documentation
+    parser.epilog = parser.epilog.replace('``', '')
+    allParams, addedParams = ret_vals
+
     args, unknown_args = parser.parse_known_args()
 
     parameters = buildParameterDict(args, addedParams)
@@ -237,7 +251,7 @@ For more details, see the documentation of stepsblender.HierarchicalParamReader.
         server = 'localhost'
     elif 'server' in args:
         localServer = None
-        server = args.resource
+        server = args.server
 
     blenderCmd = [args.blenderPath]
 

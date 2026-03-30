@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -170,6 +170,24 @@ class WmCheckpoints(base_model.TestModelFramework):
         with self.assertRaises(Exception):
             self.newSim.restore(cpEmptyPath)
 
+        self.newSim.restore(cpPath)
+
+        self.assertAlmostEqual(self.newSim.Time, self.endTime / 2)
+        self._test_API2_SimPathGetSyntax(self.newSim, init=False, extents=self.extents)
+
+        self._cleanCPFiles(self._getCPFiles(cpPath))
+
+    def testNonResetRestore(self):
+        cpPath = getUniqueTempPrefix(prefix=f'{self.__class__.__name__}basic')
+        _, cpEmptyPath = tempfile.mkstemp(prefix=f'{self.__class__.__name__}empty')
+
+        self.newSim.newRun()
+        self.init_API2_sim(self.newSim)
+
+        self.newSim.run(self.endTime / 2)
+        self.newSim.checkpoint(cpPath)
+        self._setInitValsToCurrentOnes()
+        self.newSim.run(self.endTime)
         self.newSim.restore(cpPath)
 
         self.assertAlmostEqual(self.newSim.Time, self.endTime / 2)
@@ -406,21 +424,9 @@ class TetCheckpoints(base_model.TetTestModelFramework, WmCheckpoints):
             tet1 = [tet for tet in tri1.tetNeighbs if tet in self.newGeom.comp1.tets][0]
             self.membPot = sim.TET(tet1).V
 
-        self.extents = [
-            sim.comp1.vs1R1['fwd'].Extent,
-            sim.comp1.vs1R1['bkw'].Extent,
-            sim.comp2.vs2R2['fwd'].Extent,
-            sim.comp2.vs2R2['bkw'].Extent,
-            sim.patch.ss1R3['fwd'].Extent,
-            sim.patch.ss1R3['bkw'].Extent,
-            sim.patch.ss1R4['fwd'].Extent,
-            sim.patch.ss1R4['bkw'].Extent,
-            sim.patch.ss1R5['fwd'].Extent,
-            sim.patch.ss1R5['bkw'].Extent,
-            sim.patch.ss1R6['fwd'].Extent,
-            sim.patch.ss1R6['bkw'].Extent,
-            sim.patch.ss1R7.Extent,
-        ]
+            self.extents += [
+                sim.patch.ss1RVDep01['fwd'].Extent,
+            ]
 
 
 def suite():

@@ -2,21 +2,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,6 +29,7 @@ from steps_model cimport *
 from steps_common cimport *
 
 import warnings
+from math import pi
 
 from enum import Enum
 class _py_Immobilization(Enum):
@@ -849,6 +850,24 @@ cdef class _py_Surfsys(_py__base):
 
         """
         return _py_ComplexSReac.vector2list(self.ptr().getAllComplexSReacs())
+
+    def getAllVDepComplexSReacs(self, ):
+        """
+        Returns a list of references to all steps.model.VDepComplexSReac complex surface-reaction
+        objects defined in the surface system.
+
+        Syntax::
+
+            getAllVDepComplexSReacs()
+
+        Arguments:
+        None
+
+        Return:
+        list<steps.model.VDepComplexSReac>
+
+        """
+        return _py_VDepComplexSReac.vector2list(self.ptr().getAllVDepComplexSReacs())
 
     def getDiff(self, str id):
         """
@@ -2029,11 +2048,11 @@ cdef class _py_SReac(_py__base):
     cdef SReac *ptr(self):
         return <SReac*> self._ptr
 
-    def __init__(self, str id, _py_Surfsys surfsys, list olhs=[], list ilhs=[], list slhs=[], list irhs=[], list srhs=[], list orhs=[], double kcst=0):
+    def __init__(self, str id, _py_Surfsys surfsys, list olhs=[], list ilhs=[], list slhs=[], list irhs=[], list srhs=[], list orhs=[], double kcst=0, int charge=0):
         """
         Construction::
 
-            sreac = steps.model.SReac(id, surfsys, ilhs = [ ], olhs = [ ], slhs = [ ], irhs = [ ], orhs = [ ], srhs = [ ], kcst = 0.0)
+            sreac = steps.model.SReac(id, surfsys, ilhs = [ ], olhs = [ ], slhs = [ ], irhs = [ ], orhs = [ ], srhs = [ ], kcst = 0.0, charge = 0)
 
         Construct a surface reaction rule object with identifier string
         id and assign surfsys as the parent surface system. A list of
@@ -2053,6 +2072,7 @@ cdef class _py_SReac(_py__base):
         list(steps.model.Spec) orhs (default = [ ])
         list(steps.model.Spec) srhs (default = [ ])
         float kcst (default = 0.0)
+        int charge (default = 0)
         """
         cdef std.vector[Spec*] _olhs, _ilhs, _slhs, _irhs, _srhs, _orhs
         _py_Spec.list2vector(olhs, &_olhs)
@@ -2062,7 +2082,7 @@ cdef class _py_SReac(_py__base):
         _py_Spec.list2vector(srhs, &_srhs)
         _py_Spec.list2vector(orhs, &_orhs)
         # Instantiate
-        self._ptr = new SReac( to_std_string(id), deref(surfsys.ptr()), _olhs, _ilhs, _slhs, _irhs, _srhs, _orhs, kcst )
+        self._ptr = new SReac( to_std_string(id), deref(surfsys.ptr()), _olhs, _ilhs, _slhs, _irhs, _srhs, _orhs, kcst, charge)
 
     def getID(self, ):
         """
@@ -2419,6 +2439,40 @@ cdef class _py_SReac(_py__base):
         """
         self.ptr().setKcst(kcst)
 
+    def getCharge(self, ):
+        """
+        Get the elementary charge carried by the reaction across an efield membrane.
+
+        Syntax::
+
+            getCharge()
+
+        Arguments:
+        None
+
+        Return:
+        int
+
+        """
+        return self.ptr().getCharge()
+
+    def setCharge(self, int charge):
+        """
+        Get the elementary charge carried by the reaction across an efield membrane.
+
+        Syntax::
+
+            setCharge(charge)
+
+        Arguments:
+        int charge
+
+        Return:
+        None
+
+        """
+        self.ptr().setCharge(charge)
+
     def getAllSpecs(self, ):
         """
         Returns a list of references to all steps.model.Spec species objects in
@@ -2461,6 +2515,7 @@ cdef class _py_SReac(_py__base):
     model   = property(getModel, doc="Reference to parent model.")
     surfsys = property(getSurfsys, doc="Reference to parent surface system.")
     kcst    = property(getKcst, setKcst, doc="Reaction constant.")
+    charge  = property(getCharge, setCharge, doc="Charge.")
     olhs    = property(getOLHS, setOLHS, doc="Left hand side reactants in outer compartment.")
     ilhs    = property(getILHS, setILHS, doc="Left hand side reactants in inner compartment.")
     slhs    = property(getSLHS, setSLHS, doc="Left hand side reactants on surface.")
@@ -2477,11 +2532,11 @@ cdef class _py_VDepSReac(_py__base):
     cdef VDepSReac *ptr(self):
         return <VDepSReac*> self._ptr
 
-    def __init__(self, str id, _py_Surfsys surfsys, list olhs=[], list ilhs=[], list slhs=[], list irhs=[], list srhs=[], list orhs=[], std.vector[double] ktab=[], double vmin=0, double vmax=0, double dv=0, uint tablesize=0):
+    def __init__(self, str id, _py_Surfsys surfsys, list olhs=[], list ilhs=[], list slhs=[], list irhs=[], list srhs=[], list orhs=[], std.vector[double] ktab=[], double vmin=0, double vmax=0, double dv=0, uint tablesize=0, int charge=0):
         """
         Construction::
 
-            vdepsreac = steps.model.VDepSReac(id, surfsys, ilhs = [ ], olhs = [ ], slhs = [ ], irhs = [ ], orhs = [ ], srhs = [ ], k = <function>, vrange = [-150.0e-3, 100.0e-3, 1.0e-4] )
+            vdepsreac = steps.model.VDepSReac(id, surfsys, ilhs = [ ], olhs = [ ], slhs = [ ], irhs = [ ], orhs = [ ], srhs = [ ], k = <function>, vrange = [-150.0e-3, 100.0e-3, 1.0e-4], charge = 0)
 
         Construct a voltage-dependent reaction object with identifier string id
         and assign surfsys as the parent surface system. A list of
@@ -2506,6 +2561,7 @@ cdef class _py_VDepSReac(_py__base):
         list(steps.model.Spec) srhs (default = [ ])
 		function k
         list vrange (default = [-150.0e-3, 100.0e-3, 1.0e-4])
+        int charge
         """
         cdef std.vector[Spec*] _olhs, _ilhs, _slhs, _irhs, _srhs, _orhs
         _py_Spec.list2vector(olhs, &_olhs)
@@ -2515,7 +2571,7 @@ cdef class _py_VDepSReac(_py__base):
         _py_Spec.list2vector(srhs, &_srhs)
         _py_Spec.list2vector(orhs, &_orhs)
         # Instantiate
-        self._ptr = new VDepSReac(to_std_string(id), deref(surfsys.ptr()), _olhs, _ilhs, _slhs, _irhs, _srhs, _orhs, ktab, vmin, vmax, dv, tablesize )      # We create an object
+        self._ptr = new VDepSReac(to_std_string(id), deref(surfsys.ptr()), _olhs, _ilhs, _slhs, _irhs, _srhs, _orhs, ktab, vmin, vmax, dv, tablesize, charge)      # We create an object
         #self._autodealoc.reset(self.ptr()) # So we need to ensure its destroyed too
 
     def getID(self, ):
@@ -2854,6 +2910,40 @@ cdef class _py_VDepSReac(_py__base):
         """
         return self.ptr().getK()
 
+    def getCharge(self, ):
+        """
+        Get the elementary charge carried by the voltage-dependent reaction across an efield membrane.
+
+        Syntax::
+
+            getCharge()
+
+        Arguments:
+        None
+
+        Return:
+        int
+
+        """
+        return self.ptr().getCharge()
+
+    def setCharge(self, int charge):
+        """
+        Set the elementary charge carried by the voltage-dependent reaction across an efield membrane.
+
+        Syntax::
+
+            setCharge(charge)
+
+        Arguments:
+        int charge
+
+        Return:
+        None
+
+        """
+        self.ptr().setCharge(charge)
+
     def getAllSpecs(self, ):
         """
         Returns a list of references to all steps.model.Spec species objects in
@@ -2898,6 +2988,7 @@ cdef class _py_VDepSReac(_py__base):
     irhs    = property(getIRHS, setIRHS, doc="Right hand side reactants in inner compartment.")
     srhs    = property(getSRHS, setSRHS, doc="Right hand side reactants on surface.")
     order   = property(getOrder, doc="Order of the voltage-dependent reaction.")
+    charge  = property(getCharge, setCharge, doc="Charge.")
 
 
 # ======================================================================================================================
@@ -2936,7 +3027,7 @@ cdef class _py_ComplexUpdateEvent(_py_ComplexEvent):
         return <ComplexEvent*> self._ptr
 
     def __init__(self, str comp, filts, std.vector[uint] reac, upds, destLoc=None):
-        cdef steps_model.ComplexLocation cpp_destloc
+        cdef Location cpp_destloc
         if destLoc is None:
             cpp_destloc = steps_model.COMP
         else:
@@ -3038,7 +3129,7 @@ cdef class _py_ComplexSReac(_py__base):
     cdef ComplexSReac *ptr(self):
         return <ComplexSReac*> self._ptr
 
-    def __init__(self, str id, _py_Surfsys surfsys, list ilhs=[], list slhs=[], list olhs=[], list irhs=[], list srhs=[], list orhs=[], list icompEvs=[], list scompEvs=[], list ocompEvs=[], double kcst=0):
+    def __init__(self, str id, _py_Surfsys surfsys, list ilhs=[], list slhs=[], list olhs=[], list irhs=[], list srhs=[], list orhs=[], list icompEvs=[], list scompEvs=[], list ocompEvs=[], double kcst=0, int charge=0):
         cdef std.vector[Spec*] _ilhs, _slhs, _olhs, _irhs, _srhs, _orhs
         _py_Spec.list2vector(ilhs, &_ilhs)
         _py_Spec.list2vector(slhs, &_slhs)
@@ -3055,7 +3146,7 @@ cdef class _py_ComplexSReac(_py__base):
         for ev in ocompEvs:
             _ocompEvs.push_back((<_py_ComplexEvent>ev).ptr())
 
-        self._ptr = new ComplexSReac(to_std_string(id), deref(surfsys.ptr()), _ilhs, _slhs, _olhs, _irhs, _srhs, _orhs, _icompEvs, _scompEvs, _ocompEvs, kcst )
+        self._ptr = new ComplexSReac(to_std_string(id), deref(surfsys.ptr()), _ilhs, _slhs, _olhs, _irhs, _srhs, _orhs, _icompEvs, _scompEvs, _ocompEvs, kcst, charge)
 
     def getID(self, ):
         return from_std_string(self.ptr().getID())
@@ -3096,6 +3187,12 @@ cdef class _py_ComplexSReac(_py__base):
     def getOrder(self):
         return self.ptr().getOrder()
 
+    def getCharge(self, ):
+        return self.ptr().getCharge()
+
+    def setCharge(self, int charge):
+        self.ptr().setCharge(charge)
+
     @staticmethod
     cdef _py_ComplexSReac from_ptr(ComplexSReac *ptr):
         cdef _py_ComplexSReac obj = _py_ComplexSReac.__new__(_py_ComplexSReac)
@@ -3110,6 +3207,87 @@ cdef class _py_ComplexSReac(_py__base):
     cdef list vector2list(std.vector[ComplexSReac*] vec):
         return [ _py_ComplexSReac.from_ptr(elem) for elem in vec ]
 
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_VDepComplexSReac(_py__base):
+    "Python wrapper class for ComplexReac"
+# ----------------------------------------------------------------------------------------------------------------------
+    cdef VDepComplexSReac *ptr(self):
+        return <VDepComplexSReac*> self._ptr
+
+    def __init__(self, str id, _py_Surfsys surfsys, list ilhs=[], list slhs=[], list olhs=[], list irhs=[], list srhs=[], list orhs=[], list icompEvs=[], list scompEvs=[], list ocompEvs=[], std.vector[double] ktab=[], double vmin=0, double vmax=0, double dv=0, uint tablesize=0, int charge=0):
+        cdef std.vector[Spec*] _ilhs, _slhs, _olhs, _irhs, _srhs, _orhs
+        _py_Spec.list2vector(ilhs, &_ilhs)
+        _py_Spec.list2vector(slhs, &_slhs)
+        _py_Spec.list2vector(olhs, &_olhs)
+        _py_Spec.list2vector(irhs, &_irhs)
+        _py_Spec.list2vector(srhs, &_srhs)
+        _py_Spec.list2vector(orhs, &_orhs)
+
+        cdef std.vector[ComplexEvent*] _icompEvs, _scompEvs, _ocompEvs
+        for ev in icompEvs:
+            _icompEvs.push_back((<_py_ComplexEvent>ev).ptr())
+        for ev in scompEvs:
+            _scompEvs.push_back((<_py_ComplexEvent>ev).ptr())
+        for ev in ocompEvs:
+            _ocompEvs.push_back((<_py_ComplexEvent>ev).ptr())
+
+        self._ptr = new VDepComplexSReac(to_std_string(id), deref(surfsys.ptr()), _ilhs, _slhs, _olhs, _irhs, _srhs, _orhs, _icompEvs, _scompEvs, _ocompEvs, ktab, vmin, vmax, dv, tablesize, charge)
+
+    def getID(self, ):
+        return from_std_string(self.ptr().getID())
+
+    def getSurfsys(self, ):
+        return _py_Surfsys.from_ptr(&self.ptr().getSurfsys())
+
+    def getModel(self, ):
+        return _py_Model.from_ptr(&self.ptr().getModel())
+
+    def getOLHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getOLHS())
+
+    def getILHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getILHS())
+
+    def getSLHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getSLHS())
+
+    def getIRHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getIRHS())
+
+    def getSRHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getSRHS())
+
+    def getORHS(self, ):
+        return _py_Spec.vector2list(self.ptr().getORHS())
+
+    def getAllSpecs(self, ):
+        return _py_Spec.flat_set2list(self.ptr().getAllSpecs())
+
+    def getK(self, ):
+        return self.ptr().getK()
+
+    def getOrder(self):
+        return self.ptr().getOrder()
+
+    def getCharge(self, ):
+        return self.ptr().getCharge()
+
+    def setCharge(self, int charge):
+        self.ptr().setCharge(charge)
+
+    @staticmethod
+    cdef _py_VDepComplexSReac from_ptr(VDepComplexSReac *ptr):
+        cdef _py_VDepComplexSReac obj = _py_VDepComplexSReac.__new__(_py_VDepComplexSReac)
+        obj._ptr = ptr
+        return obj
+
+    @staticmethod
+    cdef _py_VDepComplexSReac from_ref(const VDepComplexSReac &ref):
+        return _py_VDepComplexSReac.from_ptr(<VDepComplexSReac*>&ref)
+
+    @staticmethod
+    cdef list vector2list(std.vector[VDepComplexSReac*] vec):
+        return [ _py_VDepComplexSReac.from_ptr(elem) for elem in vec ]
 
 # ----------------------------------------------------------------------------------------------------------------------
 cdef class _py_OhmicCurr(_py__base):
@@ -3330,6 +3508,42 @@ cdef class _py_OhmicCurr(_py__base):
     surfsys = property(getSurfsys, doc="Reference to parent surface system.")
     erev    = property(getERev, setERev, doc=" The reversal potential (in volts). ")
     g       = property(getG, setG, doc=" The single-channel conductance (in Siemens). ")
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_ComplexOhmicCurr(_py__base):
+    "Python wrapper class for ComplexOhmicCurr"
+# ----------------------------------------------------------------------------------------------------------------------
+    #cdef unique_ptr[OhmicCurr] _autodealoc
+    cdef OhmicCurr *ptr(self):
+        return <OhmicCurr*> self._ptr
+
+    def __init__(self, str id, _py_Surfsys surfsys, str cmplx, filts, double erev, double g):
+        self._ptr = new ComplexOhmicCurr(to_std_string(id), deref(surfsys.ptr()), to_std_string(cmplx), _get_filters(filts), erev, g)
+
+    def getID(self, ):
+        return from_std_string(self.ptr().getID())
+
+    def getSurfsys(self, ):
+        return _py_Surfsys.from_ptr(&self.ptr().getSurfsys())
+
+    def getModel(self, ):
+        return _py_Model.from_ptr(&self.ptr().getModel())
+
+    def getChanState(self, ):
+        return _py_ChanState.from_ptr(&self.ptr().getChanState())
+
+    def getERev(self, ):
+        return self.ptr().getERev()
+
+    def setERev(self, double erev):
+        self.ptr().setERev(erev)
+
+    def getG(self, ):
+        return self.ptr().getG()
+
+    def setG(self, double g):
+        self.ptr().setG(g)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -3582,6 +3796,43 @@ cdef class _py_GHKcurr(_py__base):
     ion     = property(getIon, setIon, doc=" The current ion. ")
     chanState = property(getChanState, setChanState)
 
+# ----------------------------------------------------------------------------------------------------------------------
+cdef class _py_ComplexGHKcurr(_py__base):
+    "Python wrapper class for ComplexGHKcurr"
+# ----------------------------------------------------------------------------------------------------------------------
+    #cdef unique_ptr[GHKcurr] _autodealoc
+    cdef ComplexGHKcurr *ptr(self):
+        return <ComplexGHKcurr*> self._ptr
+
+    def __init__(self, str id, _py_Surfsys surfsys, str cmplx, filts, _py_Spec ion, bool computeflux=True, double virtual_oconc=-1.0, double vshift=0.0):
+        self._ptr = new ComplexGHKcurr(to_std_string(id), deref(surfsys.ptr()), to_std_string(cmplx), _get_filters(filts), deref(ion.ptr()), computeflux, virtual_oconc, vshift)
+
+    def getID(self, ):
+        return from_std_string(self.ptr().getID())
+
+    def setID(self, str id):
+        self.ptr().setID(to_std_string(id))
+
+    def getSurfsys(self, ):
+        return _py_Surfsys.from_ptr(&self.ptr().getSurfsys())
+
+    def getModel(self, ):
+        return _py_Model.from_ptr(&self.ptr().getModel())
+
+    def getIon(self, ):
+        return _py_Spec.from_ptr(&self.ptr().getIon())
+
+    def setIon(self, _py_Spec ion):
+        self.ptr().setIon(deref(ion.ptr()))
+
+    def setPInfo(self, double g, double V, double T, double oconc, double iconc):
+        self.ptr().setPInfo(g, V, T, oconc, iconc)
+
+    def getP(self):
+        return self.ptr().getP()
+
+    def setP(self, double p):
+        self.ptr().setP(p)
 
 # ----------------------------------------------------------------------------------------------------------------------
 cdef class _py_Vesicle(_py__base):
@@ -4040,8 +4291,8 @@ cdef class _py_LinkSpec(_py__base):
     cdef LinkSpec *ptr(self):
         return <LinkSpec*> self._ptr
 
-    def __init__(self, str id, _py_Model model, double dcst=0):
-        self._ptr = new LinkSpec(to_std_string(id), deref(model.ptr()), dcst)
+    def __init__(self, str id, _py_Model model, double dcst=0, max_angle=pi):
+        self._ptr = new LinkSpec(to_std_string(id), deref(model.ptr()), dcst, max_angle)
 
     def getID(self, ):
         return from_std_string(self.ptr().getID())
@@ -4051,6 +4302,9 @@ cdef class _py_LinkSpec(_py__base):
 
     def getModel(self):
         return _py_Model.from_ptr(&self.ptr().getModel())
+    
+    def getMaxAngle(self): 
+        return self.ptr().getMaxAngle()
 
     @staticmethod
     cdef _py_LinkSpec from_ptr(LinkSpec *ptr):

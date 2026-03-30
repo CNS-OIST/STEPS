@@ -11,26 +11,6 @@ from steps_common cimport *
 from steps_dist cimport *
 
 # ======================================================================================================================
-cdef extern from "util/vocabulary.hpp" namespace "steps::dist::model":
-# ----------------------------------------------------------------------------------------------------------------------
-
-    cdef cppclass vertgroup_id:
-        vertgroup_id(std.string)
-        std.string get()
-
-    cdef cppclass patch_id:
-        patch_id(std.string)
-        std.string get()
-
-    cdef cppclass compartment_id:
-        compartment_id(std.string)
-        std.string get()
-
-    cdef cppclass membrane_id:
-        membrane_id(std.string)
-        std.string get()
-
-# ======================================================================================================================
 cdef extern from "geom/dist/distmesh.hpp" namespace "Omega_h":
 # ----------------------------------------------------------------------------------------------------------------------
     ###### Cybinding for Distmesh ######
@@ -62,6 +42,7 @@ cdef extern from "geom/dist/distmesh.hpp" namespace "steps::dist":
         GO total_num_bars()
         LO num_verts()
         GO total_num_verts()
+        bool redistributed()
         void addDiffusionBoundary(diffusion_boundary_name &, compartment_id&, compartment_id&, std.set[triangle_global_id_t]) except +
         void addDiffusionBoundary(diffusion_boundary_name &, compartment_id&, compartment_id&) except +
         DistComp* getTetComp(tetrahedron_global_id_t) except +
@@ -131,8 +112,10 @@ cdef extern from "geom/dist/distmesh.hpp" namespace "steps::dist":
         double total_measure(compartment_id) except +
         double local_measure(compartment_id) except +
         std.vector[std.string] getTags(int) except +
-        std.vector[std.vector[std.pair[tetrahedron_local_id_t, double]]] intersect(const double*, int, int) except+
-        std.vector[std.vector[std.pair[tetrahedron_local_id_t, double]]] intersectIndependentSegments(const double*, int, int) except+
+        std.vector[std.vector[std.pair[tetrahedron_global_id_t, double]]] intersect(const double*, int, int) except+
+        std.vector[std.vector[std.pair[tetrahedron_local_id_t, double]]] localIntersect(const double*, int, int) except+
+        std.vector[std.vector[std.pair[tetrahedron_global_id_t, double]]] intersectIndependentSegments(const double*, int, int) except+
+        std.vector[std.vector[std.pair[tetrahedron_local_id_t, double]]] localIntersectIndependentSegments(const double*, int, int) except+
 
 
 # ======================================================================================================================

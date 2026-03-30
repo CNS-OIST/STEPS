@@ -15,6 +15,7 @@ add_library(
   error.cpp
   finish.cpp
   init.cpp
+  vocabulary.cpp
   ${EASYLOGGINGPP_INCLUDE_DIRS}/easylogging++.cc)
 
 set_property(TARGET stepsutil PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -41,6 +42,7 @@ add_definitions(-DELPP_NO_DEFAULT_LOG_FILE=1 -DELPP_STL_LOGGING=1
 
 target_link_libraries(stepsutil PUBLIC stepstracker instrumentor)
 if(PETSC_FOUND AND USE_PETSC)
+  target_sources(stepsutil PRIVATE petsc.cpp petsc.hpp)
   target_link_libraries(stepsutil PUBLIC PETSC::PETSC)
 endif()
 

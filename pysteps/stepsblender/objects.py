@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,10 +33,11 @@ import colorsys
 import numpy as np
 import re
 from typing import Annotated
+import warnings
 
 from . import utils
 
-from .utils import Loc
+from .utils import Loc, progress
 
 ####################################################################################################
 
@@ -281,6 +282,18 @@ class BlenderMaterial(BlenderWrapper):
     def __init__(self, **kwargs):
         super().__init__('materials', **kwargs)
 
+    def setAlphaBlendShadowMethod(self, mat, shadow_method='NONE'):
+        if bpy.app.version < (4, 2, 0):
+            if self.alpha < 1:
+                mat.blend_method = 'BLEND'
+            # This property was deprecated in 4.2 and removed in 4.3
+            mat.shadow_method = shadow_method
+        else:
+            if self.alpha < 1:
+                mat.surface_render_method = 'BLENDED'
+            if shadow_method == 'OPAQUE':
+                mat.use_transparent_shadow = False
+
 
 BlenderMaterial.setUp.__doc__ = \
 """Sets up the given blender material object
@@ -307,9 +320,7 @@ class DefaultBSDFMaterial(BlenderMaterial):
             bsdf.inputs[em_socket_name].default_value = self.color
             bsdf.inputs['Alpha'].default_value = self.alpha
             bsdf.inputs['Emission Strength'].default_value = self.emission
-            if self.alpha < 1:
-                mat.blend_method = 'BLEND'
-            mat.shadow_method = 'NONE'
+            self.setAlphaBlendShadowMethod(mat)
 
 
 class MeshMaterial(DefaultBSDFMaterial):
@@ -329,9 +340,7 @@ class MeshMaterial(DefaultBSDFMaterial):
             bsdf.inputs[em_socket_name].default_value = self.color
             bsdf.inputs['Alpha'].default_value = self.alpha
             bsdf.inputs['Emission Strength'].default_value = self.emission
-            if self.alpha < 1:
-                mat.blend_method = 'BLEND'
-            mat.shadow_method = 'NONE'
+            self.setAlphaBlendShadowMethod(mat)
 
             transp = nodes.new('ShaderNodeBsdfTransparent')
             mix = nodes.new('ShaderNodeMixShader')
@@ -385,7 +394,7 @@ class VesicleMaterial(BlenderMaterial):
     fresnel_multiplier: Annotated[float, 'Strength of the outer rim'] = 2
     facing_blend: Annotated[float, 'Gradient of the inner color'] = 0.4
 
-    shadow_method: Annotated[str, 'Blender shadow method'] = 'NONE'
+    shadow_method: Annotated[str, 'Blender shadow method (only for Blender < 4.2)'] = 'NONE'
 
     def setUp(self, mat, fromScratch):
         if fromScratch:
@@ -402,9 +411,7 @@ class VesicleMaterial(BlenderMaterial):
             em_socket_name = 'Emission Color' if 'Emission Color' in bsdf.inputs else 'Emission'
             bsdf.inputs[em_socket_name].default_value = self.outline_color
             bsdf.inputs['Alpha'].default_value = self.alpha
-            if self.alpha < 1:
-                mat.blend_method = 'BLEND'
-            mat.shadow_method = self.shadow_method
+            self.setAlphaBlendShadowMethod(mat, self.shadow_method)
 
             fresnel = nodes.new('ShaderNodeFresnel')
             fresnel.inputs['IOR'].default_value = self.fresnel_IOR
@@ -450,9 +457,7 @@ class RaftMaterial(BlenderMaterial):
             em_socket_name = 'Emission Color' if 'Emission Color' in bsdf.inputs else 'Emission'
             bsdf.inputs[em_socket_name].default_value = self.outline_color
             bsdf.inputs['Alpha'].default_value = self.alpha
-            if self.alpha < 1:
-                mat.blend_method = 'BLEND'
-            mat.shadow_method = 'NONE'
+            self.setAlphaBlendShadowMethod(mat)
 
             geom = nodes.new('ShaderNodeNewGeometry')
             obj = nodes.new('ShaderNodeObjectInfo')
@@ -610,6 +615,19 @@ class STEPSLinkSpeciesCurve(BlenderCurve):
             curve.bevel_depth = self.bevel_depth
 
 
+class STEPSPathLinkCurve(BlenderCurve):
+    bevel_depth: Annotated[float, 'Width of the link between vesicle and vesicle path'] = 0.01
+
+    def setUp(self, curve, fromScratch):
+        if fromScratch:
+            splines = curve.splines.new('POLY')
+            splines.points.add(1)
+            splines.points[0].co = (-1, 0, 0, 0)
+            splines.points[1].co = (1, 0, 0, 0)
+
+            curve.bevel_depth = self.bevel_depth
+
+
 class STEPSVesiclePathCurve(BlenderCurve):
     path_thickness: Annotated[float, 'Thickness to the path'] = 0.01
 
@@ -639,8 +657,17 @@ class BlenderObject(BlenderWrapper):
     mesh: BlenderMesh = None
     material: BlenderMaterial = None
 
+    cast_shadows: Annotated[str,
+        'Whether the object casts shadows. Possible values: ["ON", "OFF"] (only for Blender >= 4.2)'] = "ON"
+
     def __init__(self, **kwargs):
         super().__init__('objects', **kwargs)
+
+    def setShadowVisibility(self, obj):
+        assert(self.cast_shadows in ['ON', 'OFF'])
+        if bpy.app.version >= (4, 2, 0):
+            obj.visible_shadow = self.cast_shadows == "ON"
+        # Otherwise, this is handled by the material
 
     def CreateBlenderObj(self, name):
         """Create and return the actual blender object"""
@@ -659,6 +686,8 @@ class BlenderObject(BlenderWrapper):
         if self.material is not None and self.material._name not in obj.data.materials:
             obj.data.materials.clear()
             obj.data.materials.append(self.material.blenderObj)
+        if fromScratch:
+            self.setShadowVisibility(obj)
         if fromScratch and self.parent is not None:
             self.parent.addChild(self)
 
@@ -668,6 +697,10 @@ class STEPSMeshObject(BlenderObject):
     material: BlenderMaterial = MeshMaterial
     surfaceThickness: Annotated[float,
         'The thickness of the mesh surface, should be greater than 0 if rafts are present on the surface'] = 0.01
+
+    # Default cast shadows to false for meshes
+    cast_shadows: Annotated[str,
+        'Whether the object casts shadows. Possible values: ["ON", "OFF"] (only for Blender >= 4.2)'] = "OFF"
 
     def setUp(self, obj, fromScratch):
         """Sets up the given blender object
@@ -816,7 +849,7 @@ class SeparateObjects(BlenderObjectSet):
         hiddenColObj = self._hiddenCol.blenderObj
         mainObj = self.obj.blenderObj
         addedObjs = []
-        for idx in self._indexes:
+        for idx in progress(self._indexes, 'Add individual objects'):
             obj_name = f'{self._name}_{idx}'
             if fromScratch:
                 self._objects[idx], newObj = self.obj.blenderCopy(obj_name, obj=mainObj)
@@ -844,6 +877,7 @@ class BlenderSpecies(ParticleSystem):
 
 class BlenderLinks(SeparateObjects):
     obj: BlenderObject = BlenderObject.using(mesh=STEPSLinkSpeciesCurve, material=SpeciesMaterial)
+    _linkScale: float = 0.5 # Default for link species
 
     def _setPositions(self, scene, depg, linkPositions):
         v0 = mathutils.Vector((1, 0, 0))
@@ -852,9 +886,9 @@ class BlenderLinks(SeparateObjects):
             try:
                 p1, p2 = linkPositions[idx]
                 v1 = mathutils.Vector(p2 - p1)
-                blenderObj.scale = (np.linalg.norm(p2 - p1) / 4, 1, 1)
+                blenderObj.scale = (np.linalg.norm(p2 - p1) / 2 * self._linkScale, 1, 1)
                 blenderObj.rotation_euler = v0.rotation_difference(v1).to_euler()
-                blenderObj.location = p1 + (p2 - p1) / 4
+                blenderObj.location = p1 + (p2 - p1) / 2 * self._linkScale
                 obj.setHidden(False, blenderObj)
             except KeyError:
                 blenderObj.rotation_euler = (0, 0, 0)
@@ -886,7 +920,7 @@ class BlenderVesicleRafts(SeparateObjects):
         self._defaultBooleanModifOn = isinstance(self, BlenderRafts)
         super().__init__(**kwargs)
 
-    def _getParticleSys(self, fromScratch, obj, specObj, psys_name, tpe='HAIR', seed=0):
+    def _setupParticleSys(self, fromScratch, obj, specObj, psys_name, tpe='HAIR', seed=0):
         if fromScratch:
             obj.blenderObj.modifiers.new(psys_name, type='PARTICLE_SYSTEM')
         elif psys_name not in obj.blenderObj.particle_systems:
@@ -944,21 +978,37 @@ class BlenderVesicleRafts(SeparateObjects):
                 else:
                     boolean = blendObj.modifiers['boolean']
                 # Modify the algo and visibility even when loading from file
-                boolean.solver = self.parent.parent.intersectAlgo
+                intersectAlgo = self.parent.parent.intersectAlgo
+                if intersectAlgo == "FAST" and bpy.app.version >= (5, 0, 0):
+                    # "FAST" was renamed to "FLOAT" in Blender 5.0.0
+                    # see https://projects.blender.org/blender/blender/pulls/141686
+                    intersectAlgo = "FLOAT"
+                try:
+                    boolean.solver = intersectAlgo
+                except TypeError as ex:
+                    warnings.warn(
+                        f'The --intersectAlgo option has an invalid value ({intersectAlgo}) '
+                        f'that resulted in the following exception: {ex}'
+                    )
                 boolean.show_viewport = self._defaultBooleanModifOn
                 boolean.show_render = self._defaultBooleanModifOn
                 obj._booleanModifOn = self._defaultBooleanModifOn
 
     def _updateSpecCounts(self, allCounts):
+        #TODO: Check if we need to do something related to immobilespecs
+        totCnt = {loc: {spec._name: 0 for spec in self._specs} for loc in allCounts.keys()}
         for loc, counts in allCounts.items():
             for idx, cntDct in counts.items():
                 for spec, cnt in cntDct.items():
-                    objects, name = self._specSystems.get(loc, {}).get(spec, (None, None))
-                    if name is not None:
-                        ss = objects[idx].blenderObj.particle_systems[name]
-                        # The seed needs to be changed for new positions to be generated
-                        ss.seed = ss.seed + 1
-                        ss.settings.count = cnt
+                    totCnt[loc][spec] += cnt
+        for loc, specs in totCnt.items():
+            for spec, cnt in specs.items():
+                objects, name = self._specSystems[loc].get(spec, (None, None))
+                if name is not None:
+                    ss = self.obj.blenderObj.particle_systems[name]
+                    # The seed needs to be changed for new positions to be generated
+                    ss.seed = ss.seed + 1
+                    ss.settings.count = cnt
 
 
 class BlenderVesicles(BlenderVesicleRafts):
@@ -969,27 +1019,8 @@ class BlenderVesicles(BlenderVesicleRafts):
         str,
         'Comma-separated list of species (without spaces) that should not be animated in between saving time points'] = ''
 
-    def _getInnerObj(self, obj, fromScratch):
-        innerObjName = f'{obj.name}_inner'
-        if fromScratch:
-            innerObj, blendInnerObj = obj.blenderCopy(innerObjName)
-            self._hiddenCol.blenderObj.objects.link(blendInnerObj)
-        else:
-            if innerObjName not in self._hiddenCol.blenderObj.objects:
-                raise Exception(f'{innerObjName} could not be found in {self._hiddenCol.blenderObj.name}')
-            innerObj = BlenderWrapper(self.obj._blendContName, name=innerObjName, parameters=None)
-            blendInnerObj = innerObj.blenderObj
-
-        blendInnerObj.show_instancer_for_viewport = False
-        blendInnerObj.show_instancer_for_render = False
-
-        blendInnerObj.scale = (1 - self.innerSpecMargin, ) * 3
-
-        blendInnerObj.constraints.clear()
-        constr = blendInnerObj.constraints.new(type='COPY_LOCATION')
-        constr.target = obj.blenderObj
-
-        return innerObj
+    # Only used for parameter listing
+    pathLinks: BlenderLinks = None
 
     def setUp(self, coll, fromScratch):
         super().setUp(coll, fromScratch)
@@ -997,46 +1028,69 @@ class BlenderVesicles(BlenderVesicleRafts):
         self._immobileSpecs = [re.compile(reg)
                                for reg in self.immobileSpecs.split(',')] if self.immobileSpecs != '' else []
 
-        self._innerObjs = {}
-        for idx, obj in self._objects.items():
-            if len(self._specs) > 0:
-                self._innerObjs[idx] = self._getInnerObj(obj, fromScratch)
-            # particle systems:
-            for i, spec in enumerate(self._specs):
-                # Surface particles
-                psys_name = f'{spec._name}_particles_surf'
-                psys = self._getParticleSys(fromScratch,
-                                            obj,
-                                            spec.obj,
-                                            psys_name,
-                                            tpe='EMITTER',
-                                            seed=3 * idx * len(self._specs) + i)
-                self._specSystems.setdefault(Loc.VES_SURF, {})[spec._name] = (self._objects, psys_name)
+        defRad = self.parent.getVesRad(self._name)
+        for idx, obj in progress(self._objects.items(), 'Set vesicle radii'):
+            # Scale vesicles to their real radius
+            rad = self.parent.getVesRad(self._name, idx)
+            if rad != defRad:
+                obj.blenderObj.scale = (rad / defRad,) * 3
 
-                # Inner particles
-                psys_name = f'{spec._name}_particles'
-                psys = self._getParticleSys(fromScratch,
-                                            self._innerObjs[idx],
-                                            spec.obj,
-                                            psys_name,
-                                            seed=2 * idx * len(self._specs) + i)
-                self._specSystems.setdefault(Loc.VES_IN, {})[spec._name] = (self._innerObjs, psys_name)
+        # particle systems:
+        for i, spec in progress(enumerate(self._specs), 'Add vesicle species'):
+            # Surface particles
+            psys_name = f'{spec._name}_particles_surf'
+            self._setupParticleSys(fromScratch,
+                                   self.obj,
+                                   spec.obj,
+                                   psys_name,
+                                   tpe='EMITTER',
+                                   seed=3 * idx * len(self._specs) + i)
+            # TODO: Do we still need self._objects there?
+            self._specSystems.setdefault(Loc.VES_SURF, {})[spec._name] = (self._objects, psys_name)
+
+            # Surface particles
+            psys_name = f'{spec._name}_particles'
+            self._setupParticleSys(fromScratch,
+                                   self.obj,
+                                   spec.obj,
+                                   psys_name,
+                                   tpe='EMITTER',
+                                   seed=2 * idx * len(self._specs) + i) # TODO: Probably don't need seed anymore
+            self._specSystems.setdefault(Loc.VES_IN, {})[spec._name] = (self._objects, psys_name)
+
+        self.pathLinks = self._getParam(
+            'pathLinks',
+            BlenderLinks.using(
+                obj=BlenderObject.using(
+                    mesh=STEPSPathLinkCurve,
+                    material=VesiclePathMaterial,
+                ),
+                _linkScale = 1,
+            ),
+            name=f'{self._name}_path_links',
+            _indexes=self._objects.keys(),
+            color=(0.5, 0.5, 0.5, 1),
+        )
 
     def isSpecImmobile(self, spec):
         return any(reg.match(spec) for reg in self._immobileSpecs)
 
     def _setSpecPositions(self, scene, depg, positions):
+        allPos = {}
         for loc, vesDct in positions.items():
             for idx, specDct in vesDct.items():
-                for spec, poss in specDct.items():
-                    objects, name = self._specSystems.get(loc, {}).get(spec, (None, None))
-                    if name is not None:
-                        eobj = objects[idx].blenderObj.evaluated_get(depg)
-                        psys = eobj.particle_systems[name]
-                        if self.parent.isVesUnderEvent(self._name, idx):
-                            newPositions = []
-                            vesPos = self.parent.getVesPos(self._name, idx) * self.parent.parent.scale
-                            for pos in poss:
+                if self.parent.isVesUnderEvent(self._name, idx):
+                    # vesPos = self.parent.getVesPos(self._name, idx) * self.parent.parent.scale
+                    eobj = self._objects[idx].blenderObj.evaluated_get(depg)
+                    vesPos = np.array(eobj.location)
+                    for spec, poss in specDct.items():
+                        if len(poss) == 0:
+                            continue
+                        newPositions = []
+                        for pos in poss:
+                            if loc == Loc.VES_IN and utils.point_in_obj(pos - vesPos, eobj):
+                                newPositions.append(pos)
+                            else:
                                 try:
                                     found, projPos, norm, fidx = eobj.closest_point_on_mesh(pos - vesPos)
                                 except RuntimeError:
@@ -1045,13 +1099,26 @@ class BlenderVesicles(BlenderVesicleRafts):
                                     newPositions.append(np.array(projPos) + vesPos)
                                 else:
                                     newPositions.append(_FAR_LOCATION)
-                            poss = np.array(newPositions)
-                        psys.particles.foreach_set("location", poss.flatten())
+                        allPos.setdefault(loc, {}).setdefault(spec, []).extend(newPositions)
+                else:
+                    for spec, poss in specDct.items():
+                        if len(poss) == 0:
+                            continue
+                        allPos.setdefault(loc, {}).setdefault(spec, []).extend(poss)
+
+        for loc, posDct in allPos.items():
+            for spec, poss in posDct.items():
+                objects, name = self._specSystems[loc].get(spec, (None, None))
+                if name is not None:
+                    eobj = self.obj.blenderObj.evaluated_get(depg)
+                    psys = eobj.particle_systems[name]
+                    psys.particles.foreach_set("location", np.array(poss).flatten())
 
     def _setPositions(self, scene, depg, positions):
         super()._setPositions(scene, depg, positions)
-        for idx, innerObj in self._innerObjs.items():
-            innerObj.setHidden(self._objects[idx]._hidden)
+
+    def _setPathLinksPositions(self, scene, depg, pathLinkPos):
+        self.pathLinks._setPositions(scene, depg, pathLinkPos)
 
     def _setEventStatus(self, scene, depg, events):
         comps = set()
@@ -1059,18 +1126,16 @@ class BlenderVesicles(BlenderVesicleRafts):
         for idx, obj in self._objects.items():
             if idx in events:
                 if not obj._booleanModifOn:
-                    for obj2 in [obj, self._innerObjs[idx]]:
-                        boolean = obj2.blenderObj.modifiers['boolean']
-                        boolean.show_viewport = True
-                        boolean.show_render = True
+                    boolean = obj.blenderObj.modifiers['boolean']
+                    boolean.show_viewport = True
+                    boolean.show_render = True
                     obj._booleanModifOn = True
 
                     comps.add(self._locations[idx].blenderObj)
             elif obj._booleanModifOn:
-                for obj2 in [obj, self._innerObjs[idx]]:
-                    boolean = obj2.blenderObj.modifiers['boolean']
-                    boolean.show_viewport = False
-                    boolean.show_render = False
+                boolean = obj.blenderObj.modifiers['boolean']
+                boolean.show_viewport = False
+                boolean.show_render = False
                 obj._booleanModifOn = False
 
         # If boolean modifiers were turned on, we need to update the display of the corresponding
@@ -1094,6 +1159,17 @@ class BlenderRafts(BlenderVesicleRafts):
     def setUp(self, coll, fromScratch):
         super().setUp(coll, fromScratch)
 
+        for i, spec in progress(enumerate(self._specs), 'Add raft species'):
+            #TODO: ?
+            psys_name = f'{spec._name}_particles'
+            self._setupParticleSys(fromScratch,
+                                    self.obj,
+                                    spec.obj,
+                                    psys_name,
+                                   tpe='EMITTER',
+                                    )
+            self._specSystems.setdefault(Loc.RAFT_IN, {})[spec._name] = (self._objects, psys_name)
+
         for idx, obj in self._objects.items():
             if fromScratch:
                 # Always snap to mesh surface
@@ -1101,11 +1177,31 @@ class BlenderRafts(BlenderVesicleRafts):
                 constr = obj.blenderObj.constraints.new(type='SHRINKWRAP')
                 constr.target = self._locations[idx].blenderObj
 
-            for i, spec in enumerate(self._specs):
-                psys_name = f'{spec._name}_particles'
-                psys = self._getParticleSys(fromScratch,
-                                            obj,
-                                            spec.obj,
-                                            psys_name,
-                                            seed=2 * idx * len(self._specs) + i)
-                self._specSystems.setdefault(Loc.RAFT_IN, {})[spec._name] = (self._objects, psys_name)
+    def _setPositions(self, scene, depg, positions):
+        super()._setPositions(scene, depg, positions)
+
+    def _setSpecPositions(self, scene, depg, counts):
+        allPos = {}
+        for idx, cnts in counts.items():
+            eobj = self._objects[idx].blenderObj.evaluated_get(depg)
+            rpos = np.array(eobj.location)
+            for spec, cnt in cnts.items():
+                poss = utils.get_points_in_sphere(rpos, self.parent.getRaftRad(self.name), cnt)
+                newPositions = []
+                for pos in poss:
+                    try:
+                        found, projPos, norm, fidx = eobj.closest_point_on_mesh(pos - rpos)
+                    except RuntimeError:
+                        found = False
+                    if found:
+                        newPositions.append(np.array(projPos) + rpos)
+                    else:
+                        newPositions.append(_FAR_LOCATION)
+                allPos.setdefault(spec, []).extend(newPositions)
+
+        for spec, poss in allPos.items():
+            objects, name = self._specSystems[Loc.RAFT_IN].get(spec, (None, None))
+            if name is not None:
+                eobj = self.obj.blenderObj.evaluated_get(depg)
+                psys = eobj.particle_systems[name]
+                psys.particles.foreach_set("location", np.array(poss).flatten())

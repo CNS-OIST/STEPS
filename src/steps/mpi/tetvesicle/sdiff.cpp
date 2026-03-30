@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -441,23 +441,14 @@ double SDiff::rate(TetVesicleRDEF* /*solver*/) {
 
 int SDiff::apply(const rng::RNGptr& rng) {
     // Apply local change.
-    uint local = pTri->pools()[lidxTri];
     bool clamped = pTri->clamped(lidxTri);
 
-    // pConnectedTets[0] = pTri->iTet, pConnectedTets[1] = pTri->oTet
-    // rest (re)set to nullptr
-    // std::fill (pConnectedTets.begin()+2, pConnectedTets.end(), nullptr);
-
     if (clamped == false) {
+        uint local = pTri->pools()[lidxTri];
         if (local == 0) {
             return -2;
         }  // no molecule left, no diffusion
     }
-
-    // We should have a direction ergo pConnected tets size
-    // should be bigger than just 2, the source tri connected tets. Use
-    // pConnectedTets[2, 3] below so do this assert here
-    // AssertLog(pConnectedTets.size() >= 4);
 
     // Apply change in next voxel: select a direction.
     double sel = rng->getUnfEE();
@@ -477,11 +468,15 @@ int SDiff::apply(const rng::RNGptr& rng) {
     AssertLog(nexttri != nullptr);
     AssertLog(pNeighbPatchLidx[iSel].valid());
 
-    if (nexttri->clamped(pNeighbPatchLidx[iSel]) == false) {
+    // Need to check patch clamp if to a different patch (for both patches)
+    if (!(nexttri->clamped(pNeighbPatchLidx[iSel]) ||
+          (pSDiffBndDirection[iSel] && nexttri->patchdef()->clamped(pNeighbPatchLidx[iSel])))) {
         nexttri->incCount(pNeighbPatchLidx[iSel], 1);
     }
 
-    if (clamped == false) {
+    // Don't lose the molecule from this tri if it's clamped in this patch and another tri in this
+    // patch didn't gain one
+    if (!(clamped || (pSDiffBndDirection[iSel] && pTri->patchdef()->clamped(lidxTri)))) {
         pTri->incCount(lidxTri, -1);
     }
 
@@ -533,12 +528,15 @@ int SDiff::apply(const rng::RNGptr& rng, uint nmolcs) {
             AssertLog(nexttri != nullptr);
             AssertLog(pNeighbPatchLidx[direction].valid());
 
-            if (nexttri->clamped(pNeighbPatchLidx[direction]) == false) {
-                // 2 connected tets for source, 2 per direction,
-                // hence these indices
-                // pConnectedTets[2+i*2] = nexttri->oTet();
-                // pConnectedTets[3+i*2] = nexttri->iTet();
+            if (!(nexttri->clamped(pNeighbPatchLidx[direction]) ||
+                  (pSDiffBndDirection[direction] &&
+                   nexttri->patchdef()->clamped(pNeighbPatchLidx[direction])))) {
                 nexttri->incCount(pNeighbPatchLidx[direction], molcsthisdir);
+            }
+
+            if (!(clamped ||
+                  (pSDiffBndDirection[direction] && pTri->patchdef()->clamped(lidxTri)))) {
+                pTri->incCount(lidxTri, -molcsthisdir);
             }
 
             molcs_moved += molcsthisdir;
@@ -556,20 +554,20 @@ int SDiff::apply(const rng::RNGptr& rng, uint nmolcs) {
         AssertLog(nexttri != nullptr);
         AssertLog(pNeighbPatchLidx[direction].valid());
 
-        if (nexttri->clamped(pNeighbPatchLidx[direction]) == false) {
-            // pConnectedTets[pNdirections*2] = nexttri->oTet();
-            // pConnectedTets[pNdirections*2+1] = nexttri->iTet();
+        if (!(nexttri->clamped(pNeighbPatchLidx[direction]) ||
+              (pSDiffBndDirection[direction] &&
+               nexttri->patchdef()->clamped(pNeighbPatchLidx[direction])))) {
             nexttri->incCount(pNeighbPatchLidx[direction], molcsthisdir);
+        }
+
+        if (!(clamped || (pSDiffBndDirection[direction] && pTri->patchdef()->clamped(lidxTri)))) {
+            pTri->incCount(lidxTri, -molcsthisdir);
         }
 
         molcs_moved += molcsthisdir;
     }
 
     AssertLog(molcs_moved == nmolcs);
-
-    if (clamped == false) {
-        pTri->incCount(lidxTri, -nmolcs);
-    }
 
     rExtent += nmolcs;
 

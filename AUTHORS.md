@@ -28,10 +28,16 @@ Weiliang Chen (OIST, since 2009)
 * Testing and documentation
 
 Jules Lallouette (OIST, since 2019)
-* Development of the new python API
+* Development of STEPS since version 3.6.0: Development of the new python API
 * Testing and documentation for the new python API
 * Automatic data saving to HDF5 and XDMF formats
-* Blender visualization with stepsblender python package
+* Automatic parameter table generation
+* Blender visualization with `stepsblender` python package
+* Network-free simulation of multi-state complexes in `Wmdirect` and `DistTetOpSplit`
+* Reaction-diffusion leaping methods for `DistTetOpSplit`
+
+Christopher Earl (OIST, since 2024)
+* Weighted partitioning for `TetOpSplit` and `TetVesicle` solvers
 
 Guido Klingbeil  (OIST, 2015 - 2019)
 * Matlab Simbiology support utility

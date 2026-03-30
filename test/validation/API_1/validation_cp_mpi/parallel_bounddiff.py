@@ -262,10 +262,10 @@ class TestBDiffTetvesicleCP(unittest.TestCase):
 
         seed = int(time.time()%4294967295)
         for j in range(NITER):
-            sim.reset()
             sim.restore('./validation_cp_mpi/cp/boundiff')
             rng.initialize(seed)
             seed += 1
+            sim.setCompSpecClamped('cyto', 'X', True)
             for i in range(ntpnts):
                 sim.run(tpnts[i])
                 for k in range(SAMPLE):

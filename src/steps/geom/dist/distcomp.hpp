@@ -26,6 +26,7 @@ class DistComp: public wm::Comp {
      *
      * \param compartment Name id of the compartment.
      * \param mesh the distributed mesh instance
+     * \param cond Volume conductance of the tetrahedrons in the compartment
      */
     DistComp(const mesh::compartment_name& compartment, DistMesh& mesh, double cond = 0.0);
 
@@ -44,6 +45,7 @@ class DistComp: public wm::Comp {
      * \param compartment Name id of the compartment.
      * \param mesh the distributed mesh instance
      * \param physical_tag Physical tag of the compartment tetrahedrons.
+     * \param cond Volume conductance of the tetrahedrons in the compartment
      */
     DistComp(const mesh::compartment_name& compartment,
              DistMesh& mesh,
@@ -85,6 +87,21 @@ class DistComp: public wm::Comp {
              const std::vector<mesh::tetrahedron_local_id_t>& local_indices,
              double cond = 0.0);
 
+    void init(const mesh::tetrahedron_local_ids& localInds);
+
+    /**
+     * \brief Synchronize compartment tetrahedrons across ranks
+     *
+     * In case the user created the compartment with tetrahedron lists that only include owned
+     * tetrahedrons, this method returns a list of local tetrahedron indices that are part of
+     * the compartment, including ghost tetrahedrons.
+     *
+     * \attention Parallelism: Collective
+     *
+     * \return Vector of local tetrahedron indices
+     */
+    mesh::tetrahedron_local_ids syncLocalInds(const mesh::tetrahedron_local_ids& localInds) const;
+
     /**
      * \brief Get the list of all tetrahedron indices of the compartment.
      *
@@ -102,7 +119,15 @@ class DistComp: public wm::Comp {
      * \param owned Whether the tetrahedron are owned by the process.
      * \return Vector of global tetrahedron indices.
      */
-    const std::vector<mesh::tetrahedron_local_id_t>& getLocalTetIndices(bool owned = true) const;
+    std::vector<mesh::tetrahedron_local_id_t> getLocalTetIndices(bool owned = true) const;
+
+    const mesh::tetrahedron_local_ids& getTets(bool owned = true) const {
+        if (owned) {
+            return ownedTetLocalIndices;
+        } else {
+            return tetLocalIndices;
+        }
+    }
 
     /**
      * \brief Get all the triangles on the surface of the compartment.
@@ -193,42 +218,22 @@ class DistComp: public wm::Comp {
      */
     std::vector<double> getBoundMax(bool local = false) const;
 
+    void setMeshID(mesh::compartment_id id) {
+        assert(not id_.valid());
+        id_ = id;
+    }
+
+    mesh::compartment_id getMeshID() const noexcept {
+        assert(id_.valid());
+        return id_;
+    }
+
   private:
-    /**
-     * \brief Add a tetrahedron to the compartment.
-     *
-     * Add a tetrahedron to the compartment using its local index.
-     * This is an internal method.
-     *
-     * \attention Parallelism: Local
-     *
-     * \param local_index Local index of the tetrahedron.
-     */
-    void _addTet(mesh::tetrahedron_local_id_t local_index);
-
-    /**
-     * \brief Compute and update the total volume of the compartment.
-     *
-     * Compute and update the total volume of the compartment across
-     * the whole compmunicator.
-     *
-     * \attention Parallelism: Collective
-     *
-     */
-    void _computeTotalVol();
-
-    /**
-     * \brief Compute the owned bounding box of the compartment.
-     *
-     * \attention Parallelism: Local
-     *
-     */
-    void _computeBBox();
-
+    mesh::compartment_id id_;
     DistMesh& meshRef;
     osh::Real ownedVol;
-    std::vector<mesh::tetrahedron_local_id_t> tetLocalIndices;
-    std::vector<mesh::tetrahedron_local_id_t> ownedTetLocalIndices;
+    mesh::tetrahedron_local_ids tetLocalIndices;
+    mesh::tetrahedron_local_ids ownedTetLocalIndices;
 
     // Bounding box of the owned elements
     std::array<osh::Real, mesh_dimensions()> ownedBBoxMin{};

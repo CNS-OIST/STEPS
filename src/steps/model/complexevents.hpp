@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -28,12 +28,9 @@
 
 #include "solver/fwd.hpp"
 #include "util/common.hpp"
+#include "util/vocabulary.hpp"
 
 namespace steps::model {
-
-enum ComplexLocation { COMP = 0, PATCH_IN = 1, PATCH_SURF = 2, PATCH_OUT = 3 };
-
-extern const std::array<ComplexLocation, 3> AllPatchLocations;
 
 inline constexpr uint COMPLEX_FILTER_MAX_VALUE = std::numeric_limits<uint>::max();
 
@@ -52,6 +49,21 @@ struct SubunitStateFilter {
 inline bool operator==(const SubunitStateFilter& lhs, const SubunitStateFilter& rhs) {
     return lhs.min == rhs.min and lhs.max == rhs.max;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+/// Complex filter description
+/// A single std::vector<SubunitStateFilter> describes a slice of the complex
+/// state space, the union of several of these slices corresponds to the overall
+/// filter. If a complex state is within one of these slices, it matches the
+/// filter.
+struct ComplexFilterDescr {
+    ComplexFilterDescr(const std::string& _complexId,
+                       std::vector<std::vector<SubunitStateFilter>> _filters)
+        : complexId(_complexId)
+        , filters(_filters) {}
+    const std::string complexId;
+    const std::vector<std::vector<SubunitStateFilter>> filters;
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 /// A specific complex update that holds:
@@ -133,7 +145,7 @@ class ComplexUpdateEvent: public ComplexLHSEvent {
                        const std::vector<std::vector<SubunitStateFilter>>& filts,
                        const std::vector<uint>& reac,
                        const std::vector<ComplexUpdate>& upd,
-                       ComplexLocation destLoc);
+                       Location destLoc);
 
     const std::vector<uint>& reactants() const noexcept {
         return preactants;
@@ -141,14 +153,14 @@ class ComplexUpdateEvent: public ComplexLHSEvent {
     const std::vector<ComplexUpdate>& updates() const noexcept {
         return pupdates;
     }
-    ComplexLocation destLoc() const noexcept {
+    Location destLoc() const noexcept {
         return pdestLoc;
     }
 
   protected:
     const std::vector<uint> preactants;
     const std::vector<ComplexUpdate> pupdates;
-    const ComplexLocation pdestLoc;
+    const Location pdestLoc;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -43,15 +43,19 @@ from steps.utils import *
 
 import time
 
+
 class StepsComplexReaction(unittest.TestCase):
     """Test Complex creation."""
-    def setUp(self, order=NoOrdering, nbRuns=50, pThresh=0.001):
+
+    def setUp(self, order=NoOrdering, nbRuns=50, pThresh=0.001, complexCls=None):
+        if complexCls is None:
+            complexCls = Complex
+
         self.nbRuns = nbRuns
         self.pThresh = pThresh
         self.ENDT = 5
 
         self.mdls = [Model(), Model()]
-        self.geoms = [Geometry(), Geometry()]
         self.r = ReactionManager()
 
         self.sass = [True, False]
@@ -69,18 +73,19 @@ class StepsComplexReaction(unittest.TestCase):
                 self.species.append([SA, SB])
 
                 sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = SubUnitState.Create()
-                self.suss.append([sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C])
+                self.suss.append([sus1A, sus1B, sus1C, sus2A, sus2B,
+                                 sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C])
 
                 su1, su2, su3, su4 = SubUnit.Create(
-                    [sus1A, sus1B, sus1C], 
+                    [sus1A, sus1B, sus1C],
                     [sus2A, sus2B, sus2C],
                     [sus3A, sus3B, sus3C],
                     [sus4A, sus4B, sus4C],
                 )
                 self.subs.append([su1, su2, su3, su4])
 
-                Comp1 = Complex.Create([su1]*2 + [su2]*2, statesAsSpecies=sas, order=order)
-                Comp2 = Complex.Create([su3]*2 + [su4]*2, statesAsSpecies=sas, order=order)
+                Comp1 = complexCls([su1]*2 + [su2]*2, statesAsSpecies=sas, order=order, name='Comp1')
+                Comp2 = complexCls([su3]*2 + [su4]*2, statesAsSpecies=sas, order=order, name='Comp2')
                 self.complexes.append([Comp1, Comp2])
 
                 vsys = VolumeSystem.Create()
@@ -89,7 +94,17 @@ class StepsComplexReaction(unittest.TestCase):
                 ssys = SurfaceSystem.Create()
                 self.surfsyss.append(ssys)
 
-        for geom, vsys, ssys in zip(self.geoms, self.volsyss, self.surfsyss):
+        self.geoms = self.getGeometries()
+
+        # Hardcoded seed to avoid random failures
+        self.rng = RNG('mt19937', 512, 123456)
+
+    def getSimulation(self, mdl, geom, rng):
+        return Simulation('Wmdirect', mdl, geom, rng)
+
+    def getGeometries(self):
+        geoms = [Geometry(), Geometry()]
+        for geom, vsys, ssys in zip(geoms, self.volsyss, self.surfsyss):
             with geom:
                 cyt = Compartment.Create(vsys, 1.6572e-19)
                 out = Compartment.Create(vsys, 1.6572e-19)
@@ -99,9 +114,10 @@ class StepsComplexReaction(unittest.TestCase):
 
                 patch = Patch.Create(cyt, out, ssys, 1e-12)
                 self.patches.append(patch)
+        return geoms
 
-        # Hardcoded seed to avoid random failures
-        self.rng = RNG('mt19937', 512, 123456)
+    def initializeSimulation(self, sim):
+        pass
 
     @staticmethod
     def _addSaverToSim(sim, locations, complexes, addSingleSUS=True):
@@ -131,7 +147,8 @@ class StepsComplexReaction(unittest.TestCase):
             nbTests = 0
             allPVals = []
             for t in range(dat1.shape[1]):
-                d, p = scipy.stats.mstats.ks_twosamp(dat1[:,t,j], dat2[:,t,j])
+                d, p = scipy.stats.mstats.ks_twosamp(
+                    dat1[:, t, j], dat2[:, t, j])
                 nbTests += 1
                 allPVals.append(p)
 
@@ -146,18 +163,20 @@ class StepsComplexReaction(unittest.TestCase):
             totNbFail += min(nbFail, 1)
 
             # Plot average time traces of values that are significantly different from expected
-            if plot and ((same and nbFail > 0) or (not same and nbFail == 0)):
+            if plot and ((same and nbFail > 0) or (not same and nbFail == 0) or plot == 'always'):
                 if fig is None:
                     fig = plt.figure()
-                    fig.suptitle(f'Data should be ' + ('identical' if same else 'different'))
+                    fig.suptitle(f'Data should be ' +
+                                 ('identical' if same else 'different'))
                 plt.subplot(nRows, nCols, j+1)
-                plt.plot(range(dat1.shape[1]), np.mean(dat1[:,:,j],axis=0), 'b', range(dat1.shape[1]), np.mean(dat2[:,:,j],axis=0), 'r')
+                plt.plot(range(dat1.shape[1]), np.mean(dat1[:, :, j], axis=0), 'b', range(
+                    dat1.shape[1]), np.mean(dat2[:, :, j], axis=0), 'r')
                 plt.plot(range(dat1.shape[1]), np.log(allPVals), 'g')
                 if labels is not None:
                     plt.title(labels[j])
 
         if plot and fig is not None:
-            if (same and totNbFail > 0) or (not same and totNbFail == 0):
+            if (same and totNbFail > 0) or (not same and totNbFail == 0) or plot == 'always':
                 plt.show()
             else:
                 plt.close()
@@ -173,8 +192,9 @@ class StepsComplexReaction(unittest.TestCase):
             sus1, sus2 = SubUnitState.Create()
             su = SubUnit.Create([sus1, sus2])
             with self.assertRaises(Exception):
-                CC = Complex.Create([su], statesAsSpecies=False, order=StrongOrdering)
-    
+                CC = Complex.Create(
+                    [su], statesAsSpecies=False, order=StrongOrdering)
+
     def _runComplexSurfaceReacSubTests(self, func):
         with self.subTest('Volume-Volume reactions'):
             func(self.volsyss, lambda x, _: x, ['cyt', 'cyt'], True)
@@ -194,7 +214,7 @@ class StepsComplexReaction(unittest.TestCase):
             func(self.surfsyss, lambda x, i: [In, Surf][i](x), ['cyt', 'patch'], True)
             self.setUp()
             func(self.surfsyss, lambda x, i: [In, Surf][i](x), ['cyt', 'patch'], False)
-
+        
     def _testSubUnitChange(self, systems, locFunc, locations, same=True, **kwargs):
         r = self.r
         allData = []
@@ -216,7 +236,7 @@ class StepsComplexReaction(unittest.TestCase):
                             r[2].K = 2, 1
                             r[3].K = 3, 2
 
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+            sim = self.getSimulation(mdl, geom, self.rng)
 
             rs = ResultSelector(sim)
             data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2A, sus2A]).Count
@@ -225,6 +245,7 @@ class StepsComplexReaction(unittest.TestCase):
 
             for i in range(self.nbRuns):
                 sim.newRun()
+                self.initializeSimulation(sim)
                 sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2A, sus2A].Count = 500
                 sim.run(self.ENDT)
 
@@ -245,10 +266,10 @@ class StepsComplexReaction(unittest.TestCase):
             with mdl:
                 with sys:
                     with Comp1[..., sus2A, sus2A]:
-                        locFunc(sus1B | sus1A, 0) >r[1]> locFunc(sus1C, 0)
-                        locFunc(sus1C | sus1A, 0) >r[2]> locFunc(sus1B, 0)
-                        locFunc(sus1C | sus1B, 0) >r[3]> locFunc(sus1A, 0)
-                        locFunc(sus1A | sus1B, 0) + locFunc(SA, 1) >r[4]> locFunc(sus1C, 0)
+                        locFunc(sus1B|sus1A, 0) >r[1]> locFunc(sus1C, 0)
+                        locFunc(sus1C|sus1A, 0) >r[2]> locFunc(sus1B, 0)
+                        locFunc(sus1C|sus1B, 0) >r[3]> locFunc(sus1A, 0)
+                        locFunc(sus1A|sus1B, 0) + locFunc(SA, 1) >r[4]> locFunc(sus1C, 0)
                         if same or mdl is self.mdls[0]:
                             r[1].K = 5
                             r[2].K = 3
@@ -268,7 +289,7 @@ class StepsComplexReaction(unittest.TestCase):
                         else:
                             r[1].K = 1, 5
 
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+            sim = self.getSimulation(mdl, geom, self.rng)
 
             rs = ResultSelector(sim)
             data = rs.LIST(locations[1]).SA.Count
@@ -278,6 +299,7 @@ class StepsComplexReaction(unittest.TestCase):
 
             for i in range(self.nbRuns):
                 sim.newRun()
+                self.initializeSimulation(sim)
                 sim.LIST(locations[1]).SA.Count = 400
                 sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2A, sus2A].Count = 500
                 sim.run(self.ENDT)
@@ -309,7 +331,8 @@ class StepsComplexReaction(unittest.TestCase):
                             r[1].K = kfact*2000, kfact*7000
                             r[2].K = kfact*40000, kfact*12000
                             r[3].K = kfact*20000, kfact*7000
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+
+            sim = self.getSimulation(mdl, geom, self.rng)
 
             rs = ResultSelector(sim)
             data = rs.LIST(locations[1]).LIST(SA, SB).Count
@@ -320,6 +343,7 @@ class StepsComplexReaction(unittest.TestCase):
 
             for i in range(self.nbRuns):
                 sim.newRun()
+                self.initializeSimulation(sim)
                 sim.LIST(locations[1]).SA.Count = 400
                 sim.LIST(locations[1]).SB.Count = 400
                 sim.LIST(locations[0]).SB.Count = 400
@@ -359,7 +383,7 @@ class StepsComplexReaction(unittest.TestCase):
                             r[3].K = kfact * 15000, kfact * 10000
                             r[4].K = kfact * 1000, kfact * 10000
 
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+            sim = self.getSimulation(mdl, geom, self.rng)
 
             rs = ResultSelector(sim)
             data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2A, sus2A]).Count
@@ -368,6 +392,7 @@ class StepsComplexReaction(unittest.TestCase):
 
             for i in range(self.nbRuns):
                 sim.newRun()
+                self.initializeSimulation(sim)
                 sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2A, sus2A].Count = 500
                 sim.LIST(locations[1]).Comp2[sus3A, sus3A, sus4A, sus4A].Count = 500
                 sim.run(self.ENDT)
@@ -404,7 +429,7 @@ class StepsComplexReaction(unittest.TestCase):
                             r[3].K = kfact * 15000, kfact * 10000
                             r[4].K = kfact * 1000, kfact * 10000
 
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+            sim = self.getSimulation(mdl, geom, self.rng)
 
             rs = ResultSelector(sim)
             data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2C, sus2C]).Count
@@ -414,8 +439,12 @@ class StepsComplexReaction(unittest.TestCase):
 
             for i in range(self.nbRuns):
                 sim.newRun()
-                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
-                sim.LIST(locations[1]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
+                self.initializeSimulation(sim)
+                if locations[0] != locations[1]:
+                    sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
+                    sim.LIST(locations[1]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
+                else:
+                    sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 1000
                 sim.run(self.ENDT)
 
             allData.append(np.array(data.data[:]))
@@ -424,6 +453,51 @@ class StepsComplexReaction(unittest.TestCase):
 
     def testTwoSameComplexes(self):
         self._runComplexSurfaceReacSubTests(self._testTwoSameComplexes)
+
+    def _testTwoSameComplexesDiffSel(self, systems, locFunc, locations, same=True, kfact=1, **kwargs):
+        r = self.r
+        allData = []
+        for mdl, geom, sys, Comp, subunitstates, species in zip(self.mdls, self.geoms, systems, self.complexes, self.suss, self.species):
+            Comp1, Comp2 = Comp
+            sus1A, sus1B, sus1C, sus2A, sus2B, sus2C, sus3A, sus3B, sus3C, sus4A, sus4B, sus4C = subunitstates
+            SA, SB = species
+            with mdl:
+                with sys:
+                    with Comp1[..., sus2B] as C1, Comp1[..., sus2C] as C2:
+                        locFunc(sus1A[C1], 0) + locFunc(sus1A[C2], 1) <r[1]> locFunc(sus1A[C1], 0) + locFunc(sus1B[C2], 1)
+                        locFunc(sus1A[C1], 0) + locFunc(sus1B[C2], 1) <r[2]> locFunc(sus1B[C1], 0) + locFunc(sus1B[C2], 1)
+                        if same or mdl is self.mdls[0]:
+                            r[1].K = kfact * 10000, kfact * 10000
+                            r[2].K = kfact * 10000, kfact * 10000
+                        else:
+                            r[1].K = kfact * 20000, kfact * 10000
+                            r[2].K = kfact * 5000, kfact * 10000
+
+            sim = self.getSimulation(mdl, geom, self.rng)
+
+            rs = ResultSelector(sim)
+            data = rs.LIST(locations[0]).LIST(*Comp1[~sus1C, ~sus1C, sus2B, ~sus2A]).Count
+            if locations[0] != locations[1]:
+                data <<= rs.LIST(locations[1]).LIST(*Comp1[~sus1C, ~sus1C, sus2C, ~sus2A]).Count
+            else:
+                data <<= rs.LIST(locations[1]).LIST(*Comp1[~sus1C, ~sus1C, sus2C, ~sus2A]).Count
+            sim.toSave(data, dt=0.1)
+
+            for i in range(self.nbRuns):
+                sim.newRun()
+                self.initializeSimulation(sim)
+                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2B, sus2B].Count = 150
+                sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2B, sus2C].Count = 150
+                sim.LIST(locations[1]).Comp1[sus1A, sus1A, sus2B, sus2C].Count = 150
+                sim.LIST(locations[1]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 150
+                sim.run(self.ENDT)
+
+            allData.append(np.array(data.data[:]))
+
+        self._testData(allData, same=same, labels=data.labels)
+
+    def testTwoSameComplexesDiffSel(self):
+        self._runComplexSurfaceReacSubTests(self._testTwoSameComplexesDiffSel)
 
     def _testFullcomplexes(self, systems, locFunc, locations, same=True, kfact=1, **kwargs):
         r = self.r
@@ -442,7 +516,7 @@ class StepsComplexReaction(unittest.TestCase):
                     else:
                         r[1].K = kfact * 20000, kfact * 10000
 
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+            sim = self.getSimulation(mdl, geom, self.rng)
 
             rs = ResultSelector(sim)
             data = rs.LIST(locations[0]).LIST(*Comp1[sus1A, :, sus2C, sus2C]).Count
@@ -451,6 +525,7 @@ class StepsComplexReaction(unittest.TestCase):
 
             for i in range(self.nbRuns):
                 sim.newRun()
+                self.initializeSimulation(sim)
                 sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
                 sim.LIST(locations[1]).Comp2[sus3A, sus3A, sus4C, sus4C].Count = 500
                 sim.run(self.ENDT)
@@ -488,7 +563,7 @@ class StepsComplexReaction(unittest.TestCase):
                         r[3].K = 3
                         r[4].K = 4
 
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+            sim = self.getSimulation(mdl, geom, self.rng)
 
             rs = ResultSelector(sim)
             data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2C, sus2C]).Count
@@ -498,6 +573,7 @@ class StepsComplexReaction(unittest.TestCase):
 
             for i in range(self.nbRuns):
                 sim.newRun()
+                self.initializeSimulation(sim)
                 sim.LIST(locations[0]).Comp1[sus1A, sus1B, sus2C, sus2C].Count = 500
                 sim.run(self.ENDT)
 
@@ -506,7 +582,8 @@ class StepsComplexReaction(unittest.TestCase):
         self._testData(allData, same=same, labels=data.labels)
 
     def testFullcomplexesSubSelectors(self):
-        self._runComplexSurfaceReacSubTests(self._testFullcomplexesSubSelectors)
+        self._runComplexSurfaceReacSubTests(
+            self._testFullcomplexesSubSelectors)
 
     def _testComplexCreationDeletion(self, systems, locFunc, locations, same=True, kfact=1, **kwargs):
         r = self.r
@@ -541,7 +618,7 @@ class StepsComplexReaction(unittest.TestCase):
                     else:
                         r[1].K = kfact * 1500000
 
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
+            sim = self.getSimulation(mdl, geom, self.rng)
 
             rs = ResultSelector(sim)
             data = rs.LIST(locations[0]).LIST(*Comp1[..., sus2C, sus2C]).Count
@@ -549,6 +626,7 @@ class StepsComplexReaction(unittest.TestCase):
 
             for i in range(self.nbRuns):
                 sim.newRun()
+                self.initializeSimulation(sim)
                 sim.LIST(locations[1]).SA.Count = 500
                 sim.LIST(locations[1]).SB.Count = 500
                 sim.LIST(locations[0]).Comp1[sus1A, sus1A, sus2C, sus2C].Count = 500
@@ -570,7 +648,7 @@ class StepsComplexReaction(unittest.TestCase):
             SA, SB = species
             with mdl:
                 with vsys:
-                    SA <r[1]> SB
+                    SA < r[1] > SB
                     r[1].K = 1, 1
 
                     with Comp1[...] as C1:
@@ -583,18 +661,18 @@ class StepsComplexReaction(unittest.TestCase):
                         r[1].K = 20000, 10000
                         r[2].K = 10000, 20000
 
+            sim = self.getSimulation(mdl, geom, self.rng)
 
-            sim = Simulation('Wmdirect', mdl, geom, self.rng)
-
-            sim.cyt.Comp1.sus1A.Count
+            sim.LIST(self.comps[0].name).Comp1.sus1A.Count
             with self.assertRaises(Exception):
-                sim.cyt.Comp1.sus3A.Count
+                sim.LIST(self.comps[0].name).Comp1.sus3A.Count
 
 
 def suite():
     all_tests = []
     all_tests.append(unittest.TestLoader().loadTestsFromTestCase(StepsComplexReaction))
     return unittest.TestSuite(all_tests)
+
 
 if __name__ == "__main__":
     unittest.TextTestRunner(verbosity=2).run(suite())

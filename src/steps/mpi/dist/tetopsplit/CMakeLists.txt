@@ -1,6 +1,8 @@
 add_library(
   stepsdist STATIC
   definition/compdef.cpp
+  definition/complexdef.cpp
+  definition/complexeventsdef.cpp
   definition/diffdef.cpp
   definition/efield.cpp
   definition/patchdef.cpp
@@ -23,10 +25,10 @@ add_library(
   kproc/surface_reactions.hpp
   mol_state.cpp
   operator/diffusion_operator.cpp
+  operator/rleaping_operator.cpp
   operator/rssa_operator.cpp
   operator/ssa_operator.cpp
-  simulation.cpp
-  tetopsplit.cpp)
+  simulation.cpp)
 
 if(PETSC_FOUND AND USE_PETSC)
   target_sources(stepsdist PRIVATE operator/efield_operator.cpp operator/efield_operator.hpp)

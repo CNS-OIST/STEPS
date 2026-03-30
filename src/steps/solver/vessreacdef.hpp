@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -230,7 +230,6 @@ class VesSReacdef {
     uint upd_I(spec_global_id gidx) const;  // I upd always positive
     int upd_L(linkspec_global_id gidx) const;
 
-    /// \{
     /// Returns whether the surface reaction rule references a species,
     /// specified by its global index, on the
     /// outer volume (_O), surface patch (_S), vesicle (_V) or inner volume (_I)
@@ -240,8 +239,6 @@ class VesSReacdef {
     bool reqspec_V(spec_global_id gidx) const;
     bool reqspec_I(spec_global_id gidx) const;
     bool reqspec_L(linkspec_global_id gidx) const;
-
-    /// \}
 
     inline const spec_global_id_vec& updColl_S() const noexcept {
         return pSpec_S_UPD_Coll;

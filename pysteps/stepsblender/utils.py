@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -49,6 +49,7 @@ class Orders(enum.IntEnum):
     GET_RAFT_EVENTS = 13
     GET_VERTS_V = 14
     OK = 15
+    GET_VES_ON_PATH = 16
 
 
 class Loc(enum.Enum):
@@ -97,6 +98,18 @@ colorType = typing.Annotated[
          metavar='"(r, g, b, a)"'), ]
 alphaType = typing.Annotated[float, 'Alpha transparency level']
 emissionType = typing.Annotated[float, 'Emission strength']
+
+
+try:
+    import tqdm
+
+    def progress(it, desc):
+        return tqdm.tqdm(list(it), desc=desc, leave=False)
+except ImportError:
+    def progress(it, desc):
+        print(f'{desc}...')
+        return it
+
 
 ####################################################################################################
 
@@ -150,6 +163,63 @@ def zipNone(*args):
 
 ####################################################################################################
 
+
+def point_in_obj(pos, obj, eps=1e-6):
+    if (pos == 0).all():
+        direc = np.array([1, 0, 0])
+    else:
+        direc = - pos / np.linalg.norm(pos)
+    hit = True
+    cnt = 0
+    while hit:
+        hit, loc, *_ = obj.ray_cast(pos, direc)
+        if hit:
+            cnt += 1
+            pos = np.array(loc) + direc * eps
+    return cnt % 2 == 1
+
+
+def get_points_in_triangle(p0, p1, p2, cnt):
+    positions = []
+    for i in range(int(cnt)):
+        s, t = np.random.random(2)
+        u = s**0.5
+        v = u * t
+        positions.append((1 - u) * p0 + (u - v) * p1 + v * p2)
+    return positions
+
+
+def get_points_in_tetrahedron(p0, p1, p2, p3, cnt):
+    positions = []
+    for i in range(int(cnt)):
+        s, t, u = np.random.random(3)
+        if s + t > 1:
+            s = 1 - s
+            t = 1 - t
+        if t + u > 1:
+            tmp = u
+            u = 1 - s - t
+            t = 1 - tmp
+        elif s + t + u > 1:
+            tmp = u
+            u = s + t + u - 1
+            s = 1 - t - tmp
+        a = 1 - s - t - u
+        positions.append(a * p0 + s * p1 + t * p2 + u * p3)
+    return positions
+
+
+def get_points_in_sphere(pos, rad, cnt):
+    positions = []
+    for i in range(cnt):
+        relpos = (np.random.random(3) - 0.5) * 2
+        while np.linalg.norm(relpos) > 1:
+            relpos = (np.random.random(3) - 0.5) * 2
+        positions.append(pos + rad * relpos)
+    return positions
+
+####################################################################################################
+
 _ALL_COLOR_HUES = []
 
 
@@ -169,54 +239,54 @@ def GetColor(s=1, v=1, a=1):
 
 
 class HierarchicalParameters:
-    """Class for holding hierarchies of parameters
+    r"""Class for holding hierarchies of parameters
 
     This class holds several levels of parameter dictionaries and allows the retrieval of
     parameter values by iterating through levels, starting with the most specific.
-    The hierarchy is built from nested dictionnaries, for example:
+    The hierarchy is built from nested dictionnaries, for example::
 
-    parameters = {
-        'color': (1, 0, 0, 1),         # Red
-        'Species': {
-            'color': (0, 1, 0, 1),     # Green
-            'radius': 0.01,
-            'S1': {
-                'radius': 0.02,
-                'color': (0, 0, 1, 1), # Blue
+        parameters = {
+            'color': (1, 0, 0, 1),         # Red
+            'Species': {
+                'color': (0, 1, 0, 1),     # Green
+                'radius': 0.01,
+                'S1': {
+                    'radius': 0.02,
+                    'color': (0, 0, 1, 1), # Blue
+                },
             },
-        },
-    }
+        }
 
     If these parameters are given to :py:class:`HDF5BlenderLoader`, all objects that declared a
     `radius` or `color` attribute in their class (see :py:class:`HierarchicalParamReader`),
-    will get a value that depends on their position in the object hierarchy (abridged here):
+    will get a value that depends on their position in the object hierarchy (abridged here)::
 
-    Loader -----> Species ---> S1 --> mesh     | radius == 0.02
-           \              \       \-> material | color  == Blue
-            \              \-> S2 --> mesh     | radius == 0.01
-             \                    \-> material | color  == Green
-              \-> Vesicles --> V1 --> mesh     |
-                                  \-> material | color  == Red
+        Loader -----> Species ---> S1 --> mesh     | radius == 0.02
+               \              \       \-> material | color  == Blue
+                \              \-> S2 --> mesh     | radius == 0.01
+                 \                    \-> material | color  == Green
+                  \-> Vesicles --> V1 --> mesh     |
+                                      \-> material | color  == Red
 
     When retrieving the color value for the material of species S2, we first try to find the most
-    specific value: parameters['Species']['S2']['material']['color'], if this does not exist, we then
-    try parameters['Species']['S2']['color'], then parameters['Species']['color'] which exist in our
+    specific value: ``parameters['Species']['S2']['material']['color']``, if this does not exist, we then
+    try ``parameters['Species']['S2']['color']``, then ``parameters['Species']['color']`` which exist in our
     example, so the color is set to green.
-    For species S1, parameters['Species']['S1']['material']['color'] does not exist but
-    parameters['Species']['S1']['color'] does, the color is thus set to blue.
+    For species S1, ``parameters['Species']['S1']['material']['color']`` does not exist but
+    ``parameters['Species']['S1']['color']`` does, the color is thus set to blue.
 
     In addition to specifying hierarchies of parameter values, one can also change the class that
     will be used to instantiate any object in the hierarchy, for example, to provide a custom material
-    for species of type S2, we would give:
+    for species of type S2, we would give::
 
-    parameters = {
-        'S2' : {
-            'material': {
-                '__class__': MyCustomMaterialClass,
-                'myCustomParameter': 5.0,
+        parameters = {
+            'S2' : {
+                'material': {
+                    '__class__': MyCustomMaterialClass,
+                    'myCustomParameter': 5.0,
+                },
             },
-        },
-    }
+        }
 
     With MyCustomMaterialClass inheriting from :py:class:`BlenderMaterial` and having
     `myCustomParameter` as class attribute (see :py:class:`HierarchicalParamReader`).
@@ -225,13 +295,13 @@ class HierarchicalParameters:
 
     Finally, parameter objects that inherit from :py:class:`BlenderWrapper` can be loaded from the
     Blender file by giving the name of the blender object. For example, if we created a material in
-    Blender called 'myCustomMaterial', we could assign it to Species S2 with:
+    Blender called ``'myCustomMaterial'``, we could assign it to Species S2 with::
 
-    parameters = {
-        'S2' : {
-            'material': 'myCustomMaterial',
-        },
-    }
+        parameters = {
+            'S2' : {
+                'material': 'myCustomMaterial',
+            },
+        }
     """
 
     def __init__(self, parameters={}, _kwargs=[]):
@@ -310,24 +380,25 @@ class HierarchicalParamReader:
 
         a = classA(parameters={val1: 2})
 
-    This code leads to `a.val1 == 2` and `a.val2 == 'str'`.
+    This code leads to ``a.val1 == 2`` and ``a.val2 == 'str'``.
     
     If the default value is a class that inherits from :py:class:`HierarchicalParamReader`, an
     object from this class will be instantiated and recursively initialized with the
     HierarchicalParameters object.
 
-    By default, all :py:class:`HierarchicalParamReader` instances have a `parent` and `nameInParent`
+    By default, all :py:class:`HierarchicalParamReader` instances have a ``parent`` and ``nameInParent``
     attributes that will be filled in at instanciation.
-    
+
     Example::
-        
+
         class classB(HierarchicalParamReader):
             objA = classA
             val3 = 5.0
 
         objB = classB(parameters={'objA':{'val1':2}})
 
-    This code leads to objA being automatically instantiated with:
+    This code leads to objA being automatically instantiated with::
+
         objB.objA.parent == objB
         objB.objA.nameInParent == 'objA'
 
@@ -378,7 +449,7 @@ class HierarchicalParamReader:
 
     If a string is given as a second parameter to :py:class:`typing.Annotated`, it will be interpreted
     as the description of the parameter. If a dictionary is given, it will be supplied as keyword arguments
-    to :py:func:`argparse.ArgumentParser.add_argument` in the :py:module:`stepsblender.load` module to
+    to :py:func:`argparse.ArgumentParser.add_argument` in the :py:mod:`stepsblender.load` module to
     automatically add the parameter as a command-line argument.
 
     Simple types like int and float will be converted from the string provided as a command-line argument
@@ -524,6 +595,10 @@ def AddBlenderDataSaving(sim, verbose=True, **kwargs):
     except nsim.SimPathInvalidPath:
         pass
     try:
+        selectors.append(rs.ALL(geom.Compartment).VESICLES().OnPath)
+    except nsim.SimPathInvalidPath:
+        pass
+    try:
         selectors.append(rs.ALL(geom.Compartment).VESICLES()('surf').POINTSPECS().PosSpherical)
     except nsim.SimPathInvalidPath:
         try:
@@ -560,8 +635,9 @@ def AddBlenderDataSaving(sim, verbose=True, **kwargs):
         pass
 
     if verbose and nsim.MPI._shouldWrite:
-        print('Result selectors added to the simulation:')
+        from steps.API_2.utils import _print
+        _print('Result selectors added to the simulation:', 1)
         for sel in selectors:
-            print('\t', sel)
+            _print(str(sel), 1, indent=1)
 
     sim.toSave(*selectors, **kwargs)

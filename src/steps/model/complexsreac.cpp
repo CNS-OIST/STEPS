@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -33,18 +33,18 @@
 
 namespace steps::model {
 
-ComplexSReac::ComplexSReac(std::string const& id,
-                           Surfsys& surfsys,
-                           std::vector<Spec*> const& ilhs,
-                           std::vector<Spec*> const& slhs,
-                           std::vector<Spec*> const& olhs,
-                           std::vector<Spec*> const& irhs,
-                           std::vector<Spec*> const& srhs,
-                           std::vector<Spec*> const& orhs,
-                           std::vector<ComplexEvent*> const& icompEvs,
-                           std::vector<ComplexEvent*> const& scompEvs,
-                           std::vector<ComplexEvent*> const& ocompEvs,
-                           double kcst)
+ComplexSReacBase::ComplexSReacBase(std::string const& id,
+                                   Surfsys& surfsys,
+                                   std::vector<Spec*> const& ilhs,
+                                   std::vector<Spec*> const& slhs,
+                                   std::vector<Spec*> const& olhs,
+                                   std::vector<Spec*> const& irhs,
+                                   std::vector<Spec*> const& srhs,
+                                   std::vector<Spec*> const& orhs,
+                                   std::vector<ComplexEvent*> const& icompEvs,
+                                   std::vector<ComplexEvent*> const& scompEvs,
+                                   std::vector<ComplexEvent*> const& ocompEvs,
+                                   int charge)
     : pID(id)
     , pModel(surfsys.getModel())
     , pSurfsys(surfsys)
@@ -53,9 +53,8 @@ ComplexSReac::ComplexSReac(std::string const& id,
     , pOLHS(olhs)
     , pIRHS(irhs)
     , pSRHS(srhs)
-    , pORHS(orhs) {
-    setKcst(kcst);
-
+    , pORHS(orhs)
+    , pCharge(charge) {
     for (auto const& l: pOLHS) {
         AssertLog(&l->getModel() == &pModel);
     }
@@ -75,45 +74,43 @@ ComplexSReac::ComplexSReac(std::string const& id,
         AssertLog(&l->getModel() == &pModel);
     }
 
-    pLocOrder[ComplexLocation::PATCH_IN] = pILHS.size();
-    pLocOrder[ComplexLocation::PATCH_SURF] = pSLHS.size();
-    pLocOrder[ComplexLocation::PATCH_OUT] = pOLHS.size();
+    pLocOrder[Location::PATCH_IN] = pILHS.size();
+    pLocOrder[Location::PATCH_SURF] = pSLHS.size();
+    pLocOrder[Location::PATCH_OUT] = pOLHS.size();
 
     for (auto* ev: icompEvs) {
-        _addEvent(ev, ComplexLocation::PATCH_IN);
+        _addEvent(ev, Location::PATCH_IN);
     }
     for (auto* ev: scompEvs) {
-        _addEvent(ev, ComplexLocation::PATCH_SURF);
+        _addEvent(ev, Location::PATCH_SURF);
     }
     for (auto* ev: ocompEvs) {
-        _addEvent(ev, ComplexLocation::PATCH_OUT);
+        _addEvent(ev, Location::PATCH_OUT);
     }
 
-    pOuter = pLocOrder[ComplexLocation::PATCH_OUT] > 0;
+    pOuter = pLocOrder[Location::PATCH_OUT] > 0;
 
-    ArgErrLogIf(pOuter and pLocOrder[ComplexLocation::PATCH_IN] > 0,
+    ArgErrLogIf(pOuter and pLocOrder[Location::PATCH_IN] > 0,
                 "Surface reaction cannot contain reactants on both sides of the patch.");
 
     for (auto ord: pLocOrder) {
         pOrder += ord.second;
     }
 
-    pSurfSurf = pOrder == pLocOrder[ComplexLocation::PATCH_SURF];
-
-    pSurfsys._handleComplexSReacAdd(*this);
+    pSurfSurf = pOrder == pLocOrder[Location::PATCH_SURF];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ComplexSReac::_addEvent(ComplexEvent* ev, ComplexLocation loc) {
-    if (dynamic_cast<ComplexUpdateEvent*>(ev) != nullptr) {
-        pCompUPD[loc].push_back(dynamic_cast<ComplexUpdateEvent*>(ev));
+void ComplexSReacBase::_addEvent(ComplexEvent* ev, Location loc) {
+    if (auto* upd = dynamic_cast<ComplexUpdateEvent*>(ev)) {
+        pCompUPD[loc].push_back(upd);
         pLocOrder[loc]++;
-    } else if (dynamic_cast<ComplexDeleteEvent*>(ev) != nullptr) {
-        pCompDEL[loc].push_back(dynamic_cast<ComplexDeleteEvent*>(ev));
+    } else if (auto* del = dynamic_cast<ComplexDeleteEvent*>(ev)) {
+        pCompDEL[loc].push_back(del);
         pLocOrder[loc]++;
-    } else if (dynamic_cast<ComplexCreateEvent*>(ev) != nullptr) {
-        pCompCRE[loc].push_back(dynamic_cast<ComplexCreateEvent*>(ev));
+    } else if (auto* cre = dynamic_cast<ComplexCreateEvent*>(ev)) {
+        pCompCRE[loc].push_back(cre);
     }
 }
 
@@ -121,8 +118,8 @@ void ComplexSReac::_addEvent(ComplexEvent* ev, ComplexLocation loc) {
 
 static std::vector<ComplexUpdateEvent*> empty_upd;
 
-const std::vector<ComplexUpdateEvent*>& ComplexSReac::getUPDEvents(
-    ComplexLocation loc) const noexcept {
+const std::vector<ComplexUpdateEvent*>& ComplexSReacBase::getUPDEvents(
+    Location loc) const noexcept {
     const auto it = pCompUPD.find(loc);
     if (it != pCompUPD.end()) {
         return it->second;
@@ -134,8 +131,8 @@ const std::vector<ComplexUpdateEvent*>& ComplexSReac::getUPDEvents(
 
 static std::vector<ComplexDeleteEvent*> empty_del;
 
-const std::vector<ComplexDeleteEvent*>& ComplexSReac::getDELEvents(
-    ComplexLocation loc) const noexcept {
+const std::vector<ComplexDeleteEvent*>& ComplexSReacBase::getDELEvents(
+    Location loc) const noexcept {
     const auto it = pCompDEL.find(loc);
     if (it != pCompDEL.end()) {
         return it->second;
@@ -147,8 +144,8 @@ const std::vector<ComplexDeleteEvent*>& ComplexSReac::getDELEvents(
 
 static std::vector<ComplexCreateEvent*> empty_cre;
 
-const std::vector<ComplexCreateEvent*>& ComplexSReac::getCREEvents(
-    ComplexLocation loc) const noexcept {
+const std::vector<ComplexCreateEvent*>& ComplexSReacBase::getCREEvents(
+    Location loc) const noexcept {
     const auto it = pCompCRE.find(loc);
     if (it != pCompCRE.end()) {
         return it->second;
@@ -158,13 +155,7 @@ const std::vector<ComplexCreateEvent*>& ComplexSReac::getCREEvents(
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void ComplexSReac::setKcst(double kcst) {
-    ArgErrLogIf(kcst < 0.0, "Surface reaction constant can't be negative");
-    pKcst = kcst;
-}
-////////////////////////////////////////////////////////////////////////////////
-
-util::flat_set<Spec*> ComplexSReac::getAllSpecs() const {
+util::flat_set<Spec*> ComplexSReacBase::getAllSpecs() const {
     util::flat_set<Spec*> specSet;
     specSet.insert(pOLHS.begin(), pOLHS.end());
     specSet.insert(pILHS.begin(), pILHS.end());
@@ -177,5 +168,89 @@ util::flat_set<Spec*> ComplexSReac::getAllSpecs() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void ComplexSReacBase::setCharge(int charge) {
+    pCharge = charge;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ComplexSReac::ComplexSReac(std::string const& id,
+                           Surfsys& surfsys,
+                           std::vector<Spec*> const& ilhs,
+                           std::vector<Spec*> const& slhs,
+                           std::vector<Spec*> const& olhs,
+                           std::vector<Spec*> const& irhs,
+                           std::vector<Spec*> const& srhs,
+                           std::vector<Spec*> const& orhs,
+                           std::vector<ComplexEvent*> const& icompEvs,
+                           std::vector<ComplexEvent*> const& scompEvs,
+                           std::vector<ComplexEvent*> const& ocompEvs,
+                           double kcst,
+                           int charge)
+    : ComplexSReacBase::ComplexSReacBase(id,
+                                         surfsys,
+                                         ilhs,
+                                         slhs,
+                                         olhs,
+                                         irhs,
+                                         srhs,
+                                         orhs,
+                                         icompEvs,
+                                         scompEvs,
+                                         ocompEvs,
+                                         charge) {
+    setKcst(kcst);
+
+    pSurfsys._handleComplexSReacAdd(*this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ComplexSReac::setKcst(double kcst) {
+    ArgErrLogIf(kcst < 0.0, "Surface reaction constant can't be negative");
+    pKcst = kcst;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+VDepComplexSReac::VDepComplexSReac(std::string const& id,
+                                   Surfsys& surfsys,
+                                   std::vector<Spec*> const& ilhs,
+                                   std::vector<Spec*> const& slhs,
+                                   std::vector<Spec*> const& olhs,
+                                   std::vector<Spec*> const& irhs,
+                                   std::vector<Spec*> const& srhs,
+                                   std::vector<Spec*> const& orhs,
+                                   std::vector<ComplexEvent*> const& icompEvs,
+                                   std::vector<ComplexEvent*> const& scompEvs,
+                                   std::vector<ComplexEvent*> const& ocompEvs,
+                                   std::vector<double> ktab,
+                                   double vmin,
+                                   double vmax,
+                                   double dv,
+                                   uint tablesize,
+                                   int charge)
+    : ComplexSReacBase::ComplexSReacBase(id,
+                                         surfsys,
+                                         ilhs,
+                                         slhs,
+                                         olhs,
+                                         irhs,
+                                         srhs,
+                                         orhs,
+                                         icompEvs,
+                                         scompEvs,
+                                         ocompEvs,
+                                         charge)
+    , pVMin(vmin)
+    , pVMax(vmax)
+    , pDV(dv)
+    , pTablesize(tablesize) {
+    ArgErrLogIf(ktab.size() != pTablesize, "Table of reaction parameters is not of expected size");
+    AssertLog(pDV > 0.0);
+    pK = ktab;
+
+    pSurfsys._handleVDepComplexSReacAdd(*this);
+}
 
 }  // namespace steps::model

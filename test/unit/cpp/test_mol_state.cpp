@@ -1,4 +1,9 @@
+#include "model/diff.hpp"
+#include "model/volsys.hpp"
+#include "mpi/dist/tetopsplit/kproc/kproc_state.hpp"
 #include "steps/mpi/dist/tetopsplit/mol_state.hpp"
+
+#include "test_common.hpp"
 
 #include <iostream>
 
@@ -55,9 +60,31 @@ TEST_CASE("MolState_Occupancy") {
     REQUIRE_THAT(val, Catch::Matchers::WithinULP(n_molecules, 4));
 }
 
+auto lib = Omega_h::Library();
+
 TEST_CASE("MolState_EntityMolecules") {
-    osh::LOs structure = {1, 3, 11, 5};
-    steps::dist::EntityMolecules<steps::dist::mesh::tetrahedron_id_t> en_mol(structure);
+    const auto mesh_file = Omega_h::filesystem::path(STEPS_SOURCE_DIR) / "test" / "mesh" /
+                           "box.msh";
+    steps::dist::DistMesh mesh(lib, mesh_file.string());
+    steps::dist::DistComp comp("__MESH__", mesh);
+    steps::model::Model model;
+    steps::model::Spec spec1("SA", model);
+    steps::model::Spec spec2("SB", model);
+    steps::model::Spec spec3("SC", model);
+    steps::model::Spec spec4("SD", model);
+    steps::model::Volsys vsys("vsys", model);
+    steps::model::Diff diff1("diff1", vsys, spec1);
+    steps::model::Diff diff2("diff2", vsys, spec2);
+    steps::model::Diff diff3("diff3", vsys, spec3);
+    steps::model::Diff diff4("diff4", vsys, spec4);
+    comp.addVolsys("vsys");
+    steps::dist::Statedef statedef(model, mesh);
+
+    osh::LOs structure = {1, 3, 2, 5};
+    osh::LOs sus_per_cplx = {1};
+    steps::dist::ComplexIndexer indexer({0, 1});
+    steps::dist::EntityMolecules<steps::dist::mesh::tetrahedron_id_t> en_mol(
+        mesh, statedef, structure, sus_per_cplx, indexer);
     osh::Real val;
 
     steps::dist::mesh::tetrahedron_id_t elem_rd(3);
@@ -104,4 +131,50 @@ TEST_CASE("MolState_EntityMolecules") {
     REQUIRE_THAT(val, Catch::Matchers::WithinULP(0.f, 4));
     val = en_mol.get_occupancy_ef(elem_ef, species_ef, t);
     REQUIRE_THAT(val, Catch::Matchers::WithinULP(0.f, 4));
+
+    // check clamped species with add
+    en_mol.reset(t);
+    CHECK(not en_mol.get_clamped(elem_rd, species_rd));
+    en_mol.set_clamped(elem_rd, species_rd, true);
+    CHECK(en_mol.get_clamped(elem_rd, species_rd));
+    en_mol.add(elem_rd, species_rd, 2);
+    val = en_mol(elem_rd, species_rd);
+    REQUIRE_THAT(val, Catch::Matchers::WithinULP(0.f, 4));
+    en_mol.set_clamped(elem_rd, species_rd, false);
+    CHECK(not en_mol.get_clamped(elem_rd, species_rd));
+    en_mol.add(elem_rd, species_rd, 2);
+    val = en_mol(elem_rd, species_rd);
+    REQUIRE_THAT(val, Catch::Matchers::WithinULP(2.f, 4));
+
+    // check clamped species with add_and_update_occupancy
+    en_mol.reset(t);
+    CHECK(not en_mol.get_clamped(elem_rd, species_rd));
+    en_mol.set_clamped(elem_rd, species_rd, true);
+    CHECK(en_mol.get_clamped(elem_rd, species_rd));
+    en_mol.add_and_update_occupancy(elem_rd, species_rd, 2, t);
+    val = en_mol(elem_rd, species_rd);
+    REQUIRE_THAT(val, Catch::Matchers::WithinULP(0.f, 4));
+    en_mol.set_clamped(elem_rd, species_rd, false);
+    CHECK(not en_mol.get_clamped(elem_rd, species_rd));
+    en_mol.add_and_update_occupancy(elem_rd, species_rd, 2, t);
+    val = en_mol(elem_rd, species_rd);
+    REQUIRE_THAT(val, Catch::Matchers::WithinULP(2.f, 4));
+
+    // check clamped compartment
+    auto& compdef = statedef.getCompdef("__MESH__");
+    compdef.setSpecClamped(species_rd, true);
+    REQUIRE(en_mol(elem_rd, species_rd) == val);
+    en_mol.add(elem_rd, species_rd, 2);
+    REQUIRE(en_mol(elem_rd, species_rd) == val);
+    en_mol.add<false>(elem_rd, species_rd, 2);
+    REQUIRE(en_mol(elem_rd, species_rd) == val + 2);
+    en_mol.set_clamped(elem_rd, species_rd, true);
+    en_mol.add<false>(elem_rd, species_rd, -2);
+    REQUIRE(en_mol(elem_rd, species_rd) == val + 2);
+    en_mol.set_clamped(elem_rd, species_rd, false);
+    en_mol.add<false>(elem_rd, species_rd, -2);
+    REQUIRE(en_mol(elem_rd, species_rd) == val);
+    compdef.setSpecClamped(species_rd, false);
+    en_mol.add<false>(elem_rd, species_rd, 2);
+    REQUIRE(en_mol(elem_rd, species_rd) == val + 2);
 }

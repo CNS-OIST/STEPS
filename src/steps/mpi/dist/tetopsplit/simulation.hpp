@@ -1,44 +1,23 @@
 #pragma once
 
 #include <Omega_h_adj.hpp>
+#include <type_traits>
 
 #include "geom/dist/distmesh.hpp"
 #include "kproc/diffusions.hpp"
 #include "math/distributions.hpp"
 #include "mol_state.hpp"
+#include "mpi/dist/tetopsplit/fwd.hpp"
 #include "operator/diffusion_operator.hpp"
+#include "operator/rleaping_operator.hpp"
 #include "operator/rssa_operator.hpp"
 #include "operator/ssa_operator.hpp"
 #include "rng/rng.hpp"
 #include "simulation_data.hpp"
+#include "util/mpitools.hpp"
+#include "util/vocabulary.hpp"
 
 namespace steps::dist {
-
-struct CompartmentCount {
-    CompartmentCount(model::species_name t_species, osh::Real t_num_mols)
-        : species(std::move(t_species))
-        , num_mols(t_num_mols) {}
-    model::species_name species;
-    osh::Real num_mols;
-};
-
-struct CompartmentConc {
-    CompartmentConc(model::species_name t_species, osh::Real t_concentration)
-        : species(std::move(t_species))
-        , concentration(t_concentration) {}
-    model::species_name species;
-    osh::Real concentration;
-};
-
-struct PatchCount {
-    PatchCount(model::patch_id t_patch, model::species_name t_species, osh::Real t_num_mols)
-        : patch(std::move(t_patch))
-        , species(std::move(t_species))
-        , num_mols(t_num_mols) {}
-    const model::patch_id patch;
-    const model::species_name species;
-    const osh::Real num_mols;
-};
 
 struct MembraneResistivity {
     MembraneResistivity() = default;
@@ -51,415 +30,613 @@ struct MembraneResistivity {
 
 class Simulation {
   public:
-    using compartment_counts_t =
-        std::unordered_map<model::compartment_id, std::vector<CompartmentCount>>;
-    using compartment_concs_t =
-        std::unordered_map<model::compartment_id, std::vector<CompartmentConc>>;
-    using patch_counts_t = std::vector<PatchCount>;
-
-    Simulation(DistMesh& t_mesh, rng::RNG& t_rng, std::ostream& t_outstream);
+    Simulation(DistMesh& t_mesh, rng::RNG& t_rng);
     virtual ~Simulation() noexcept;
 
-    virtual void setCompSpecCount(
-        const model::compartment_id& compartment,
-        const model::species_name& species,
-        osh::Real num_molecules,
-        const math::DistributionMethod distribution = math::DistributionMethod::DIST_UNIFORM) = 0;
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Required methods
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    void setCompSpecCount(
-        const compartment_counts_t& counts,
-        const math::DistributionMethod distribution = math::DistributionMethod::DIST_UNIFORM);
-    virtual void setCompSpecCount(
-        const model::compartment_id& compartment,
-        const std::vector<CompartmentCount>& counts,
-        const math::DistributionMethod distribution = math::DistributionMethod::DIST_UNIFORM) = 0;
-    void setCompSpecConc(
-        const compartment_concs_t& concentrations,
-        const math::DistributionMethod distribution = math::DistributionMethod::DIST_UNIFORM);
-    virtual void setCompSpecConc(
-        const model::compartment_id& compartment,
-        const std::vector<CompartmentConc>& concs,
-        const math::DistributionMethod distribution = math::DistributionMethod::DIST_UNIFORM) = 0;
+    /////////////////////
+    // General methods //
+    /////////////////////
 
-    virtual void setPatchSpecCount(
-        const model::patch_id& /*patch_id*/,
-        const model::species_name& /*species*/,
-        osh::Real /*num_molecules*/,
-        const math::DistributionMethod = math::DistributionMethod::DIST_UNIFORM) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-    virtual void setPatchSpecCount(
-        const patch_counts_t& /*counts*/,
-        const math::DistributionMethod = math::DistributionMethod::DIST_UNIFORM) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-    virtual const std::vector<mesh::triangle_id_t>& getGHKBoundaries() const {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-    virtual osh::Reals getGHKCurrents() const {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-    virtual osh::Real getTotalGHKCurrent() const {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
+    // Simulation control
+    virtual void reset() = 0;
+    virtual void run(osh::Real end_time) = 0;
 
-    virtual void setKCstSReac(const model::patch_id& /*patchId*/,
-                              container::surface_reaction_id /*reactionId*/,
-                              osh::Real /*kCst*/) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-    virtual void setTriSpecCount(const model::patch_id& /*patch*/,
-                                 const model::species_name& /*species*/,
-                                 osh::Real /*num_molecules*/) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-    virtual osh::Real getPatchSpecCount(const model::patch_id& /*compartment*/,
-                                        const model::species_name& /*species*/) const {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-
-    virtual void setPotential(osh::Real) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-
-    virtual osh::Reals getPotentialOnVertices(const model::patch_id&) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-
-    virtual osh::Real getMaxPotentialOnVertices(const model::patch_id&) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-
-    virtual osh::Real getMinPotentialOnVertices(const model::patch_id&) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-
-    virtual osh::Reals getPotentialOnTriangles(const model::patch_id&) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-
-    virtual osh::Real getMaxPotentialOnTriangles(const model::patch_id&) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-
-    virtual osh::Real getMinPotentialOnTriangles(const model::patch_id&) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-
-    virtual osh::Real getLocalMaxPotentialOnVertices(const model::patch_id&) {
-        throw std::logic_error("NOT IMPLEMENTED");
-    }
-
-    virtual osh::Real getLocalMinPotentialOnVertices(const model::patch_id&) {
-        throw std::logic_error("NOT_IMPLEMENTED");
-    }
+    // Data getting / setting
+    virtual osh::Real getTime() const noexcept = 0;
+    virtual SSAMethod ssaMethod() const noexcept = 0;
+    virtual osh::Real getTemp() const noexcept = 0;
+    virtual void setTemp(const osh::Real temp) noexcept = 0;
+    virtual osh::Real getDiffusionTolerance() const = 0;
+    virtual void setDiffusionTolerance(osh::Real tolerance) = 0;
+    virtual osh::Real getDiffusionNormalApproximationThreshold() const = 0;
+    virtual void setDiffusionNormalApproximationThreshold(osh::Real threshold) = 0;
+    virtual osh::Real getDiffusionCrankNicolsonThreshold() const = 0;
+    virtual void setDiffusionCrankNicolsonThreshold(osh::Real threshold) = 0;
+    virtual uint getDiffusionLeapThreshold() const = 0;
+    virtual void setDiffusionLeapThreshold(uint leap_thresh) = 0;
+    virtual uint getDiffusionMaxDtSkips() const = 0;
+    virtual void setDiffusionMaxDtSkips(uint max_skips) = 0;
+    virtual osh::Real getDiffusionMinDtFactor() const = 0;
+    virtual void setDiffusionMinDtFactor(osh::Real factor) = 0;
+    virtual uint getReactionSSAThreshold() const = 0;
+    virtual void setReactionSSAThreshold(uint thresh) = 0;
+    virtual uint getReactionSSASteps() const = 0;
+    virtual void setReactionSSASteps(uint steps) = 0;
+    virtual uint getReactionLComputePeriod() const = 0;
+    virtual void setReactionLComputePeriod(uint period) = 0;
+    virtual osh::Real getReactionTolerance() const = 0;
+    virtual void setReactionTolerance(osh::Real tolerance) = 0;
+    virtual osh::Real getReactionTheta() const = 0;
+    virtual void setReactionTheta(osh::Real theta) = 0;
+    virtual std::string getSolverName() const = 0;
+    virtual void setDiffApplyThreshold(osh::Real threshold) = 0;
 
 #if USE_PETSC
-    virtual std::optional<osh::Real> getEfieldDt() const {
-        throw std::logic_error("NOT_IMPLEMENTED");
-    }
+    // E-field specific
 
-    virtual void setEfieldDt(const osh::Real) const {
-        throw std::logic_error("NOT_IMPLEMENTED");
-    }
+    virtual osh::Real getEfieldDT() const = 0;
+    virtual void setEfieldDT(const osh::Real dt) const = 0;
+
+    virtual void setPetscOptions(const std::string& s) = 0;
+
 #endif  // USE_PETSC
+
+    // Debugging / monitoring
+    virtual void dumpDepGraphToFile(const std::string& path) const = 0;
+    virtual std::string createStateReport() const = 0;
+    virtual osh::I64 getDiffExtent(bool local = false) const = 0;
+    virtual osh::I64 getReacExtent(bool local = false) const = 0;
+    virtual double getEFieldTime() const noexcept = 0;
+    virtual double getRDTime() const noexcept = 0;
+    virtual double getDiffusionTime() const noexcept = 0;
+    virtual double getReactionTime() const noexcept = 0;
+    virtual std::map<std::string, double> getReactionDebugInfo(bool local = false) const = 0;
+    virtual std::map<std::string, double> getDiffusionDebugInfo(bool local = false) const = 0;
+
+    ///////////////////////////
+    // Location: Compartment //
+    ///////////////////////////
+
+    // Species
+    virtual osh::Real getCompSpecCount(const model::compartment_id& compartment,
+                                       const model::species_name& species) const = 0;
+    virtual void setCompSpecCount(const model::compartment_id& compartment,
+                                  const model::species_name& spec,
+                                  osh::Real n,
+                                  const math::DistributionMethod distribution) = 0;
 
     virtual osh::Real getCompSpecConc(const model::compartment_id& compartment,
                                       const model::species_name& species) const = 0;
-    virtual osh::Real getOwnedCompSpecConc(const model::compartment_id& compartment,
-                                           const model::species_name& species) const = 0;
-    virtual osh::Real getCompSpecCount(const model::compartment_id& compartment,
-                                       const model::species_name& species) const = 0;
+    virtual void setCompSpecConc(const model::compartment_id& compartment,
+                                 const model::species_name& spec,
+                                 osh::Real conc,
+                                 const math::DistributionMethod distribution) = 0;
+
+    virtual bool getCompSpecClamped(const model::compartment_id& compartment,
+                                    const model::species_name& spec) const = 0;
+    virtual void setCompSpecClamped(const model::compartment_id& compartment,
+                                    const model::species_name& spec,
+                                    bool clamped) = 0;
+
+    // Reactions
+    virtual osh::Real getCompReacK(const model::compartment_id& compartment,
+                                   const model::reaction_id& reac) const = 0;
+    virtual void setCompReacK(const model::compartment_id& compartment,
+                              const model::reaction_id& reac,
+                              osh::Real kcst) = 0;
+
+    virtual osh::I64 getCompReacExtent(const model::compartment_id& compartment,
+                                       const model::reaction_id& reac) const = 0;
+
+    virtual osh::I64 getCompComplexReacExtent(const model::compartment_id& compartment,
+                                              const model::complex_reaction_id& reac) const = 0;
+
+    // Diffusions
+    virtual osh::Real getCompDiffD(const model::compartment_id& compartment,
+                                   const model::diffusion_id& diff) const = 0;
+    virtual void setCompDiffD(const model::compartment_id& compartment,
+                              const model::diffusion_id& diff,
+                              osh::Real dcst) = 0;
+
+    // Complexes
+    virtual osh::Real getCompComplexCount(
+        const model::compartment_id& compartment,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& f) const = 0;
+    virtual void setCompComplexCount(
+        const model::compartment_id& compartment,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& i,
+        osh::Real num_molecules,
+        math::DistributionMethod distribution) = 0;
+
+    virtual osh::Real getCompComplexSUSCount(
+        const model::compartment_id& compartment,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& f,
+        model::complex_substate_id m) const = 0;
+
+    /////////////////////
+    // Location: Patch //
+    /////////////////////
+
+    // Species
+    virtual osh::Real getPatchSpecCount(const model::patch_id& compartment,
+                                        const model::species_name& species) const = 0;
+    virtual void setPatchSpecCount(const model::patch_id& patch_id,
+                                   const model::species_name& species,
+                                   osh::Real num_molecules,
+                                   const math::DistributionMethod) = 0;
+
+    virtual bool getPatchSpecClamped(const model::patch_id& patch,
+                                     const model::species_name& spec) const = 0;
+    virtual void setPatchSpecClamped(const model::patch_id& patch,
+                                     const model::species_name& spec,
+                                     bool clamped) = 0;
+
+    // Complexes
+    virtual osh::Real getPatchComplexCount(
+        const model::patch_id& patch,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& f) const = 0;
+    virtual void setPatchComplexCount(
+        const model::patch_id& patch,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& i,
+        osh::Real num_molecules,
+        math::DistributionMethod distribution) = 0;
+
+    virtual osh::Real getPatchComplexSUSCount(
+        const model::patch_id& cidx,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& f,
+        model::complex_substate_id m) const = 0;
+
+    // Reactions
+    virtual osh::Real getPatchSReacK(const model::patch_id& patchId,
+                                     const model::surface_reaction_id& reactionId) const = 0;
+    virtual void setPatchSReacK(const model::patch_id& patchId,
+                                const model::surface_reaction_id& reactionId,
+                                osh::Real kCst) = 0;
+
+    virtual osh::I64 getPatchSReacExtent(const model::patch_id& patch,
+                                         const model::surface_reaction_id& reac) const = 0;
+
+    virtual osh::I64 getPatchComplexSReacExtent(
+        const model::patch_id& patch,
+        const model::complex_surface_reaction_id& reac) const = 0;
+
+    virtual osh::I64 getPatchVDepSReacExtent(const model::patch_id& patch,
+                                             const model::vdep_surface_reaction_id& reac) const = 0;
+
+    virtual osh::I64 getPatchVDepComplexSReacExtent(
+        const model::patch_id& patch,
+        const model::vdep_complex_surface_reaction_id& reac) const = 0;
+
+    ////////////////////////
+    // Location: Membrane //
+    ////////////////////////
 
 #if USE_PETSC
-    virtual std::pair<mesh::triangle_ids, osh::Reals> getOhmicCurrents(
-        const model::membrane_id& membrane_id,
-        const model::channel_id& l_id) const = 0;
+    // E-field values
+    virtual MembraneResistivity getMembRes(const model::membrane_id& membrane) const = 0;
+    virtual void setMembRes(const model::membrane_id& membrane,
+                            osh::Real resistivity,
+                            osh::Real reversal_potential) = 0;
 
-    virtual osh::Real getTotalOhmicCurrent(const model::membrane_id& mem_id,
-                                           const model::channel_id& chan_id) const = 0;
+    virtual void setMembVolRes(const model::membrane_id& membrane, double ro) = 0;
+
+    virtual void setMembCapac(const model::membrane_id& membrane, double capacitance) = 0;
+
+    virtual void setMembPotential(const model::membrane_id& memb, osh::Real value) = 0;
+
+    virtual void setMembIClamp(const model::membrane_id& membrane, osh::Real current) = 0;
+
 #endif  // USE_PETSC
 
-    virtual osh::Real getOwnedCompSpecCount(const model::compartment_id& compartment,
-                                            const model::species_name& species) const = 0;
-    virtual std::pair<std::reference_wrapper<const mesh::tetrahedron_ids>, std::vector<osh::LO>>
-    getOwnedElemSpecCount(const model::species_name& species) const = 0;
+    //////////////////////////////////
+    // Location: Diffusion boundary //
+    //////////////////////////////////
 
-    virtual std::pair<std::vector<mesh::tetrahedron_global_id_t>, std::vector<osh::LO>>
-    getElemSpecCount(const model::species_name& species) const = 0;
+    virtual bool getDiffBoundarySpecDiffusionActive(
+        const mesh::diffusion_boundary_name& diffusion_boundary_name,
+        const model::species_name& spec_id) const = 0;
+    virtual void setDiffBoundarySpecDiffusionActive(
+        const mesh::diffusion_boundary_name& diffusion_boundary_name,
+        const model::species_name& spec_id,
+        bool set_active) = 0;
 
-    virtual void setOwnedElementSpecCount(const model::compartment_id& compartment,
-                                          mesh::tetrahedron_id_t element,
-                                          const model::species_name& species,
-                                          osh::Real num_mols) = 0;
+    virtual void setDiffBoundarySpecDcst(const mesh::diffusion_boundary_name& diffb,
+                                         const model::species_name& spec,
+                                         osh::Real dcst) = 0;
 
-    virtual void setDiffOpBinomialThreshold(osh::Real threshold) = 0;
+    ///////////////////////////
+    // Location: Tetrahedron //
+    ///////////////////////////
 
-    virtual void exportMolStateToVTK(const std::string& filename) = 0;
+    // Species
+    virtual void getBatchTetSpecCountsNP(const osh::GO* indices,
+                                         size_t input_size,
+                                         const model::species_name& species,
+                                         double* counts,
+                                         size_t output_size,
+                                         bool local) const = 0;
+    virtual void setBatchTetSpecCountsNP(const osh::GO* indices,
+                                         size_t input_size,
+                                         const model::species_name& s,
+                                         double* counts,
+                                         size_t output_size,
+                                         bool local) = 0;
 
-    virtual osh::I64 getDiffOpExtent(bool local = false) const = 0;
-    virtual osh::I64 getSSAOpExtent(bool local = false) const = 0;
-    virtual osh::I64 getNIterations() const noexcept = 0;
-    virtual osh::Real getIterationTimeStep() const noexcept = 0;
+    virtual void getBatchTetSpecConcsNP(const osh::GO* indices,
+                                        size_t input_size,
+                                        const model::species_name& species,
+                                        double* counts,
+                                        size_t output_size,
+                                        bool local) const = 0;
+    virtual void setBatchTetSpecConcsNP(const osh::GO* indices,
+                                        size_t input_size,
+                                        const model::species_name& s,
+                                        double* concs,
+                                        size_t output_size,
+                                        bool local) = 0;
 
-    virtual std::string createStateReport() = 0;
+    virtual bool getTetSpecClamped(osh::GO tet,
+                                   const model::species_name& s,
+                                   bool local = false) const = 0;
+    virtual void setTetSpecClamped(osh::GO tet,
+                                   const model::species_name& s,
+                                   bool clamped,
+                                   bool local = false) = 0;
 
-    virtual void init(std::unique_ptr<Statedef>&& statedef) = 0;
-    virtual void reset() = 0;
-    virtual void run(osh::Real end_time) = 0;
-    /// \brief Emit the given message on every rank.
-    /// the message is prefixed by "[RANK] "
-    void log_all(const std::string& message) const;
-    /// Emit the given message on rank 0 only
-    void log_once(const std::string& message, bool force_stdout = false) const;
-    /**
-     * log progress to stdout
-     *
-     * progress = 100*i/tot %
-     *
-     * @param i progress index
-     * @param tot progress total
-     * @param name what is progressing
-     */
-    void log_progress(const double i, const double tot, const std::string& name = "total") const;
+    // Reactions
+    virtual osh::Real getTetReacK(osh::GO tet,
+                                  const model::reaction_id reac,
+                                  bool local = false) const = 0;
+    virtual void setTetReacK(osh::GO tet,
+                             const model::reaction_id reac,
+                             osh::Real kcst,
+                             bool local = false) = 0;
 
-    virtual void setDiffusionBoundaryActive(const mesh::diffusion_boundary_name& boundary_id,
-                                            const model::species_name& species,
-                                            bool set_active) = 0;
-    const std::vector<unsigned int>& get_diffusion_rank_exchanges() const noexcept {
-        return diffusion_rank_exchanges;
-    }
+    virtual osh::Real getTetComplexReacK(osh::GO tet,
+                                         const model::complex_reaction_id reac,
+                                         bool local = false) const = 0;
+    virtual void setTetComplexReacK(osh::GO tet,
+                                    const model::complex_reaction_id reac,
+                                    osh::Real kcst,
+                                    bool local = false) = 0;
 
-    virtual SSAMethod ssaMethod() const noexcept = 0;
+    // Diffusions
+    virtual osh::Real getTetDiffD(osh::GO tet,
+                                  const model::diffusion_id diff,
+                                  osh::GO direc_tet,
+                                  bool local = false) const = 0;
+    virtual void setTetDiffD(osh::GO tet,
+                             const model::diffusion_id diff,
+                             double dcst,
+                             osh::GO direc_tet,
+                             bool local = false) = 0;
 
-    void log_diffusion_exchanges() const;
+    // E-field values
+#if USE_PETSC
+    virtual void getBatchTetVsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 osh::Real* voltages,
+                                 size_t output_size,
+                                 bool local = false) const = 0;
+    virtual void setBatchTetVsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 osh::Real* voltages,
+                                 size_t output_size,
+                                 bool local = false) = 0;
 
-    const DistMesh& getMesh() const noexcept {
-        return mesh;
-    }
+    virtual bool getTetVClamped(osh::GO vertex, bool local = false) const = 0;
+    virtual void setTetVClamped(osh::GO vertex, bool clamped, bool local = false) = 0;
+#endif  // USE_PETSC
 
-    DistMesh& getMesh() noexcept {
-        return mesh;
-    }
+    ////////////////////////
+    // Location: Triangle //
+    ////////////////////////
 
-    double getElapsedSSA() const noexcept {
-        return reactions_timer;
-    }
+    // Species
+    virtual void getBatchTriSpecCountsNP(const osh::GO* indices,
+                                         size_t input_size,
+                                         const model::species_name& s,
+                                         double* counts,
+                                         size_t output_size,
+                                         bool local) const = 0;
 
-    double getElapsedDiff() const noexcept {
-        return diffusions_timer;
-    }
+    virtual void setBatchTriSpecCountsNP(const osh::GO* indices,
+                                         size_t input_size,
+                                         const model::species_name& s,
+                                         double* counts,
+                                         size_t output_size,
+                                         bool local) = 0;
 
-    double getElapsedEField() const noexcept {
-        return efield_timer;
+    virtual bool getTriSpecClamped(osh::GO tri,
+                                   const model::species_name& s,
+                                   bool local = false) const = 0;
+    virtual void setTriSpecClamped(osh::GO tri,
+                                   const model::species_name& s,
+                                   bool clamped,
+                                   bool local = false) = 0;
+
+    // Reactions
+    virtual osh::Real getTriSReacK(osh::GO triangle,
+                                   const model::surface_reaction_id& reactionId,
+                                   bool local) const = 0;
+    virtual void setTriSReacK(osh::GO triangle,
+                              const model::surface_reaction_id& reactionId,
+                              osh::Real kCst,
+                              bool local) = 0;
+
+    virtual osh::Real getTriComplexSReacK(osh::GO triangle,
+                                          const model::complex_surface_reaction_id& reactionId,
+                                          bool local) const = 0;
+    virtual void setTriComplexSReacK(osh::GO triangle,
+                                     const model::complex_surface_reaction_id& reactionId,
+                                     osh::Real kCst,
+                                     bool local) = 0;
+
+    // E-field values
+#if USE_PETSC
+    virtual void getBatchTriVsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 osh::Real* voltages,
+                                 size_t output_size,
+                                 bool local = false) const = 0;
+    virtual void setBatchTriVsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 osh::Real* voltages,
+                                 size_t output_size,
+                                 bool local = false) = 0;
+
+    virtual void getBatchTriSReacIsNP(const osh::GO* indices,
+                                      size_t input_size,
+                                      const model::surface_reaction_id reac,
+                                      osh::Real* currents,
+                                      size_t output_size,
+                                      bool local = false) const = 0;
+
+    virtual void getBatchTriComplexSReacIsNP(const osh::GO* indices,
+                                             size_t input_size,
+                                             const model::complex_surface_reaction_id reac,
+                                             osh::Real* currents,
+                                             size_t output_size,
+                                             bool local = false) const = 0;
+
+    virtual void getBatchTriVDepSReacIsNP(const osh::GO* indices,
+                                          size_t input_size,
+                                          const model::vdep_surface_reaction_id reac,
+                                          osh::Real* currents,
+                                          size_t output_size,
+                                          bool local = false) const = 0;
+
+    virtual void getBatchTriVDepComplexSReacIsNP(const osh::GO* indices,
+                                                 size_t input_size,
+                                                 const model::vdep_complex_surface_reaction_id reac,
+                                                 osh::Real* currents,
+                                                 size_t output_size,
+                                                 bool local = false) const = 0;
+
+    virtual void getBatchTriOhmicIsNP(const osh::GO* indices,
+                                      size_t input_size,
+                                      const model::ohmic_current_id curr,
+                                      osh::Real* currents,
+                                      size_t output_size,
+                                      bool local = false) const = 0;
+
+    virtual void getBatchTriComplexOhmicIsNP(const osh::GO* indices,
+                                             size_t input_size,
+                                             const model::complex_ohmic_current_id curr,
+                                             osh::Real* currents,
+                                             size_t output_size,
+                                             bool local = false) const = 0;
+
+    virtual void getBatchTriGHKIsNP(const osh::GO* indices,
+                                    size_t input_size,
+                                    const model::ghk_current_id curr,
+                                    osh::Real* currents,
+                                    size_t output_size,
+                                    bool local = false) const = 0;
+
+    virtual void getBatchTriComplexGHKIsNP(const osh::GO* indices,
+                                           size_t input_size,
+                                           const model::complex_ghk_current_id curr,
+                                           osh::Real* currents,
+                                           size_t output_size,
+                                           bool local = false) const = 0;
+
+    virtual void getBatchTriIsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 osh::Real* currents,
+                                 size_t output_size,
+                                 bool local = false) const = 0;
+
+    virtual void getBatchTriOhmicErevsNP(const osh::GO* indices,
+                                         size_t input_size,
+                                         const model::ohmic_current_id& ohmic_current,
+                                         double* rv,
+                                         size_t output_size,
+                                         bool local) const = 0;
+
+    virtual void getBatchTriComplexOhmicErevsNP(
+        const osh::GO* indices,
+        size_t input_size,
+        const model::complex_ohmic_current_id& ohmic_current,
+        double* rv,
+        size_t output_size,
+        bool local) const = 0;
+
+    virtual void setTriOhmicErev(osh::GO triangle,
+                                 const model::ohmic_current_id& ohmic_current,
+                                 double reversal_potential,
+                                 bool local) = 0;
+
+    virtual void setTriComplexOhmicErev(osh::GO triangle,
+                                        const model::complex_ohmic_current_id& ohmic_current,
+                                        double reversal_potential,
+                                        bool local) = 0;
+
+    virtual bool getTriVClamped(osh::GO vertex, bool local = false) const = 0;
+    virtual void setTriVClamped(osh::GO vertex, bool clamped, bool local = false) = 0;
+
+    virtual osh::Real getTriIClamp(osh::GO tri, bool local = false) const = 0;
+    virtual void setTriIClamp(osh::GO tri, osh::Real current, bool local = false) = 0;
+
+    virtual MembraneResistivity getTriRes(osh::GO tri, bool local = false) const = 0;
+    virtual void setTriRes(const osh::GO tri,
+                           osh::Real res,
+                           osh::Real erev,
+                           bool local = false) = 0;
+
+    virtual osh::Real getTriCapac(osh::GO tri, bool local = false) const = 0;
+    virtual void setTriCapac(const osh::GO tri, osh::Real c, bool local = false) = 0;
+
+#endif  // USE_PETSC
+
+    //////////////////////
+    // Location: Vertex //
+    //////////////////////
+
+#if USE_PETSC
+    // E-field value
+    virtual void getBatchVertVsNP(const osh::GO* indices,
+                                  size_t input_size,
+                                  osh::Real* voltages,
+                                  size_t output_size,
+                                  bool local = false) const = 0;
+    virtual void setBatchVertVsNP(const osh::GO* indices,
+                                  size_t input_size,
+                                  osh::Real* voltages,
+                                  size_t output_size,
+                                  bool local = false) = 0;
+
+    virtual bool getVertVClamped(osh::GO vertex, bool local = false) const = 0;
+    virtual void setVertVClamped(osh::GO vertex, bool clamped, bool local = false) = 0;
+
+    virtual osh::Real getVertIClamp(osh::GO vertex, bool local = false) const = 0;
+    virtual void setVertIClamp(osh::GO vertex, osh::Real current, bool local = false) = 0;
+
+#endif  // USE_PETSC
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Convenience methods
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////
+    // Location: Tetrahedron //
+    ///////////////////////////
+    double getTetSpecCount(osh::GO tet, const model::species_name& s, bool local) const;
+    void setTetSpecCount(osh::GO tet, const model::species_name& s, double count, bool local);
+
+    double getTetSpecConc(osh::GO tet, const model::species_name& s, bool local) const;
+    void setTetSpecConc(osh::GO tet, const model::species_name& s, double conc, bool local);
+
+#if USE_PETSC
+    double getTetV(osh::GO tet, bool local) const;
+    void setTetV(osh::GO tet, double v, bool local);
+#endif  // USE_PETSC
+
+    ////////////////////////
+    // Location: Triangle //
+    ////////////////////////
+    double getTriSpecCount(osh::GO tri, const model::species_name& s, bool local) const;
+    void setTriSpecCount(osh::GO tri, const model::species_name& s, double count, bool local);
+
+#if USE_PETSC
+    double getTriV(osh::GO tri, bool local) const;
+    void setTriV(osh::GO tri, double v, bool local);
+    double getTriOhmicErev(osh::GO tri, const model::ohmic_current_id& curr, bool local) const;
+    double getTriComplexOhmicErev(osh::GO tri,
+                                  const model::complex_ohmic_current_id& curr,
+                                  bool local) const;
+    double getTriSReacI(osh::GO tri, const model::surface_reaction_id& reac, bool local) const;
+    double getTriComplexSReacI(osh::GO tri,
+                               const model::complex_surface_reaction_id& reac,
+                               bool local) const;
+    double getTriVDepSReacI(osh::GO tri,
+                            const model::vdep_surface_reaction_id& reac,
+                            bool local) const;
+    double getTriVDepComplexSReacI(osh::GO tri,
+                                   const model::vdep_complex_surface_reaction_id& reac,
+                                   bool local) const;
+    double getTriOhmicI(osh::GO tri, const model::ohmic_current_id& curr, bool local) const;
+    double getTriComplexOhmicI(osh::GO tri,
+                               const model::complex_ohmic_current_id& curr,
+                               bool local) const;
+    double getTriGHKI(osh::GO tri, const model::ghk_current_id& curr, bool local) const;
+    double getTriComplexGHKI(osh::GO tri,
+                             const model::complex_ghk_current_id& curr,
+                             bool local) const;
+    double getTriI(osh::GO tri, bool local) const;
+#endif  // USE_PETSC
+
+    //////////////////////
+    // Location: Vertex //
+    //////////////////////
+#if USE_PETSC
+    double getVertV(osh::GO vert, bool local) const;
+    void setVertV(osh::GO vert, double v, bool local);
+#endif  // USE_PETSC
+
+  protected:
+    inline MPI_Comm comm() const noexcept {
+        return mesh.comm_impl();
     }
 
     const int comm_rank;
     const int comm_size;
 
-    inline MPI_Comm comm() const noexcept {
-        return getMesh().comm_impl();
-    }
-
-  protected:
-    /**
-     * \name for diffusion debug only
-     * \{
-     */
-    /// matrix N, N with N the number of ranks
-    /// M[i, j] provides number of molecules that went from rank i to rank j
-    std::vector<unsigned int> diffusion_rank_exchanges;
-    /** \} */
     DistMesh& mesh;
     rng::RNG& rng;
+
     /// total time in seconds spent performing reactions
     double reactions_timer{};
     /// total time in seconds spent performing diffusions
     double diffusions_timer{};
     /// total time in seconds spent performing efield
     double efield_timer{};
-
-    std::ostream& outstream;
 };
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
 template <SSAMethod SSA = SSAMethod::SSA,
-          NextEventSearchMethod SearchMethod = NextEventSearchMethod::Direct>
+          NextEventSearchMethod SearchMethod = NextEventSearchMethod::Direct,
+          DiffusionMethod DiffMethod = DiffusionMethod::ConstantDiffDt>
 class OmegaHSimulation: public Simulation {
   public:
     using super_type = Simulation;
     using mesh_type = DistMesh;
 
-    OmegaHSimulation(mesh_type& t_mesh,
-                     rng::RNG& t_rng,
-                     std::ostream& t_outstream,
-                     bool t_indepKProcs);
+    OmegaHSimulation(steps::model::Model& model,
+                     mesh_type& t_mesh,
+                     const rng::RNGptr& r,
+                     bool t_indepKProcs,
+                     bool isEfield);
+    virtual ~OmegaHSimulation();
 
-    void setCompSpecCount(const model::compartment_id& compartment,
-                          const model::species_name& species,
-                          osh::Real num_molecules,
-                          const math::DistributionMethod distribution =
-                              math::DistributionMethod::DIST_UNIFORM) override;
-    void setCompSpecCount(const model::compartment_id& compartment,
-                          const std::vector<CompartmentCount>& counts,
-                          const math::DistributionMethod distribution =
-                              math::DistributionMethod::DIST_UNIFORM) override;
-    void setCompSpecConc(
-        const model::compartment_id& compartment,
-        const model::species_name& species,
-        osh::Real concentration,
-        const math::DistributionMethod distribution = math::DistributionMethod::DIST_UNIFORM);
-    void setCompSpecConc(const model::compartment_id& compartment,
-                         const std::vector<CompartmentConc>& concentrations,
-                         const math::DistributionMethod distribution =
-                             math::DistributionMethod::DIST_UNIFORM) override;
-    void setOwnedElementSpecCount(const model::compartment_id& compartment,
-                                  const mesh::tetrahedron_id_t element,
-                                  const model::species_name& species,
-                                  osh::Real num_molecules) override;
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Required methods
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    osh::Real getCompSpecConc(const model::compartment_id& compartment,
-                              const model::species_name& species) const override;
-    osh::Real getOwnedCompSpecConc(const model::compartment_id& compartment,
-                                   const model::species_name& species) const override;
-    osh::Real getCompSpecCount(const model::compartment_id& compartment,
-                               const model::species_name& species) const override;
+    /////////////////////
+    // General methods //
+    /////////////////////
 
-#if USE_PETSC
-    std::pair<mesh::triangle_ids, osh::Reals> getOhmicCurrents(
-        const model::membrane_id& mem_id,
-        const model::channel_id& chan_id) const override;
-    osh::Real getTotalOhmicCurrent(const model::membrane_id& mem_id,
-                                   const model::channel_id& chan_id) const override;
-#endif  // USE_PETSC
-    /**
-     * \brief Distribute a certain number of molecules on a patch.
-     *
-     * Check setCompCount for more details on distribution methods
-     *
-     * \param patch patch identifier
-     * \param species species name
-     * \param num_molecules number of molecules to distribute among the patch
-     * \param is_uniform_distribution true: uniform distribution, false:
-     * multinomial
-     */
-    void setPatchSpecCount(const model::patch_id& patch,
-                           const model::species_name& species,
-                           osh::Real num_molecules,
-                           const math::DistributionMethod distribution =
-                               math::DistributionMethod::DIST_UNIFORM) override;
-    /**
-     * \brief Distribute molecules on multiple patches.
-     *
-     * \param counts list of molecules assignments on patches
-     */
-    void setPatchSpecCount(const patch_counts_t& counts,
-                           const math::DistributionMethod distribution =
-                               math::DistributionMethod::DIST_UNIFORM) override;
-
-    /**
-     * \brief Get the total number of molecules on a patch.
-     *
-     * \param patch patch identifier
-     * \param species species name
-     */
-    osh::Real getPatchSpecCount(const model::patch_id& patch,
-                                const model::species_name& species) const override;
-
-    osh::Real getOwnedCompSpecCount(const model::compartment_id& compartment,
-                                    const model::species_name& species) const override;
-
-    std::pair<std::reference_wrapper<const mesh::tetrahedron_ids>, std::vector<osh::LO>>
-    getOwnedElemSpecCount(const model::species_name& species) const override;
-
-    std::pair<std::vector<mesh::tetrahedron_global_id_t>, std::vector<osh::LO>> getElemSpecCount(
-        const model::species_name& species) const override;
-
-    void getBatchElemValsNP(const osh::GO* indices,
-                            size_t input_size,
-                            const model::species_name& species,
-                            osh::Real* counts,
-                            bool useConc = false,
-                            bool local = false) const;
-
-    void setBatchElemValsNP(const osh::GO* indices,
-                            size_t input_size,
-                            const model::species_name& species,
-                            osh::Real* counts,
-                            bool useConc = false,
-                            bool local = false) const;
-
-    void getBatchBoundSpecCountNP(const osh::GO* indices,
-                                  size_t input_size,
-                                  const model::species_name& species,
-                                  osh::Real* counts,
-                                  bool local = false) const;
-
-    void setBatchBoundSpecCountNP(const osh::GO* indices,
-                                  size_t input_size,
-                                  const model::species_name& species,
-                                  osh::Real* counts,
-                                  bool local = false) const;
-
-    void getBatchVertVsNP(const osh::GO* indices,
-                          size_t input_size,
-                          osh::Real* voltages,
-                          bool local = false) const;
-
-    void getBatchTriVsNP(const osh::GO* indices,
-                         size_t input_size,
-                         osh::Real* voltages,
-                         bool local = false) const;
-
-    void getBatchTetVsNP(const osh::GO* indices,
-                         size_t input_size,
-                         osh::Real* voltages,
-                         bool local = false) const;
-
-    void getBatchTriOhmicIsNP(const osh::GO* indices,
-                              size_t input_size,
-                              const model::ohmic_current_id curr,
-                              osh::Real* currents,
-                              bool local = false) const;
-
-    void getBatchTriGHKIsNP(const osh::GO* indices,
-                            size_t input_size,
-                            const model::ghk_current_id curr,
-                            osh::Real* currents,
-                            bool local = false) const;
-
-    void setDiffOpBinomialThreshold(osh::Real threshold) override;
-    osh::Real getIterationTimeStep() const noexcept override;
-
-    void exportMolStateToVTK(const std::string& filename) override;
-
-    osh::I64 getDiffOpExtent(bool local = false) const override;
-    osh::I64 getSSAOpExtent(bool local = false) const override;
-    osh::I64 getNIterations() const noexcept override;
-
-    std::string createStateReport() override;
-
-    void init(std::unique_ptr<Statedef>&& t_statedef) override;
+    // Simulation control
     void reset() override;
-    /** Run the simulation up to end_time from state_time.
-     *
-     * Every time run is called its results are checkpointed at state_time. This
-     * function decides the time step for evolve (which moves the simulation one
-     * time step further and updates state_time). If end_time-state_time is not
-     * a multiple of the time step we reduce the last time step to align it with
-     * end_time.
-     *
-     * end_time-state_time is usually the sampling frequency of  the simulation.
-     * In other words, for every recording point at time rt = i*dt we call
-     * simulation.run(rt) and we record results. In this sense it is the
-     * sampling frequency. Internally the simulation proceeds with its own time
-     * steps (efield_dt and reaction-diffusion dt). As explaine,d time steps can
-     * be reduced to align the simulation to the recordings.
-     *
-     * @param end_time : run up to end_time from state_time.
-     */
     void run(osh::Real end_time) override;
 
-    inline osh::Real getTime() const noexcept {
+    // Data getting / setting
+    inline osh::Real getTime() const noexcept override {
         return state_time;
     }
 
@@ -467,14 +644,512 @@ class OmegaHSimulation: public Simulation {
         return SSA;
     }
 
-    /// Get temperature
-    inline osh::Real getTemp() const noexcept {
+    inline osh::Real getTemp() const noexcept override {
         return statedef->getTemp();
     }
-    /// Set temperature
-    inline void setTemp(const osh::Real temp) noexcept {
+    inline void setTemp(const osh::Real temp) noexcept override {
         statedef->setTemp(temp);
     }
+
+    osh::Real getDiffusionTolerance() const override;
+    void setDiffusionTolerance(osh::Real tolerance) override;
+
+    osh::Real getDiffusionNormalApproximationThreshold() const override;
+    void setDiffusionNormalApproximationThreshold(osh::Real threshold) override;
+
+    osh::Real getDiffusionCrankNicolsonThreshold() const override;
+    void setDiffusionCrankNicolsonThreshold(osh::Real threshold) override;
+
+    uint getDiffusionLeapThreshold() const override;
+    void setDiffusionLeapThreshold(uint leap_thresh) override;
+
+    uint getDiffusionMaxDtSkips() const override;
+    void setDiffusionMaxDtSkips(uint max_skips) override;
+
+    osh::Real getDiffusionMinDtFactor() const override;
+    void setDiffusionMinDtFactor(osh::Real factor) override;
+
+    uint getReactionSSAThreshold() const override;
+    void setReactionSSAThreshold(uint thresh) override;
+
+    uint getReactionSSASteps() const override;
+    void setReactionSSASteps(uint steps) override;
+
+    uint getReactionLComputePeriod() const override;
+    void setReactionLComputePeriod(uint period) override;
+
+    osh::Real getReactionTolerance() const override;
+    void setReactionTolerance(osh::Real tolerance) override;
+
+    osh::Real getReactionTheta() const override;
+    void setReactionTheta(osh::Real theta) override;
+
+    std::string getSolverName() const override;
+    void setDiffApplyThreshold(osh::Real threshold) override;
+
+#if USE_PETSC
+    // E-field specific
+
+    osh::Real getEfieldDT() const override;
+    void setEfieldDT(const osh::Real dt) const override;
+
+    void setPetscOptions(const std::string& s) override;
+
+#endif  // USE_PETSC
+
+    // Debugging / monitoring
+
+    /// Dump the dependency graph of kproc in a file specified by path
+    void dumpDepGraphToFile(const std::string& path) const override;
+
+    std::string createStateReport() const override;
+
+    osh::I64 getDiffExtent(bool local = false) const override;
+    osh::I64 getReacExtent(bool local = false) const override;
+
+    double getEFieldTime() const noexcept override {
+        return efield_timer;
+    }
+    double getRDTime() const noexcept override {
+        return diffusions_timer + reactions_timer;
+    }
+    double getDiffusionTime() const noexcept override {
+        return diffusions_timer;
+    }
+    double getReactionTime() const noexcept override {
+        return reactions_timer;
+    }
+    std::map<std::string, double> getReactionDebugInfo(bool local = false) const override;
+    std::map<std::string, double> getDiffusionDebugInfo(bool local = false) const override;
+
+    ///////////////////////////
+    // Location: Compartment //
+    ///////////////////////////
+
+    // Species
+    osh::Real getCompSpecCount(const model::compartment_id& compartment,
+                               const model::species_name& species) const override;
+    void setCompSpecCount(const model::compartment_id& compartment,
+                          const model::species_name& spec,
+                          osh::Real n,
+                          const math::DistributionMethod distribution) override;
+    osh::Real getCompSpecConc(const model::compartment_id& compartment,
+                              const model::species_name& species) const override;
+    void setCompSpecConc(const model::compartment_id& compartment,
+                         const model::species_name& spec,
+                         osh::Real conc,
+                         const math::DistributionMethod distribution) override;
+
+    bool getCompSpecClamped(const model::compartment_id& compartment,
+                            const model::species_name& spec) const override;
+    void setCompSpecClamped(const model::compartment_id& compartment,
+                            const model::species_name& spec,
+                            bool clamped) override;
+
+    // Reactions
+    osh::Real getCompReacK(const model::compartment_id& compartment,
+                           const model::reaction_id& reac) const override;
+    void setCompReacK(const model::compartment_id& compartment,
+                      const model::reaction_id& reac,
+                      osh::Real kcst) override;
+
+    osh::I64 getCompReacExtent(const model::compartment_id& compartment,
+                               const model::reaction_id& reac) const override;
+
+    osh::I64 getCompComplexReacExtent(const model::compartment_id& compartment,
+                                      const model::complex_reaction_id& reac) const override;
+
+    // Diffusions
+    osh::Real getCompDiffD(const model::compartment_id& compartment,
+                           const model::diffusion_id& diff) const override;
+    void setCompDiffD(const model::compartment_id& compartment,
+                      const model::diffusion_id& diff,
+                      osh::Real dcst) override;
+
+    // Complexes
+    osh::Real getCompComplexCount(
+        const model::compartment_id& compartment,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& f) const override;
+    void setCompComplexCount(const model::compartment_id& compartment,
+                             const model::complex_name& complex,
+                             const std::vector<std::vector<steps::model::SubunitStateFilter>>& i,
+                             osh::Real num_molecules,
+                             math::DistributionMethod distribution) override;
+
+    osh::Real getCompComplexSUSCount(
+        const model::compartment_id& compartment,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& f,
+        model::complex_substate_id m) const override;
+
+    /////////////////////
+    // Location: Patch //
+    /////////////////////
+
+    // Species
+    osh::Real getPatchSpecCount(const model::patch_id& patch,
+                                const model::species_name& species) const override;
+    void setPatchSpecCount(const model::patch_id& patch,
+                           const model::species_name& species,
+                           osh::Real num_molecules,
+                           const math::DistributionMethod distribution) override;
+
+    bool getPatchSpecClamped(const model::patch_id& patch,
+                             const model::species_name& spec) const override;
+    void setPatchSpecClamped(const model::patch_id& patch,
+                             const model::species_name& spec,
+                             bool clamped) override;
+
+    // Complexes
+    osh::Real getPatchComplexCount(
+        const model::patch_id& patch,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& f) const override;
+    void setPatchComplexCount(const model::patch_id& patch,
+                              const model::complex_name& complex,
+                              const std::vector<std::vector<steps::model::SubunitStateFilter>>& i,
+                              osh::Real num_molecules,
+                              math::DistributionMethod distribution) override;
+
+    osh::Real getPatchComplexSUSCount(
+        const model::patch_id& cidx,
+        const model::complex_name& complex,
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& f,
+        model::complex_substate_id m) const override;
+
+    // Reactions
+    osh::Real getPatchSReacK(const model::patch_id& patchId,
+                             const model::surface_reaction_id& reactionId) const override;
+    void setPatchSReacK(const model::patch_id& patchId,
+                        const model::surface_reaction_id& reactionId,
+                        osh::Real kCst) override;
+
+    osh::I64 getPatchSReacExtent(const model::patch_id& patch,
+                                 const model::surface_reaction_id& reac) const override;
+
+    osh::I64 getPatchComplexSReacExtent(
+        const model::patch_id& patch,
+        const model::complex_surface_reaction_id& reac) const override;
+
+    osh::I64 getPatchVDepSReacExtent(const model::patch_id& patch,
+                                     const model::vdep_surface_reaction_id& reac) const override;
+
+    osh::I64 getPatchVDepComplexSReacExtent(
+        const model::patch_id& patch,
+        const model::vdep_complex_surface_reaction_id& reac) const override;
+
+    ////////////////////////
+    // Location: Membrane //
+    ////////////////////////
+
+#if USE_PETSC
+    // E-field values
+    MembraneResistivity getMembRes(const model::membrane_id& membrane) const override;
+    void setMembRes(const model::membrane_id& membrane,
+                    osh::Real resistivity,
+                    osh::Real reversal_potential) override;
+
+    void setMembVolRes(const model::membrane_id& membrane, double ro) override;
+
+    void setMembCapac(const model::membrane_id& membrane, double capacitance) override;
+
+    void setMembPotential(const model::membrane_id& memb, osh::Real value) override;
+
+    void setMembIClamp(const model::membrane_id& membrane, osh::Real current) override;
+
+#endif  // USE_PETSC
+
+    //////////////////////////////////
+    // Location: Diffusion boundary //
+    //////////////////////////////////
+
+    bool getDiffBoundarySpecDiffusionActive(
+        const mesh::diffusion_boundary_name& diffusion_boundary_name,
+        const model::species_name& spec_id) const override;
+    void setDiffBoundarySpecDiffusionActive(
+        const mesh::diffusion_boundary_name& diffusion_boundary_name,
+        const model::species_name& spec_id,
+        bool set_active) override;
+
+    void setDiffBoundarySpecDcst(const mesh::diffusion_boundary_name& diffb,
+                                 const model::species_name& spec,
+                                 osh::Real dcst) override;
+
+    ///////////////////////////
+    // Location: Tetrahedron //
+    ///////////////////////////
+
+    // Species
+    void getBatchTetSpecCountsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 const model::species_name& species,
+                                 double* counts,
+                                 size_t output_size,
+                                 bool local) const override;
+    void setBatchTetSpecCountsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 const model::species_name& s,
+                                 double* counts,
+                                 size_t output_size,
+                                 bool local) override;
+
+    void getBatchTetSpecConcsNP(const osh::GO* indices,
+                                size_t input_size,
+                                const model::species_name& species,
+                                double* counts,
+                                size_t output_size,
+                                bool local) const override;
+    void setBatchTetSpecConcsNP(const osh::GO* indices,
+                                size_t input_size,
+                                const model::species_name& s,
+                                double* concs,
+                                size_t output_size,
+                                bool local) override;
+
+    bool getTetSpecClamped(osh::GO tet,
+                           const model::species_name& s,
+                           bool local = false) const override;
+    void setTetSpecClamped(osh::GO tet,
+                           const model::species_name& s,
+                           bool clamped,
+                           bool local = false) override;
+
+    // Reactions
+    osh::Real getTetReacK(osh::GO tet,
+                          const model::reaction_id reac,
+                          bool local = false) const override;
+    void setTetReacK(osh::GO tet,
+                     const model::reaction_id reac,
+                     osh::Real kcst,
+                     bool local = false) override;
+
+    osh::Real getTetComplexReacK(osh::GO tet,
+                                 const model::complex_reaction_id reac,
+                                 bool local = false) const override;
+    void setTetComplexReacK(osh::GO tet,
+                            const model::complex_reaction_id reac,
+                            osh::Real kcst,
+                            bool local = false) override;
+
+    // Diffusions
+    osh::Real getTetDiffD(osh::GO tet,
+                          const model::diffusion_id diff,
+                          osh::GO direc_tet,
+                          bool local = false) const override;
+    void setTetDiffD(osh::GO tet,
+                     const model::diffusion_id diff,
+                     double dcst,
+                     osh::GO direc_tet,
+                     bool local = false) override;
+
+#if USE_PETSC
+    // E-field values
+    void getBatchTetVsNP(const osh::GO* indices,
+                         size_t input_size,
+                         osh::Real* voltages,
+                         size_t output_size,
+                         bool local = false) const override;
+    void setBatchTetVsNP(const osh::GO* indices,
+                         size_t input_size,
+                         osh::Real* voltages,
+                         size_t output_size,
+                         bool local = false) override;
+
+    bool getTetVClamped(osh::GO vertex, bool local = false) const override;
+    void setTetVClamped(osh::GO vertex, bool clamped, bool local = false) override;
+#endif  // USE_PETSC
+
+    ////////////////////////
+    // Location: Triangle //
+    ////////////////////////
+
+    // Species
+    void getBatchTriSpecCountsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 const model::species_name& s,
+                                 double* counts,
+                                 size_t output_size,
+                                 bool local) const override;
+
+    void setBatchTriSpecCountsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 const model::species_name& s,
+                                 double* counts,
+                                 size_t output_size,
+                                 bool local) override;
+
+    bool getTriSpecClamped(osh::GO tri,
+                           const model::species_name& s,
+                           bool local = false) const override;
+    void setTriSpecClamped(osh::GO tri,
+                           const model::species_name& s,
+                           bool clamped,
+                           bool local = false) override;
+
+    // Reactions
+    osh::Real getTriSReacK(osh::GO triangle,
+                           const model::surface_reaction_id& reactionId,
+                           bool local) const override;
+    void setTriSReacK(osh::GO triangle,
+                      const model::surface_reaction_id& reactionId,
+                      osh::Real kCst,
+                      bool local) override;
+
+    osh::Real getTriComplexSReacK(osh::GO triangle,
+                                  const model::complex_surface_reaction_id& reactionId,
+                                  bool local) const override;
+    void setTriComplexSReacK(osh::GO triangle,
+                             const model::complex_surface_reaction_id& reactionId,
+                             osh::Real kCst,
+                             bool local) override;
+
+#if USE_PETSC
+    // E-field values
+    void getBatchTriVsNP(const osh::GO* indices,
+                         size_t input_size,
+                         osh::Real* voltages,
+                         size_t output_size,
+                         bool local = false) const override;
+    void setBatchTriVsNP(const osh::GO* indices,
+                         size_t input_size,
+                         osh::Real* voltages,
+                         size_t output_size,
+                         bool local = false) override;
+
+    void getBatchTriSReacIsNP(const osh::GO* indices,
+                              size_t input_size,
+                              const model::surface_reaction_id reac,
+                              osh::Real* currents,
+                              size_t output_size,
+                              bool local = false) const override;
+
+    void getBatchTriComplexSReacIsNP(const osh::GO* indices,
+                                     size_t input_size,
+                                     const model::complex_surface_reaction_id reac,
+                                     osh::Real* currents,
+                                     size_t output_size,
+                                     bool local = false) const override;
+
+    void getBatchTriVDepSReacIsNP(const osh::GO* indices,
+                                  size_t input_size,
+                                  const model::vdep_surface_reaction_id reac,
+                                  osh::Real* currents,
+                                  size_t output_size,
+                                  bool local = false) const override;
+
+    void getBatchTriVDepComplexSReacIsNP(const osh::GO* indices,
+                                         size_t input_size,
+                                         const model::vdep_complex_surface_reaction_id reac,
+                                         osh::Real* currents,
+                                         size_t output_size,
+                                         bool local = false) const override;
+
+    void getBatchTriOhmicIsNP(const osh::GO* indices,
+                              size_t input_size,
+                              const model::ohmic_current_id curr,
+                              osh::Real* currents,
+                              size_t output_size,
+                              bool local = false) const override;
+
+    void getBatchTriComplexOhmicIsNP(const osh::GO* indices,
+                                     size_t input_size,
+                                     const model::complex_ohmic_current_id curr,
+                                     osh::Real* currents,
+                                     size_t output_size,
+                                     bool local = false) const override;
+
+    void getBatchTriGHKIsNP(const osh::GO* indices,
+                            size_t input_size,
+                            const model::ghk_current_id curr,
+                            osh::Real* currents,
+                            size_t output_size,
+                            bool local = false) const override;
+
+    void getBatchTriComplexGHKIsNP(const osh::GO* indices,
+                                   size_t input_size,
+                                   const model::complex_ghk_current_id curr,
+                                   osh::Real* currents,
+                                   size_t output_size,
+                                   bool local = false) const override;
+
+    void getBatchTriIsNP(const osh::GO* indices,
+                         size_t input_size,
+                         osh::Real* currents,
+                         size_t output_size,
+                         bool local = false) const override;
+
+    void getBatchTriOhmicErevsNP(const osh::GO* indices,
+                                 size_t input_size,
+                                 const model::ohmic_current_id& ohmic_current,
+                                 double* rv,
+                                 size_t output_size,
+                                 bool local) const override;
+
+    void getBatchTriComplexOhmicErevsNP(const osh::GO* indices,
+                                        size_t input_size,
+                                        const model::complex_ohmic_current_id& ohmic_current,
+                                        double* rv,
+                                        size_t output_size,
+                                        bool local) const override;
+
+    void setTriOhmicErev(osh::GO triangle,
+                         const model::ohmic_current_id& ohmic_current,
+                         double reversal_potential,
+                         bool local) override;
+    void setTriComplexOhmicErev(osh::GO triangle,
+                                const model::complex_ohmic_current_id& ohmic_current,
+                                double reversal_potential,
+                                bool local) override;
+
+    bool getTriVClamped(osh::GO vertex, bool local = false) const override;
+    void setTriVClamped(osh::GO vertex, bool clamped, bool local = false) override;
+
+    osh::Real getTriIClamp(osh::GO tri, bool local = false) const override;
+    void setTriIClamp(osh::GO tri, osh::Real current, bool local = false) override;
+
+    MembraneResistivity getTriRes(osh::GO tri, bool local = false) const override;
+    void setTriRes(const osh::GO tri, osh::Real res, osh::Real erev, bool local = false) override;
+
+    osh::Real getTriCapac(osh::GO tri, bool local = false) const override;
+    void setTriCapac(const osh::GO tri, osh::Real c, bool local = false) override;
+
+
+#endif  // USE_PETSC
+
+    //////////////////////
+    // Location: Vertex //
+    //////////////////////
+
+#if USE_PETSC
+    // E-field value
+    void getBatchVertVsNP(const osh::GO* indices,
+                          size_t input_size,
+                          osh::Real* voltages,
+                          size_t output_size,
+                          bool local = false) const override;
+    void setBatchVertVsNP(const osh::GO* indices,
+                          size_t input_size,
+                          osh::Real* voltages,
+                          size_t output_size,
+                          bool local = false) override;
+
+    bool getVertVClamped(osh::GO vertex, bool local = false) const override;
+    void setVertVClamped(osh::GO vertex, bool clamped, bool local = false) override;
+
+    osh::Real getVertIClamp(osh::GO vertex, bool local = false) const override;
+    void setVertIClamp(osh::GO vertex, osh::Real current, bool local = false) override;
+
+#endif  // USE_PETSC
+
+  private:
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Internal methods
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /////////////////////
+    // General methods //
+    /////////////////////
 
     /**
      * Fill vectors with the number of species per elements, owned elements, and
@@ -485,238 +1160,7 @@ class OmegaHSimulation: public Simulation {
                                                  osh::LOs& num_species_per_owned_elems,
                                                  osh::LOs& num_species_per_elems,
                                                  std::optional<osh::LOs>& num_species_per_bounds);
-
-    virtual void setPotential(osh::Real value) override {
-        const auto assign = OMEGA_H_LAMBDA(osh::LO v) {
-            input->potential_on_vertices_w[v] = value;
-        };
-        osh::parallel_for(input->potential_on_vertices_w.size(),
-                          assign,
-                          "OmegaHSimulation::setPotential");
-    }
-
-    /**
-     * \brief Set the potential of a membrane and its associated conductor
-     * volume
-     *
-     * \param memb membrane identifier
-     * \param value potential in Volts
-     */
-    void setMembPotential(const model::membrane_id& memb, osh::Real value);
-
-    /**
-     * \brief Set the leakage parameters of a membrane:
-     * the resistivity and the reversal potential
-     *
-     * \param membrane membrane identifier
-     * \param resistivity resistivity
-     * \param reversal_potential reversal potential
-     */
-    void setMembRes(const model::membrane_id& membrane,
-                    osh::Real resistivity,
-                    osh::Real reversal_potential);
-
-    /**
-     * \brief Get leakage parameters of a membrane:
-     * the resistivity and the reversal potential
-     *
-     * \param membrane membrane identifier
-     */
-    MembraneResistivity getMembRes(const model::membrane_id& membrane);
-
-    /** Get resistivity and reversal potential of leak on a triangle
-     *
-     * \param tri triangle identifier
-     * \return resistivity and reversal potential
-     */
-    MembraneResistivity getTriRes(osh::GO tri, bool local = false) const;
-
-    /** Set resistivity and reversal potential of leak on a triangle
-     *
-     * \param tri triangle identifier
-     * \param res resistivity
-     * \param erev reversal potential
-     */
-    void setTriRes(const osh::GO tri, osh::Real res, osh::Real erev, bool local = false);
-
-    /** Get capacitance on a triangle
-     *
-     * \param tri triangle identifier
-     * \return capacitance
-     */
-    osh::Real getTriCapac(osh::GO tri, bool local = false) const;
-
-    /** Set capacitance on a triangle
-     *
-     * \param tri triangle identifier
-     * \param c capacitance
-     */
-    void setTriCapac(const osh::GO tri, osh::Real c, bool local = false);
-
-    /** Get current on a vertex
-     *
-     * \param vertex: global vertex identifier
-     * \return current (Amps)
-     */
-    osh::Real getVertIClamp(osh::GO vertex, bool local = false) const;
-
-    /** Set current on vertex
-     *
-     * /param vertex: global vertex index
-     * /param current: current (Amps)
-     */
-    void setVertIClamp(osh::GO vertex, osh::Real current, bool local = false);
-
-    double getTriOhmicErev(osh::GO triangle,
-                           const model::ohmic_current_id& ohmic_current,
-                           bool local) const;
-    void getBatchTriOhmicErevsNP(const gsl::span<const osh::GO>& triangles,
-                                 const model::ohmic_current_id& ohmic_current,
-                                 const gsl::span<double>& erev,
-                                 bool local) const;
-    void setTriOhmicErev(osh::GO triangle,
-                         const model::ohmic_current_id& ohmic_current,
-                         double reversal_potential,
-                         bool local);
-
-    /** \brief Return GHK boundaries */
-    const std::vector<mesh::triangle_id_t>& getGHKBoundaries() const override;
-    /** \brief Return GHK current */
-    virtual osh::Reals getGHKCurrents() const override;
-    /** \brief Return GHK current for all the processes */
-    virtual osh::Real getTotalGHKCurrent() const override;
-    /** \brief Set a reaction constant in simulation */
-    void setKCstSReac(const model::patch_id& patchId,
-                      container::surface_reaction_id reactionId,
-                      osh::Real kCst) override {
-        data->kproc_state.surfaceReactions().updateKCst(patchId, reactionId, kCst, mesh);
-    }
-
-    void setPatchSReacK(const model::patch_id& patchId,
-                        const model::surface_reaction_id& reactionId,
-                        osh::Real kCst);
-
-    osh::Reals getPotentialOnVertices(const model::patch_id& patch) override;
-
-    osh::Real getMaxPotentialOnVertices(const model::patch_id& patch) override {
-        return mesh.get_MPI_max(getPotentialOnVertices(patch));
-    }
-
-    osh::Real getMinPotentialOnVertices(const model::patch_id& patch) override {
-        return mesh.get_MPI_min(getPotentialOnVertices(patch));
-    }
-
-    osh::Reals getPotentialOnTriangles(const model::patch_id& patch) override;
-
-    osh::Real getMaxPotentialOnTriangles(const model::patch_id& patch) override {
-        return mesh.get_MPI_max(getPotentialOnTriangles(patch));
-    }
-
-    osh::Real getMinPotentialOnTriangles(const model::patch_id& patch) override {
-        return mesh.get_MPI_min(getPotentialOnTriangles(patch));
-    }
-
-    osh::Real getLocalMaxPotentialOnVertices(const model::patch_id& patch) override {
-        auto vals = getPotentialOnVertices(patch);
-        if (!vals.size()) {
-            return std::numeric_limits<osh::Real>::quiet_NaN();
-        } else {
-            return *std::max_element(vals.begin(), vals.end());
-        }
-    }
-
-    osh::Real getLocalMinPotentialOnVertices(const model::patch_id& patch) override {
-        auto vals = getPotentialOnVertices(patch);
-        if (!vals.size()) {
-            return std::numeric_limits<osh::Real>::quiet_NaN();
-        } else {
-            return *std::min_element(vals.begin(), vals.end());
-        }
-    }
-
-#if USE_PETSC
-    std::optional<osh::Real> getEfieldDt() const override {
-        if (data->efield)
-            return data->efield->getDt();
-        return std::nullopt;
-    }
-
-    void setEfieldDt(const osh::Real dt) const override {
-        if (data->efield)
-            data->efield->setDt(dt);
-        else
-            throw std::logic_error("NO E-FIELD WHERE I CAN ASSIGN DT");
-    }
-
-    void setPetscOptions() {
-        if (data->efield) {
-            data->efield->setPetscOptions();
-        } else {
-            throw std::logic_error("E-Field is not in use.");
-        }
-    }
-#endif  // USE_PETSC
-
-    void setDiffusionBoundaryActive(const mesh::diffusion_boundary_name& diffusion_boundary_name,
-                                    const model::species_name& spec_id,
-                                    bool set_active) override;
-
-    bool getDiffusionBoundaryActive(const mesh::diffusion_boundary_name& diffusion_boundary_name,
-                                    const model::species_name& spec_id);
-
-    /**
-     * Set a current clamp on a membrane
-     * \param membrane membrane identifier
-     * \param current stimulus to apply (Amps)
-     */
-    void setMembIClamp(const model::membrane_id& membrane, osh::Real current);
-
-    /// Dump the dependency graph of kproc in a file specified by path
-    void dumpDepGraphToFile(const std::string& path) const;
-
-  private:
-    /**
-     * Update the number of molecules of a certain species in the current rank
-     *
-     * In case is_uniform is false, the distribution of molecules among the
-     * elements is stochastic following the probability: V_elem/V_rank where
-     * V_elem is the volume of an element and V_rank is the volume of all the
-     * elements owned by the rank
-     *
-     * In case is_uniform is true molecules are evenly split following the
-     * partial volume ratio: V_elem/V_rank with stochastic rounding
-     *
-     * \param molecules Molecules pool instance
-     * \param comp_id compartment identifier
-     * \param species species identifier
-     * \param num_molecules number of molecules to set
-     * \param distribution distribution type. Check distributions.hpp for more
-     * information
-     */
-    void setOwnedCompSpecCount(
-        const model::compartment_id& compartment,
-        const model::species_name& species,
-        osh::Real num_molecules,
-        const math::DistributionMethod distribution = math::DistributionMethod::DIST_UNIFORM);
-
-    /**
-     * Evolve the system by the efield time step ef_dt.
-     *
-     * Check "simulation.run" for more info on the general framework
-     *
-     * @param ef_dt: time step of the efield
-     */
-    void evolve(const osh::Real ef_dt);
-
-    /**
-     * Update reactions and diffusions up to end_time and decide the time-step
-     * (rd_dt).
-     *
-     * Check "simulation.run" for more info on the general framework
-     *
-     * @param end_time: reaction-diffusion updates up to end_time
-     */
-    void run_rd(const osh::Real end_time);
+    void init(std::unique_ptr<Statedef>&& t_statedef);
 
     /** Evolve reactions and diffusions by the time step rd_dt
      *
@@ -728,27 +1172,263 @@ class OmegaHSimulation: public Simulation {
      **/
     void evolve_rd(const osh::Real rd_dt);
 
-    void initialize_discretized_rates();
+    /**
+     * Update reactions and diffusions up to end_time and decide the time-step
+     * (rd_dt).
+     *
+     * Check "simulation.run" for more info on the general framework
+     *
+     * @param end_time: reaction-diffusion updates up to end_time
+     */
+    void run_rd(const osh::Real end_time);
+
+    /**
+     * Evolve the system by the efield time step ef_dt.
+     *
+     * Check "simulation.run" for more info on the general framework
+     *
+     * @param ef_dt: time step of the efield
+     */
+    void evolve(const osh::Real ef_dt);
+
+    ///////////////////////////
+    // Location: Compartment //
+    ///////////////////////////
+
+    // Species
+    osh::Real getOwnedCompSpecCount(const model::compartment_id& compartment,
+                                    const model::species_name& species) const;
+    void setOwnedCompSpecCount(const model::compartment_id& compartment,
+                               const model::species_name& species,
+                               osh::Real num_molecules,
+                               const math::DistributionMethod distribution);
+
+    osh::Real getOwnedCompSpecConc(const model::compartment_id& compartment,
+                                   const model::species_name& species) const;
+
+    // Complexes
+    osh::Real getOwnedCompComplexCount(
+        const model::compartment_id& compartment,
+        const model::complex_name& complex,
+        const std::vector<util::strongid_vector<model::complex_substate_id,
+                                                steps::model::SubunitStateFilter>>& f) const;
+    void setOwnedCompComplexCount(const model::compartment_id& compartment,
+                                  const model::complex_name& complex,
+                                  const util::strongid_vector<model::complex_substate_id, uint>& i,
+                                  osh::Real num_molecules,
+                                  const math::DistributionMethod distribution);
+
+    osh::Real getOwnedCompComplexSUSCount(
+        const model::compartment_id& compartment,
+        const model::complex_name& complex,
+        const std::vector<
+            util::strongid_vector<model::complex_substate_id, steps::model::SubunitStateFilter>>& f,
+        model::complex_substate_id m) const;
+
+
+    /////////////////////
+    // Location: Patch //
+    /////////////////////
+
+    // Species
+
+
+    // Complexes
+    osh::Real getOwnedPatchComplexCount(
+        const model::patch_id& patch,
+        const model::complex_name& complex,
+        const std::vector<util::strongid_vector<model::complex_substate_id,
+                                                steps::model::SubunitStateFilter>>& f) const;
+    void setOwnedPatchComplexCount(const model::patch_id& patch,
+                                   const model::complex_name& complex,
+                                   const util::strongid_vector<model::complex_substate_id, uint>& i,
+                                   osh::Real num_molecules,
+                                   const math::DistributionMethod distribution);
+
+    osh::Real getOwnedPatchComplexSUSCount(
+        const model::patch_id& patch,
+        const model::complex_name& complex,
+        const std::vector<
+            util::strongid_vector<model::complex_substate_id, steps::model::SubunitStateFilter>>& f,
+        model::complex_substate_id m) const;
+
+    ///////////////////////////
+    // Location: Tetrahedron //
+    ///////////////////////////
+
+    // Species
+    void setOwnedElementSpecCount(const model::compartment_id& compartment,
+                                  const mesh::tetrahedron_id_t element,
+                                  const model::species_name& species,
+                                  osh::Real num_molecules);
+
+    void getBatchElemValsNP(const osh::GO* indices,
+                            size_t input_size,
+                            const model::species_name& species,
+                            osh::Real* counts,
+                            bool useConc,
+                            bool local) const;
+    void setBatchElemValsNP(const osh::GO* indices,
+                            size_t input_size,
+                            const model::species_name& species,
+                            osh::Real* counts,
+                            bool useConc,
+                            bool local) const;
+
+    // Reactions
+    template <typename Reacs, typename MReacID>
+    osh::Real getTetReacK(const Reacs& reacs, osh::GO tet, const MReacID reac, bool local) const;
+    template <typename Reacs, typename MReacID>
+    void setTetReacK(Reacs& reacs, osh::GO tet, const MReacID reac, osh::Real kcst, bool local);
+
+    ////////////////////////
+    // Location: Triangle //
+    ////////////////////////
+
+    // Species
+    void getBatchBoundSpecCountNP(const osh::GO* indices,
+                                  size_t input_size,
+                                  const model::species_name& species,
+                                  osh::Real* counts,
+                                  bool local) const;
+    void setBatchBoundSpecCountNP(const osh::GO* indices,
+                                  size_t input_size,
+                                  const model::species_name& species,
+                                  osh::Real* counts,
+                                  bool local) const;
+
+    // Reactions
+    template <typename Reacs, typename MReacID>
+    osh::Real getTriSReacK(const Reacs& reacs,
+                           osh::GO triangle,
+                           const MReacID& reactionId,
+                           bool local) const;
+    template <typename Reacs, typename MReacID>
+    void setTriSReacK(Reacs& reacs,
+                      osh::GO triangle,
+                      const MReacID& reactionId,
+                      osh::Real kCst,
+                      bool local);
+
+#if USE_PETSC
+    template <typename SReacT, typename SReacID>
+    void getBatchTriSReacIsNP(const SReacT& reacs,
+                              const osh::GO* indices,
+                              size_t input_size,
+                              const SReacID reac,
+                              osh::Real* currents,
+                              bool local) const;
+
+    template <typename CurrdefT, typename MCurrID>
+    void getBatchTriOhmicIsNP(const osh::GO* indices,
+                              size_t input_size,
+                              const MCurrID curr,
+                              osh::Real* currents,
+                              bool local) const;
+
+    template <typename SReacT, typename MReacID>
+    void getBatchTriGHKIsNP(const SReacT& reacs,
+                            const osh::GO* indices,
+                            size_t input_size,
+                            const MReacID curr,
+                            osh::Real* currents,
+                            bool local) const;
+
+    template <typename CurrT, typename MCurrID>
+    void getBatchTriOhmicErevsNP(const gsl::span<const osh::GO>& triangles,
+                                 const MCurrID& ohmic_current,
+                                 const gsl::span<double>& erev,
+                                 bool local) const;
+
+    template <typename CurrdefT, typename MCurrID>
+    void setTriOhmicErev(osh::GO triangle,
+                         const MCurrID& ohmic_current,
+                         double reversal_potential,
+                         bool local);
+#endif  // USE_PETSC
+
+    /////////////////////
+    // Utility methods //
+    /////////////////////
+
+    template <typename T>
+    T allReduce(const T& v,
+                MPI_Op op = MPI_SUM,
+                MPI_Datatype mpi_type = util::mpi_get_type<T>()) const {
+        T global_v;
+        auto err = MPI_Allreduce(&v, &global_v, 1, mpi_type, op, this->comm());
+        if (err != MPI_SUCCESS) {
+            MPI_Abort(this->comm(), err);
+        }
+        return global_v;
+    }
+
+    static util::strongid_vector<model::complex_substate_id, uint> _convertComplexState(
+        const std::vector<std::vector<steps::model::SubunitStateFilter>>& f);
+
+    static std::vector<
+        util::strongid_vector<model::complex_substate_id, steps::model::SubunitStateFilter>>
+    _convertComplexFilters(const std::vector<std::vector<steps::model::SubunitStateFilter>>& f);
+
+    template <typename LT>
+    inline LT getLocalInd(osh::GO idx, bool local, bool owned = true) const {
+        if (local) {
+            if (idx == static_cast<osh::LO>(idx)) {
+                return LT(static_cast<osh::LO>(idx));
+            } else {
+                return {};
+            }
+        } else {
+            using GT = decltype(mesh.getGlobalIndex(LT(static_cast<osh::LO>(idx))));
+            return mesh.getLocalIndex(GT(idx), owned);
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Attributes
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     mesh_type& mesh;
-    const osh::LOs elems2verts;
-    const osh::Reals coords;
-    osh::I64 num_iterations{};
-    osh::Real state_time{};
-    std::unique_ptr<Statedef> statedef;
-    std::unique_ptr<SimulationInput> input;
-    std::unique_ptr<SimulationData<SSA, SearchMethod>> data;
     bool indepKProcs;
 
-    /// provide MPI rank that owned a given element, for diffusion debugging
-    /// only
-    osh::LOs element_ranks;
+    std::unique_ptr<Statedef> statedef;
+    std::unique_ptr<SimulationInput> input;
+    std::unique_ptr<SimulationData<SSA, SearchMethod, DiffMethod>> data;
+
+    osh::I64 num_iterations{};
+    osh::Real state_time{};
+
+    bool outdated_diffusions{false};
 };
 
-// explicit template instantiation declarations
+///////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
 
-extern template class OmegaHSimulation<SSAMethod::SSA, NextEventSearchMethod::Direct>;
-extern template class OmegaHSimulation<SSAMethod::RSSA, NextEventSearchMethod::Direct>;
-extern template class OmegaHSimulation<SSAMethod::SSA, NextEventSearchMethod::GibsonBruck>;
+std::unique_ptr<Simulation> GetSimulation(steps::model::Model& model,
+                                          DistMesh& t_mesh,
+                                          const rng::RNGptr& r,
+                                          int ssaMethod,
+                                          int searchMethod,
+                                          int diffMethod,
+                                          bool t_indepKProcs,
+                                          bool isEfield);
+
+template <SSAMethod SSA>
+std::unique_ptr<Simulation> _getSimulation(steps::model::Model& model,
+                                           DistMesh& t_mesh,
+                                           const rng::RNGptr& r,
+                                           NextEventSearchMethod searchMethod,
+                                           DiffusionMethod diffMethod,
+                                           bool t_indepKProcs,
+                                           bool isEfield);
+
+
+template <SSAMethod SSA, NextEventSearchMethod SearchMethod>
+std::unique_ptr<Simulation> _getSimulation(steps::model::Model& model,
+                                           DistMesh& mesh,
+                                           const rng::RNGptr& r,
+                                           DiffusionMethod diffMethod,
+                                           bool indepKProcs,
+                                           bool isEfield);
 
 }  // namespace steps::dist

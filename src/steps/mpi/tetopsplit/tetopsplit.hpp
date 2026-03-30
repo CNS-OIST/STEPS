@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -82,6 +82,7 @@ class TetOpSplitP: public solver::API {
                 wm::Geom* g,
                 const rng::RNGptr& r,
                 int calcMembPot = EF_NONE,
+                bool calcMembPot_lenient = false,
                 std::vector<int> const& tet_hosts = {},
                 const std::map<triangle_global_id, int>& tri_hosts = {},
                 std::vector<int> const& wm_hosts = {});
@@ -261,6 +262,8 @@ class TetOpSplitP: public solver::API {
 
     unsigned long long _getPatchSReacExtent(solver::patch_global_id pidx,
                                             solver::sreac_global_id sridx) const override;
+    unsigned long long _getPatchVDepSReacExtent(solver::patch_global_id pidx,
+                                                solver::vdepsreac_global_id vsridx) const override;
     void _resetPatchSReacExtent(solver::patch_global_id pidx,
                                 solver::sreac_global_id sridx) override;
 
@@ -363,6 +366,18 @@ class TetOpSplitP: public solver::API {
 
     double _getTetDiffA(tetrahedron_global_id tidx, solver::diff_global_id didx) const override;
 
+    double _getTetA(tetrahedron_global_id tetid) const;
+    uint _getTetExtent(tetrahedron_global_id tetid) const;
+    uint _getTetWeightedExtent(tetrahedron_global_id tetid) const;
+    double _getTriA(triangle_global_id triid) const;
+    uint _getTriExtent(triangle_global_id triid) const;
+    std::vector<double> getBatchTetA(std::vector<index_t> tetids) const;
+    std::vector<uint> getBatchTetExtent(std::vector<index_t> tetids) const;
+    std::vector<uint> getBatchTetWeightedExtent(std::vector<index_t> tetids) const;
+    std::vector<double> getBatchTriA(std::vector<index_t> triids) const;
+    std::vector<uint> getBatchTriExtent(std::vector<index_t> triids) const;
+    std::vector<uint> getBatchTriWeightedExtent(std::vector<index_t> triids) const;
+
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
     double _getTetV(tetrahedron_global_id tidx) const override;
@@ -435,6 +450,13 @@ class TetOpSplitP: public solver::API {
 
     double _getTriGHKI(triangle_global_id tidx) const override;
     double _getTriGHKI(triangle_global_id tidx, solver::ghkcurr_global_id ghkidx) const override;
+
+    double _getTriSReacI(triangle_global_id tidx) const override;
+    double _getTriSReacI(triangle_global_id tidx, solver::sreac_global_id sridx) const override;
+
+    double _getTriVDepSReacI(triangle_global_id tidx) const override;
+    double _getTriVDepSReacI(triangle_global_id tidx,
+                             solver::vdepsreac_global_id vdsridx) const override;
 
     double _getTriI(triangle_global_id tidx) const override;
 
@@ -917,9 +939,6 @@ class TetOpSplitP: public solver::API {
     int _getHost(triangle_global_id tgidx) const;
     ////////////////////////////////////////////////////////////////////////
 
-    // Keeps track of whether _build() has been called
-    // bool                                       pBuilt;
-
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
     // The Efield flag. If false we don't calclulate the potential, nor include
@@ -933,6 +952,9 @@ class TetOpSplitP: public solver::API {
 
     // Pointer to the EField object
     std::unique_ptr<solver::efield::EField> pEField;
+
+    // Leniency
+    bool pEField_lenient;
 
     // The Efield time-step
     double pEFDT{1.0e-5};

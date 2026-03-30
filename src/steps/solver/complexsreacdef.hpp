@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -82,6 +82,11 @@ class ComplexSReacdef {
     /// Return the MACROscopic reaction constant.
     double kcst() const {
         return pKcst;
+    }
+
+    /// Return the charge carried by this surface reaction.
+    double charge() const {
+        return pCharge;
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -168,9 +173,7 @@ class ComplexSReacdef {
     depT dep_I(spec_global_id gidx) const;
     depT dep_S(spec_global_id gidx) const;
     depT dep_O(spec_global_id gidx) const;
-    bool complexdep(model::ComplexLocation loc,
-                    complex_global_id gidx,
-                    complex_substate_id sus) const;
+    bool complexdep(model::Location loc, complex_global_id gidx, complex_substate_id sus) const;
 
     /// Returns how many molecules of some species, specified by its
     /// global index, are produced after a single occurence of this
@@ -209,14 +212,11 @@ class ComplexSReacdef {
     }
 
     const std::map<complex_global_id, std::set<complex_substate_id>>& complexUPDMAP(
-        model::ComplexLocation loc) const;
+        model::Location loc) const;
 
-    const std::vector<std::shared_ptr<ComplexUpdateEventdef>>& updEvents(
-        model::ComplexLocation loc) const;
-    const std::vector<std::shared_ptr<ComplexDeleteEventdef>>& delEvents(
-        model::ComplexLocation loc) const;
-    const std::vector<std::shared_ptr<ComplexCreateEventdef>>& creEvents(
-        model::ComplexLocation loc) const;
+    const std::vector<std::shared_ptr<ComplexUpdateEventdef>>& updEvents(model::Location loc) const;
+    const std::vector<std::shared_ptr<ComplexDeleteEventdef>>& delEvents(model::Location loc) const;
+    const std::vector<std::shared_ptr<ComplexCreateEventdef>>& creEvents(model::Location loc) const;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -229,6 +229,7 @@ class ComplexSReacdef {
     const std::string pName;
     const uint pOrder;
     const double pKcst;
+    const int pCharge;
 
     // The stoichiometry stored as model level Spec objects.
     // To be used during setup ONLY
@@ -300,17 +301,14 @@ class ComplexSReacdef {
     spec_global_id_vec pSpec_S_UPD_Coll;
     spec_global_id_vec pSpec_O_UPD_Coll;
 
-    std::map<model::ComplexLocation, std::vector<std::shared_ptr<ComplexUpdateEventdef>>>
-        pComplexUPDEvs;
-    std::map<model::ComplexLocation, std::vector<std::shared_ptr<ComplexDeleteEventdef>>>
-        pComplexDELEvs;
-    std::map<model::ComplexLocation, std::vector<std::shared_ptr<ComplexCreateEventdef>>>
-        pComplexCREEvs;
+    std::map<model::Location, std::vector<std::shared_ptr<ComplexUpdateEventdef>>> pComplexUPDEvs;
+    std::map<model::Location, std::vector<std::shared_ptr<ComplexDeleteEventdef>>> pComplexDELEvs;
+    std::map<model::Location, std::vector<std::shared_ptr<ComplexCreateEventdef>>> pComplexCREEvs;
 
     // location -> {cmplxIdx -> {sub unit states ind}}
-    std::map<model::ComplexLocation, std::map<complex_global_id, std::set<complex_substate_id>>>
+    std::map<model::Location, std::map<complex_global_id, std::set<complex_substate_id>>>
         pComplex_DEPMAP;
-    std::map<model::ComplexLocation, std::map<complex_global_id, std::set<complex_substate_id>>>
+    std::map<model::Location, std::map<complex_global_id, std::set<complex_substate_id>>>
         pComplex_UPDMAP;
 
     ////////////////////////////////////////////////////////////////////////

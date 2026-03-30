@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -241,30 +241,30 @@ std::vector<KProc*> const& GHKcurr::apply(const rng::RNGptr& /*rng*/,
 
     if (efflux()) {
         if (realflux) {
-            if (!itet->clamped(linneridx)) {
+            if (!itet->clamped(linneridx) && !innercdef->clamped(linneridx)) {
                 itet->incCount(linneridx, -1);
             }
             if ((otet != nullptr) && voconc < 0.0) {
-                if (!otet->clamped(louteridx)) {
+                if (!otet->clamped(louteridx) && !outercdef->clamped(louteridx)) {
                     otet->incCount(louteridx, 1);
                 }
             }
         }
         // A positive outward current is a positive current by convention
-        pTri->incECharge(ghklidx, valence);
+        pTri->incECharge_ghk(ghklidx, valence);
     } else {
         if (realflux) {
-            if (!itet->clamped(linneridx)) {
+            if (!itet->clamped(linneridx) && !innercdef->clamped(linneridx)) {
                 itet->incCount(linneridx, 1);
             }
             if ((otet != nullptr) && voconc < 0.0) {
-                if (!otet->clamped(louteridx)) {
+                if (!otet->clamped(louteridx) && !outercdef->clamped(louteridx)) {
                     otet->incCount(louteridx, -1);
                 }
             }
         }
         // A positive outward current is a positive current by convention
-        pTri->incECharge(ghklidx, -valence);
+        pTri->incECharge_ghk(ghklidx, -valence);
     }
 
     rExtent++;

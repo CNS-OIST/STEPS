@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -707,7 +707,7 @@ void VesReac::apply(const rng::RNGptr& rng,
 
         AssertLog(spec_tetlidx.valid());
 
-        if (pTet->clamped(spec_tetlidx) == true) {
+        if (pTet->clamped(spec_tetlidx) || pTet->compdef()->clamped(spec_tetlidx)) {
             continue;
         }
 
@@ -759,7 +759,7 @@ void VesReac::apply(const rng::RNGptr& rng,
             if (upd > 0) {
                 // Even if clamped it's important to add this for selection, even though
                 // it's unchanging
-                if (tri->clamped(spec_trilidx)) {
+                if (tri->clamped(spec_trilidx) || tri->patchdef()->clamped(spec_trilidx)) {
                     update_tris[i] = cnt_s;
                 } else {
                     update_tris[i] = cnt_s + upd;
@@ -771,7 +771,7 @@ void VesReac::apply(const rng::RNGptr& rng,
                 if (cnt_s >= static_cast<uint>(-upd)) {
                     // Even if clamped it's important to add this for selection, even
                     // though it's unchanging
-                    if (tri->clamped(spec_trilidx)) {
+                    if (tri->clamped(spec_trilidx) || tri->patchdef()->clamped(spec_trilidx)) {
                         update_tris[i] = cnt_s;
                     } else {
                         update_tris[i] = cnt_s + upd;

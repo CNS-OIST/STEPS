@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -524,7 +524,12 @@ class API {
     ///
     /// \param c Name of the compartment.
     /// \param v Name of the vesicle.
-    vesicle_individual_id addCompVesicle(std::string const& c, std::string const& v);
+    /// \param diam Optional diameter of the vesicle.
+    /// \param dcst Optional diffusion constant of the vesicle.
+    vesicle_individual_id addCompVesicle(std::string const& c,
+                                         std::string const& v,
+                                         double diam = -1,
+                                         double dcst = -1);
 
     /// Deletes individual vesicle of type v with unique index ves_unique_index
     ///
@@ -595,6 +600,16 @@ class API {
     std::vector<double> getSingleVesiclePos(std::string const& v,
                                             vesicle_individual_id ves_unique_index) const;
 
+    /// Returns the name of the path to which the vesicle is bound, and the point of the
+    /// path at which the vesicle currently is. If the vesicle is not bound to a path,
+    /// the returned name is an empty string.
+    ///
+    /// \param v Name of the vesicle.
+    /// \param ves_unique_index Unique index of the individual vesicle
+    std::pair<std::string, std::vector<double>> getSingleVesicleOnPath(
+        std::string const& v,
+        vesicle_individual_id ves_unique_index) const;
+
     /// Set the position of vesicle of type v with unique index
     /// ves_unique_index to pos (cartesian coordinates)
     ///
@@ -605,6 +620,23 @@ class API {
                              vesicle_individual_id ves_unique_index,
                              const std::vector<double>& pos,
                              bool force = false);
+
+    /// Returns the diffusion constant of vesicle of type v with unique index
+    /// ves_unique_index
+    ///
+    /// \param v Name of the vesicle.
+    /// \param ves_unique_index Unique index of the individual vesicle
+    double getSingleVesicleDcst(std::string const& v, vesicle_individual_id ves_unique_index) const;
+
+    /// Set the diffusion constant of vesicle of type v with unique index
+    /// ves_unique_index to dcst
+    ///
+    /// \param v Name of the vesicle.
+    /// \param ves_unique_index Unique index of the individual vesicle
+    /// \param dcst Diffusion constant
+    void setSingleVesicleDcst(std::string const& v,
+                              vesicle_individual_id ves_unique_index,
+                              double dcst);
 
     /// Returns the surface count of species s on vesicles v in compartment c.
     /// Return is a map, vesicle_unique_index : count of s
@@ -770,6 +802,17 @@ class API {
     /// \param ls_unique_id Unique index of the individual link species
     vesicle_individual_id getSingleLinkSpecVes(linkspec_individual_id ls_unique_id) const;
 
+    /// Set the 'immobility' of vesicle of type v and unique index
+    /// ves_unique_index. All non-zero numbers mean vesicle is
+    /// immobile.
+    ///
+    /// \param v Name of the vesicle.
+    /// \param ves_unique_index Unique index of the individual vesicle
+    /// \param immob Immobility value
+    void setSingleVesicleImmobility(std::string const& v,
+                                    vesicle_individual_id ves_unique_index,
+                                    uint immob) const;
+
     /// Get the 'immobility' of vesicle of type v and unique index
     /// ves_unique_index. All non-zero numbers mean vesicle is
     /// immobile.
@@ -794,7 +837,23 @@ class API {
     /// \param tidx Tetrahrdron index
     /// \param v Name of the vesicle.
     /// \param dcst Diffusion coefficient
-    void setTetVesicleDcst(tetrahedron_global_id tidx, std::string const& v, double dcst);
+    /// \param rel Boolean if dcst is relative.
+    void setTetVesicleDcst(tetrahedron_global_id tidx,
+                           std::string const& v,
+                           double dcst,
+                           bool rel = false);
+
+    /// Get the diffusion rate per tetrahedron of vesicles of type v.
+    ///
+    /// \param tidx Tetrahrdron index
+    /// \param v Name of the vesicle.
+    double getTetVesicleDcst(tetrahedron_global_id tidx, std::string const& v) const;
+
+    /// Returns whether diffusion rate per tetrahedron of vesicles of type v is relative.
+    ///
+    /// \param tidx Tetrahrdron index
+    /// \param v Name of the vesicle.
+    bool getTetVesicleDcstRel(tetrahedron_global_id tidx, std::string const& v) const;
 
     ////////////////////////////////////////////////////////////////////////
     // SOLVER CONTROLS:
@@ -875,7 +934,8 @@ class API {
     /// Create a path
     ///
     /// \param path Name of the path
-    virtual void createPath(std::string const& path);
+    /// \param bind_to_start Whether the vesicle binds when overlapping the start point
+    virtual void createPath(std::string const& path, bool bind_to_start);
 
     /// Add a point to a path
     ///
@@ -885,6 +945,19 @@ class API {
     virtual void addPathPoint(std::string const& path,
                               uint point_idx,
                               const std::vector<double>& position);
+
+    /// Create branching in the path from a point
+    ///
+    /// \param path Name of the path
+    /// \param sourcepoint_idx An index for the source point, positive integer
+    /// \param destpoint_idx An index for the source point, positive integer
+    /// \param weight A weight for the edge
+    /// \param allow_binding Whether vesicles can bind to these branches
+    virtual void addPathEdge(std::string const& path,
+                             uint sourcepoint_idx,
+                             uint destpoint_idx,
+                             double weight,
+                             bool allow_binding);
 
     /// Create branching in the path from a point
     ///
@@ -910,11 +983,18 @@ class API {
     /// \param speed Speed of the vesicle on this path in m/s
     /// \param spec_deps Optional species dependencies, in map of species names
     /// to number of the species required
+    /// \param binding_rate binding rate in 1/s, negative is none
+    /// \param binding_radius binding_radius in m, negative if default
     void addPathVesicle(std::string const& path,
                         std::string const& ves,
                         double speed,
                         const std::map<std::string, uint>& spec_deps,
-                        const std::vector<double>& stoch_stepsize);
+                        const std::vector<double>& stoch_stepsize,
+                        double binding_rate,
+                        double min_binding_radius,
+                        double max_binding_radius,
+                        double unbinding_rate,
+                        bool allow_path_intersection);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -1092,6 +1172,33 @@ class API {
     /// \param tidx Index of the tetrahedron.
     /// \param d Name of the diffusion.
     double getTetDiffA(tetrahedron_global_id tidx, std::string const& d) const;
+
+    /// Returns the cumulative propensity of all diffusion and reaction rules in a tetrahedron.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    double getTetA(tetrahedron_global_id tidx) const;
+
+    /// Returns the cumulative extent of all diffusion and reaction rules in a tetrahedron.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    uint getTetExtent(tetrahedron_global_id tidx) const;
+
+    /// Returns the cumulative 'weighted' extent of all diffusion and reaction rules in a
+    /// tetrahedron. Weighting is done by multiplying the extent of each rule with its number of
+    /// dependent rules.
+    ///
+    /// \param tidx Index of the tetrahedron.
+    uint getTetWeightedExtent(tetrahedron_global_id tidx) const;
+
+    /// Returns the cumulative propensity of all diffusion and reaction rules in a triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    double getTriA(triangle_global_id tidx) const;
+
+    /// Returns the cumulative extent of all diffusion and reaction rules in a triangle.
+    ///
+    /// \param tidx Index of the triangle.
+    uint getTriExtent(triangle_global_id tidx) const;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -1328,6 +1435,14 @@ class API {
     /// \param r Name of the reaction.
     unsigned long long getPatchSReacExtent(std::string const& p, std::string const& r) const;
 
+    /// Returns the extent of voltage-dependent surface reaction r in patch p.
+    ///
+    /// NOTE: in a mesh-based simulation, returns the sum of the extents in
+    /// all triangles of the patch.
+    /// \param p Name of the patch.
+    /// \param r Name of the voltage-dependent reaction.
+    unsigned long long getPatchVDepSReacExtent(std::string const& p, std::string const& r) const;
+
     /// Resets the extent of surface reaction r in patch p to zero.
     ///
     /// NOTE: in a mesh-based simulation, resets the extents of the
@@ -1429,6 +1544,17 @@ class API {
                                 raft_individual_id raft_unique_index,
                                 std::string const& s,
                                 uint count);
+
+    /// Set the 'immobility' of raft of type r and unique index
+    /// raft_unique_index. All non-zero numbers mean raft is
+    /// immobile.
+    ///
+    /// \param r Name of the raft.
+    /// \param raft_unique_index Unique index of the individual raft.
+    /// \param immob Immobility of the raft
+    void setSingleRaftImmobility(std::string const& r,
+                                 raft_individual_id raft_unique_index,
+                                 uint immob) const;
 
     /// Get the 'immobility' of raft of type r and unique index
     /// raft_unique_index. All non-zero numbers mean raft is
@@ -1847,6 +1973,28 @@ class API {
     /// \param tidx Index of the triangle.
     /// \param ghk name of the ghk current
     double getTriGHKI(triangle_global_id tidx, std::string const& ghk) const;
+
+    /// Returns the sreac current of triangle in amperes.
+    ///
+    /// \param tidx Index of the triangle.
+    double getTriSReacI(triangle_global_id tidx) const;
+
+    /// Returns the sreac current of triangle in amperes.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param sreac name of the surface reaction
+    double getTriSReacI(triangle_global_id tidx, std::string const& sreac) const;
+
+    /// Returns the vdepsreac current of triangle in amperes.
+    ///
+    /// \param tidx Index of the triangle.
+    double getTriVDepSReacI(triangle_global_id tidx) const;
+
+    /// Returns the vdepsreac current of triangle in amperes.
+    ///
+    /// \param tidx Index of the triangle.
+    /// \param vdepsreac name of the voltage-dependent surface reaction
+    double getTriVDepSReacI(triangle_global_id tidx, std::string const& vdsreac) const;
 
     /// Returns the current of a triangle in amperes from the last EField
     /// calculation step.
@@ -2410,7 +2558,10 @@ class API {
     virtual uint _getCompVesicleCount(comp_global_id cidx, vesicle_global_id vidx) const;
     virtual void _setCompVesicleCount(comp_global_id cidx, vesicle_global_id vidx, uint n);
 
-    virtual vesicle_individual_id _addCompVesicle(comp_global_id cidx, vesicle_global_id vidx);
+    virtual vesicle_individual_id _addCompVesicle(comp_global_id cidx,
+                                                  vesicle_global_id vidx,
+                                                  double diam,
+                                                  double dcst);
     virtual void _deleteSingleVesicle(vesicle_global_id vidx,
                                       vesicle_individual_id ves_unique_index);
 
@@ -2446,6 +2597,17 @@ class API {
                                       solver::vesicle_individual_id ves_unique_index,
                                       const std::vector<double>& pos,
                                       bool force = false);
+
+    virtual double _getSingleVesicleDcst(solver::vesicle_global_id vidx,
+                                         solver::vesicle_individual_id ves_unique_index) const;
+
+    virtual void _setSingleVesicleDcst(solver::vesicle_global_id vidx,
+                                       solver::vesicle_individual_id ves_unique_index,
+                                       double dcst);
+
+    virtual std::pair<std::string, std::vector<double>> _getSingleVesicleOnPath(
+        solver::vesicle_global_id vidx,
+        solver::vesicle_individual_id ves_unique_index) const;
 
     virtual std::map<vesicle_individual_id, uint> _getCompVesicleSurfaceSpecCountMap(
         comp_global_id cidx,
@@ -2519,6 +2681,10 @@ class API {
 
     virtual vesicle_individual_id _getSingleLinkSpecVes(linkspec_individual_id ls_unique_id) const;
 
+    virtual void _setSingleVesicleImmobility(vesicle_global_id vidx,
+                                             vesicle_individual_id ves_unique_index,
+                                             uint immob) const;
+
     virtual uint _getSingleVesicleImmobility(vesicle_global_id vidx,
                                              vesicle_individual_id ves_unique_index) const;
 
@@ -2528,7 +2694,12 @@ class API {
 
     virtual void _setTetVesicleDcst(tetrahedron_global_id tidx,
                                     vesicle_global_id vidx,
-                                    double dcst);
+                                    double dcst,
+                                    bool rel);
+
+    virtual double _getTetVesicleDcst(tetrahedron_global_id tidx, vesicle_global_id vidx) const;
+
+    virtual bool _getTetVesicleDcstRel(tetrahedron_global_id tidx, vesicle_global_id vidx) const;
 
     //////////////// NOT COMPARTMENT-SPECIFIC ///////////////////////////////
 
@@ -2562,7 +2733,12 @@ class API {
                                  vesicle_global_id vidx,
                                  double speed,
                                  const std::map<spec_global_id, uint>& spec_deps,
-                                 const std::vector<double>& stoch_stepsize);
+                                 const std::vector<double>& stoch_stepsize,
+                                 double binding_rate,
+                                 double min_binding_radius,
+                                 double max_binding_radius,
+                                 double unbinding_rate,
+                                 bool allow_path_intersection);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -2615,6 +2791,11 @@ class API {
     virtual double _getTetReacA(tetrahedron_global_id tidx, reac_global_id ridx) const;
 
     virtual double _getTetDiffA(tetrahedron_global_id tidx, diff_global_id didx) const;
+    virtual double _getTetA(tetrahedron_global_id tidx) const;
+    virtual uint _getTetExtent(tetrahedron_global_id tidx) const;
+    virtual uint _getTetWeightedExtent(tetrahedron_global_id tidx) const;
+    virtual double _getTriA(triangle_global_id tidx) const;
+    virtual uint _getTriExtent(triangle_global_id tidx) const;
 
     ////////////////////////// ADDED FOR EFIELD ////////////////////////////
 
@@ -2683,6 +2864,8 @@ class API {
 
     virtual unsigned long long _getPatchSReacExtent(patch_global_id pidx,
                                                     sreac_global_id ridx) const;
+    virtual unsigned long long _getPatchVDepSReacExtent(patch_global_id pidx,
+                                                        vdepsreac_global_id vsridx) const;
     virtual void _resetPatchSReacExtent(patch_global_id pidx, sreac_global_id ridx);
 
     virtual unsigned long long _getPatchComplexSReacExtent(patch_global_id pidx,
@@ -2714,6 +2897,10 @@ class API {
                                          raft_individual_id raft_unique_index,
                                          spec_global_id sidx,
                                          uint c);
+
+    virtual void _setSingleRaftImmobility(raft_global_id ridx,
+                                          raft_individual_id raft_unique_index,
+                                          uint immob) const;
 
     virtual uint _getSingleRaftImmobility(raft_global_id ridx,
                                           raft_individual_id raft_unique_index) const;
@@ -2856,7 +3043,13 @@ class API {
     virtual void _setTriIClamp(triangle_global_id tidx, double i);
 
     virtual double _getTriGHKI(triangle_global_id tidx) const;
-    virtual double _getTriGHKI(triangle_global_id tidx, ghkcurr_global_id ocidx) const;
+    virtual double _getTriGHKI(triangle_global_id tidx, ghkcurr_global_id ghkidx) const;
+
+    virtual double _getTriSReacI(triangle_global_id tidx) const;
+    virtual double _getTriSReacI(triangle_global_id tidx, sreac_global_id sridx) const;
+
+    virtual double _getTriVDepSReacI(triangle_global_id tidx) const;
+    virtual double _getTriVDepSReacI(triangle_global_id tidx, vdepsreac_global_id vdsridx) const;
 
     virtual double _getTriVDepSReacK(triangle_global_id tidx, vdepsreac_global_id vsridx) const;
     virtual bool _getTriVDepSReacActive(triangle_global_id tidx, vdepsreac_global_id vsridx) const;

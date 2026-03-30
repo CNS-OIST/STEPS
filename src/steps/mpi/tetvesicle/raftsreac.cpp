@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -636,7 +636,7 @@ void RaftSReac::apply(const rng::RNGptr& rng,
         solver::spec_local_id spec_trilidx = pTri->patchdef()->specG2L(s);
         AssertLog(spec_trilidx.valid());
 
-        if (pTri->clamped(spec_trilidx) == true) {
+        if (pTri->clamped(spec_trilidx) || pTri->patchdef()->clamped(spec_trilidx)) {
             continue;
         }
 
@@ -661,7 +661,7 @@ void RaftSReac::apply(const rng::RNGptr& rng,
 
             AssertLog(spec_tetlidx.valid());
 
-            if (otet->clamped(spec_tetlidx) == true) {
+            if (otet->clamped(spec_tetlidx) || otet->compdef()->clamped(spec_tetlidx)) {
                 continue;
             }
 
@@ -687,7 +687,7 @@ void RaftSReac::apply(const rng::RNGptr& rng,
 
             AssertLog(spec_tetlidx.valid());
 
-            if (itet->clamped(spec_tetlidx) == true) {
+            if (itet->clamped(spec_tetlidx) || itet->compdef()->clamped(spec_tetlidx)) {
                 continue;
             }
 

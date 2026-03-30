@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -69,6 +69,59 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
     def allGather(self, lst, func=lambda a, b: a + b):
         lists = self.mesh3._comm.allgather(lst)
         return functools.reduce(func, lists)
+
+    def testInternalPatch(self):
+        mesh = self.mesh
+        with mesh:
+            comp1 = Compartment.Create(
+                list(filter(lambda tet:tet.center.x >= mesh.bbox.center.x, mesh.tets)),
+                self.vsys
+            )
+            comp2 = Compartment.Create(mesh.tets - comp1.tets)
+            patch = Patch.Create(comp1.surface & comp2.surface, comp1, comp2, self.ssys)
+
+        with mesh.asLocal():
+            localTetLst1 = mesh.tets[mesh.bbox.center].toList()
+            localTetLst1.dilate(2)
+
+        globalTetLst1 = mesh.tets[mesh.bbox.center].toList()
+        globalTetLst1.dilate(2)
+
+        # Force caching of local list in global one
+        globalTetLst1.toLocal()
+
+        sim = self.getSimulation()
+
+        # Combining the list after the redistribution leads to incorrect result
+        tetLst1 = localTetLst1.combineWithOperator(lambda a,b: a|b)
+
+        tetLst2 = mesh.tets[mesh.bbox.center].toList()
+        tetLst2.dilate(2)
+
+        self.assertNotEqual(sorted(tetLst1.indices), sorted(tetLst2.indices))
+        self.assertEqual(sorted(globalTetLst1.indices), sorted(tetLst2.indices))
+
+        # Check that the cached local version of globalTetLst1 was cleared
+        newGlobal1 = globalTetLst1.toLocal().combineWithOperator(lambda a,b: a|b)
+        self.assertEqual(sorted(globalTetLst1.indices), sorted(newGlobal1.indices))
+
+    def testInternalPatch_maxPatches(self):
+        mesh = self.mesh
+        with mesh:
+            # Create one compartment per tet
+            for tet in mesh.tets:
+                Compartment(tet.toList(), self.vsys)
+            # Create one patch per triangle between two compartments
+            for tri in mesh.tris - mesh.surface:
+                comps = [tet.comp for tet in tri.tetNeighbs]
+                Patch(tri.toList(), *comps, self.ssys)
+
+        sim = self.getSimulation()
+
+        totalNtets = len(mesh.tets)
+        with mesh.asLocal():
+            # Check that now all tets are owned by rank 0
+            self.assertEqual(len(mesh.tets), totalNtets if MPI.rank == 0 else 0)
 
     def testGroupBlocksLoading(self):
         mesh = self.mesh3
@@ -350,9 +403,6 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
             patch1 = Patch.Create(remSurfTris[:len(remSurfTris)//2], TETGROUP1)
             patch2 = Patch.Create(remSurfTris[len(remSurfTris)//2:], TETGROUP1)
 
-            with self.assertRaises(ValueError):
-                memb1 = Membrane.Create([patch1, patch2])
-
             memb2 = Membrane.Create([patch1], capacitance=4.56)
             memb3 = Membrane.Create([patch2], capacitance=7.89)
 
@@ -471,17 +521,19 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
         with mesh:
             TG1 = Compartment.Create(mesh.tetGroups['TETGROUP1'])
         self.assertCountEqual(TG1.tets, mesh.tetGroups['TETGROUP1'])
-            
-        # Check that compartments require local lists with ghost elements
-        with self.assertRaises(Exception):
-            with mesh.asLocal():
-                tets3owned = mesh.tetGroups['TETGROUP3']
-                TG2_ = Compartment.Create(mesh.tetGroups['TETGROUP2'])
+
+        # Check that compartments can be created without ghost elements
+        with mesh.asLocal():
+            tets3owned = mesh.tetGroups['TETGROUP3']
+            TG2 = Compartment.Create(mesh.tetGroups['TETGROUP2'])
+        self.assertCountEqual(TG2.tets, mesh.tetGroups['TETGROUP2'])
 
         with mesh:
-            with self.assertRaises(Exception):
-                TG3_ = Compartment.Create(tets3owned)
+            TG3 = Compartment.Create(tets3owned)
+        self.assertCountEqual(TG3.tets, mesh.tetGroups['TETGROUP3'])
 
+    def testDistCompFromListsGhost(self):
+        mesh = self.mesh3
         # Create a compartment from local list with ghost elements
         with mesh.asLocal(owned=False) as mesh:
             tets2 = mesh.tetGroups['TETGROUP2']
@@ -508,15 +560,33 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
             patch1 = Patch.Create(remSurfTris, TETGROUP1)
         self.assertCountEqual(patch1.tris, remSurfTris)
 
-        # Check that patches require local lists with ghost bounds
-        with self.assertRaises(Exception):
-            with mesh.asLocal():
-                tris2owned = TETGROUP2.surface & mesh.surface
-                patch2_0 = Patch.Create(tris2owned, TETGROUP2)
+        # Check that patches can be created without ghost bounds
+        with mesh.asLocal():
+            tris2owned = TETGROUP2.surface & mesh.surface
+            tris3owned = TETGROUP3.surface & mesh.surface
+            patch2 = Patch.Create(tris2owned, TETGROUP2)
+        self.assertCountEqual(patch2.tris, tris2owned.combineWithOperator(operator.or_))
 
         with mesh:
-            with self.assertRaises(Exception):
-                patch2_1 = Compartment.Create(tris2owned, TETGROUP2)
+            patch3 = Patch.Create(tris3owned, TETGROUP3)
+        self.assertCountEqual(patch3.tris, tris3owned.combineWithOperator(operator.or_))
+
+        # Create inner patch
+        trisInner = TETGROUP2.surface & TETGROUP3.surface
+        with mesh.asLocal():
+            patchInner = Patch.Create(trisInner.toLocal(), TETGROUP2, TETGROUP3)
+            self.assertCountEqual(patchInner.tris, trisInner.toLocal())
+        with mesh.asLocal(owned=False):
+            self.assertCountEqual(patchInner.tris, trisInner.toLocal(owned=False))
+        self.assertCountEqual(patchInner.tris, trisInner)
+
+    def testDistPatchFromListsGhost(self):
+        mesh = self.mesh3
+
+        with mesh:
+            TETGROUP1 = Compartment.Create()
+            TETGROUP2 = Compartment.Create()
+            TETGROUP3 = Compartment.Create()
 
         # Create a patch from local list with ghost bounds
         tris2 = (TETGROUP2.surface & mesh.surface).toLocal(owned=False)
@@ -533,8 +603,6 @@ class distTetMeshTests(test_tetMesh.tetMeshTests):
         # Create inner patch
         trisInner = TETGROUP2.surface & TETGROUP3.surface
         with mesh.asLocal():
-            with self.assertRaises(Exception):
-                patchInner_1 = Patch.Create(trisInner.toLocal(), TETGROUP2, TETGROUP3)
             patchInner = Patch.Create(trisInner.toLocal(owned=False), TETGROUP2, TETGROUP3)
             self.assertCountEqual(patchInner.tris, trisInner.toLocal())
         with mesh.asLocal(owned=False):

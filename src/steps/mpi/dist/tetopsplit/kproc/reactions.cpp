@@ -6,138 +6,95 @@
 #include "geom/dist/distmesh.hpp"
 #include "kproc_state.hpp"
 #include "math/constants.hpp"
+#include "model/complexreac.hpp"
+#include "mpi/dist/tetopsplit/definition/fwd.hpp"
 #include "util/vocabulary.hpp"
 
 namespace steps::dist::kproc {
 
-Reactions::Reactions(const Statedef& statedef, DistMesh& mesh, MolState& mol_state)
-    : measureInfo(mesh.getMeasure()) {
-    const auto& owned_elems_mask = mesh.owned_elems_mask();
+void ComplexReactions::addComplexReactions(const Compdef& compartment,
+                                           MolState& mol_state,
+                                           const mesh::tetrahedron_id_t& tet) {
+    for (const auto& reacdef: compartment.reacdefs<ComplexReacdef>()) {
+        std::vector<MolStateComplexElementID> comp_deps;
+        const auto& deps = reacdef->complexDEPMAP();
+        for (const auto& [cId, substates]: deps) {
+            for (const auto& sus: substates) {
+                comp_deps.emplace_back(tet, cId, sus);
+            }
+        }
+        complex_reactions_deps.push_back(comp_deps);
 
-    for (const auto& compartment: statedef.compdefs()) {
-        const auto& elements = mesh.getEntities(compartment->getID());
-        for (auto k: elements) {
-            if (owned_elems_mask[k.get()] != 0) {
-                for (const auto& reacdef: compartment->reacdefs()) {
-                    reacdefs_.emplace_back(*reacdef);
-                    ownerPoints_.push_back(k);
-                    ccsts_.push_back(compute_ccst(*reacdef, k));
-                    std::vector<osh::I64> stoichiometry_change;
-                    std::vector<MolStateElementID> reaction_upd;
-                    std::vector<MolStateElementID> reaction_lhs;
-                    const auto& upd_array = reacdef->getPoolChangeUPD();
-                    for (size_t spec = 0; spec < upd_array.size(); spec++) {
-                        if (upd_array[spec] != 0) {
-                            container::species_id speciesId(static_cast<int>(spec));
-                            reaction_upd.emplace_back(k, speciesId);
-                            stoichiometry_change.push_back(upd_array[spec]);
+        std::vector<MolStateComplexElementID> comp_upds;
+        const auto& upds = reacdef->complexUPDMAP();
+        for (const auto& [cId, substates]: upds) {
+            for (const auto& sus: substates) {
+                comp_upds.emplace_back(tet, cId, sus);
+            }
+        }
+        complex_reactions_upds.push_back(comp_upds);
 
-                            // track occupancy if the molecule can diffuse (here we have only
-                            // molecules, not channel states)
-                            if (compartment->isDiffused(speciesId)) {
-                                mol_state.track_occupancy_rd(k, speciesId);
-                            }
-                        }
-                    }
-                    const auto& lhs_array = reacdef->getPoolChangeLHS();
-                    for (size_t spec = 0; spec < lhs_array.size(); ++spec) {
-                        if (lhs_array[spec] != 0) {
-                            const container::species_id spec_id(static_cast<int>(spec));
-                            reaction_lhs.emplace_back(k, spec_id);
-                        }
-                    }
-                    reactions_upd_.push_back(reaction_upd);
-                    reactions_lhs_.push_back(reaction_lhs);
-                    stoichiometry_change_.push_back(stoichiometry_change);
-                }
+        candidates.emplace_back();
+        auto& lhscands = candidates.back();
+        std::map<model::complex_id, uint> added;
+        for (auto ev: reacdef->lhsEvents()) {
+            auto it = added.find(ev->complexIdx());
+            if (it == added.end()) {
+                it = added.insert({ev->complexIdx(), lhscands.size()}).first;
+                lhscands.emplace_back(ev->complexIdx(), tet);
+            }
+            lhscands[it->second].addEvent(ev, mol_state.moleculesOnElements());
+        }
+    }
+}
+
+osh::Real ComplexReactions::computeRate(const MolState& mol_state, size_t index) const {
+    auto specRate = ReactionsBase<ComplexReacdef>::computeRate(mol_state, index);
+    if (specRate == 0.0) {
+        return 0;
+    }
+    // Get the rates for the complex reaction part
+    double cmult = 1.0;
+    for (auto& cand: candidates[index]) {
+        cmult *= cand.rateMult(mol_state.moleculesOnElements());
+    }
+    return cmult * specRate;
+}
+
+const std::vector<MolStateElementID>& ComplexReactions::updateMolStateAndOccupancy(
+    MolState& mol_state,
+    rng::RNG& rng,
+    size_t index,
+    osh::Real event_time) const {
+    // Species part of the complex reaction
+    auto& upd = ReactionsBase<ComplexReacdef>::updateMolStateAndOccupancy(
+        mol_state, rng, index, event_time, 1);
+
+    const auto& entity = ownerPoints_[index];
+    auto& entmols = mol_state.moleculesOnElements();
+    // Updates
+    for (auto& cands: candidates[index]) {
+        for (auto& event: cands.selectEvents(entmols, rng)) {
+            if (event.first->type() == UPDEvent) {
+                const auto ev = std::dynamic_pointer_cast<const ComplexUpdateEventdef>(event.first);
+                const auto& state = entmols.complexStates(cands.complexIdx()).at(event.second);
+                entmols.updateComplexUpdateOccupancy(cands.complexIdx(),
+                                                     event.second,
+                                                     ev->getUpdate(state, rng),
+                                                     event_time);
+            } else {
+                // Deletions
+                entmols.removeComplexUpdateOccupancy(cands.complexIdx(), event.second, event_time);
             }
         }
     }
-}
-
-//------------------------------------------------------------------
-
-void Reactions::report(std::ostream& report_stream, size_t index) const {
-    getReacDef(index).report(report_stream, ownerPoints_[index]);
-}
-
-//------------------------------------------------------------------
-
-osh::Real Reactions::computeRate(const MolState& mol_state, size_t index) const {
-    const auto& lhs = reacdefs_[index].get().getPoolChangeLHS();
-
-    osh::Real h_mu = 1.0;
-    const container::species_id num_species(
-        static_cast<container::species_id::value_type>(lhs.size()));
-
-    for (container::species_id species(0); species < num_species; species++) {
-        osh::I64 lhs_s = -lhs[static_cast<size_t>(species.get())];
-
-        if (lhs_s == 0) {
-            continue;
-        }
-        auto pool_s = mol_state(this->getOwnerPoint(index), species);
-
-        if (lhs_s > pool_s) {
-            h_mu = 0.0;
-            break;
-        }
-        switch (lhs_s) {
-        case 4: {
-            h_mu *= static_cast<osh::Real>(pool_s - 3);
-            OMEGA_H_FALLTHROUGH;
-        }
-        case 3: {
-            h_mu *= static_cast<osh::Real>(pool_s - 2);
-            OMEGA_H_FALLTHROUGH;
-        }
-        case 2: {
-            h_mu *= static_cast<osh::Real>(pool_s - 1);
-            OMEGA_H_FALLTHROUGH;
-        }
-        case 1: {
-            h_mu *= static_cast<osh::Real>(pool_s);
-            break;
-        }
-        default: {
-            throw std::runtime_error("Reaction rate computation error");
-        }
-        }
+    // Creations
+    for (auto& ce: reacdefs_[index].get().creEvents()) {
+        entmols.createComplexUpdateOccupancy(entity, ce->complexIdx(), ce->init(), event_time);
     }
 
-    return h_mu * ccsts_[index];
-}
-
-//------------------------------------------------------------------
-
-osh::Real Reactions::compute_ccst(const Reacdef& reacdef, mesh::tetrahedron_id_t element) const {
-    const auto measure = measureInfo.element_measure(element);
-    osh::Real scale = 1.0e3 * measure * math::AVOGADRO;
-    osh::I64 o1 = reacdef.getOrder() - 1;
-    osh::Real ccst = reacdef.getKcst() * std::pow(scale, static_cast<osh::Real>(-o1));
-    return ccst;
-}
-
-//------------------------------------------------------------------
-
-
-const std::vector<MolStateElementID>& Reactions::updateMolStateAndOccupancy(
-    MolState& mol_state,
-    size_t index,
-    const osh::Real event_time) const {
-    const auto& upd = reactions_upd_[index];
-    const auto& stoichoimetry = stoichiometry_change_[index];
-
-
-    for (size_t k = 0; k < upd.size(); k++) {
-        const auto& elmt = upd[k];
-        const auto& s = stoichoimetry[k];
-
-        // mol_state(elmt) +s is the new mols count. It cannot go negative
-        assert(mol_state(elmt) >= -s);
-        assert(mol_state(elmt) <= std::numeric_limits<molecules_t>::max() - std::max(s, {}));
-        mol_state.add_and_update_occupancy(elmt, static_cast<osh::LO>(s), event_time);
-    }
+    // TODO Eventually try to take complex changes into account for the return value, so RSSA can be
+    // used
     return upd;
 }
 

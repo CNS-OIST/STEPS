@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -592,31 +592,32 @@ class TetopsplitValidationsRD(unittest.TestCase):
         self.perform_tests()
 
     # TODO Re-activate the test once RSSA is fully supported
-    # def test_sr_indep_KProcs_RSSA(self):
-        # self.steps_version = 4
-        # self.is_full = False
-        # self.set_constants()
+    def test_sr_indep_KProcs_RSSA(self):
+        self.steps_version = 4
+        self.is_full = False
+        self.set_constants()
 
-        # self.init_model()
-        # self.init_mesh(filename='cube.msh', scale=4.5e-6)
+        self.init_model()
+        self.init_mesh(filename='cube.msh', scale=4.5e-6)
 
-        # rng = RNG('r123', 512, 100)
-        # if self.steps_version == 4:
-            # self.sim = Simulation(
-                # 'DistTetOpSplit',
-                # self.mdl,
-                # self.mesh,
-                # rng,
-                # isEfield=False,
-                # indepKProcs=True,
-                # SSAMethod=SSAMethod.RSSA,
-            # )
-        # else:
-            # part = LinearMeshPartition(self.mesh, MPI.nhosts, 1, 1)
-            # self.sim = Simulation('TetOpSplit', self.mdl, self.mesh, rng, MPI.EF_NONE, part)
+        rng = RNG('r123', 512, 100)
+        if self.steps_version == 4:
+            self.sim = Simulation(
+                'DistTetOpSplit',
+                self.mdl,
+                self.mesh,
+                rng,
+                isEfield=False,
+                indepKProcs=True,
+                SSAMethod=SSAMethod.RSSA,
+                searchMethod=NextEventSearchMethod.DIRECT,
+            )
+        else:
+            part = LinearMeshPartition(self.mesh, MPI.nhosts, 1, 1)
+            self.sim = Simulation('TetOpSplit', self.mdl, self.mesh, rng, MPI.EF_NONE, part)
 
-        # self.run_sim()
-        # self.perform_tests()
+        self.run_sim()
+        self.perform_tests()
 
 
 def suite():

@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -163,6 +163,17 @@ class Surfsys {
     /// \return List of pointers to ohmic currents.
     std::vector<OhmicCurr*> getAllOhmicCurrs() const;
 
+    /// Return a complex ohmic current with name id.
+    ///
+    /// \param id ID of the complex ohmic current.
+    /// \return Reference to the complex ohmic current.
+    ComplexOhmicCurr& getComplexOhmicCurr(std::string const& id) const;
+
+    /// Return a list of all complex ohmic currents.
+    ///
+    /// \return List of pointers to complex ohmic currents.
+    std::vector<ComplexOhmicCurr*> getAllComplexOhmicCurrs() const;
+
     ////////////////////////////////////////////////////////////////////////
     // OPERATIONS (EXPOSED TO PYTHON): GHK CURRENTS
     ////////////////////////////////////////////////////////////////////////
@@ -232,6 +243,16 @@ class Surfsys {
     /// \return List of pointers to complex reactions.
     std::vector<ComplexSReac*> getAllComplexSReacs() const;
 
+    /// Return a list of all voltage-dependent complex reactions.
+    ///
+    /// \return List of pointers to voltage-dependent complex reactions.
+    std::vector<VDepComplexSReac*> getAllVDepComplexSReacs() const;
+
+    /// Return a list of all complex ghk currents.
+    ///
+    /// \return List of pointers to complex ghk currents.
+    std::vector<ComplexGHKcurr*> getAllComplexGHKcurrs() const;
+
     ////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////
@@ -276,6 +297,11 @@ class Surfsys {
     ///
     /// \param reac Pointer to the complex reaction.
     void _handleComplexSReacAdd(ComplexSReac& reac);
+
+    /// Add a voltage-dependent complex reaction to the surface system.
+    ///
+    /// \param reac Pointer to the voltage-dependent complex reaction.
+    void _handleVDepComplexSReacAdd(VDepComplexSReac& reac);
 
     ////////////////////////////////////////////////////////////////////////
     // INTERNAL (NON-EXPOSED) OPERATIONS: DIFFUSION
@@ -346,6 +372,11 @@ class Surfsys {
     /// \param Reference to the ohmic current.
     void _handleOhmicCurrAdd(OhmicCurr& ohmiccurr);
 
+    /// Add a complex ohmic current to the surface system.
+    ///
+    /// \param Reference to the complex ohmic current.
+    void _handleComplexOhmicCurrAdd(ComplexOhmicCurr& ohmiccurr);
+
     /// Delete an ohmic current in the surface system.
     ///
     /// \param Reference to the ohmic current.
@@ -370,6 +401,11 @@ class Surfsys {
     ///
     /// \param Reference to the GHK current.
     void _handleGHKcurrAdd(GHKcurr& ghkcurr);
+
+    /// Add a complex GHK current to the surface system.
+    ///
+    /// \param Reference to the complex GHK current.
+    void _handleComplexGHKcurrAdd(ComplexGHKcurr& ghkcurr);
 
     /// Delete a GHK current in the surface system.
     ///
@@ -499,17 +535,37 @@ class Surfsys {
         return pOhmicCurrs.size();
     }
 
+    /// Count the complex ohmic currents in the surface system.
+    ///
+    /// \return Number of complex ohmic currents.
+    inline uint _countComplexOhmicCurrs() const noexcept {
+        return pComplexOhmicCurrs.size();
+    }
+
     /// Get ohmic current object with index lidx.
     ///
     /// \param lidx index of the ohmic current.
     /// \ return Reference to the ohmic current.
     OhmicCurr& _getOhmicCurr(uint lidx) const;
 
+    /// Get complex ohmic current object with index lidx.
+    ///
+    /// \param lidx index of the complex ohmic current.
+    /// \ return Reference to the complex ohmic current.
+    ComplexOhmicCurr& _getComplexOhmicCurr(uint lidx) const;
+
     /// Count the ghk currents in the surface system.
     ///
     /// \return Number of ghk currents.
     inline uint _countGHKcurrs() const noexcept {
         return pGHKcurrs.size();
+    }
+
+    /// Count the complex GHK currents in the surface system.
+    ///
+    /// \return Number of complex GHK currents.
+    inline uint _countComplexGHKcurrs() const noexcept {
+        return pComplexGHKcurrs.size();
     }
 
     /// Get ghk current object with index lidx.
@@ -579,11 +635,26 @@ class Surfsys {
         return pOhmicCurrs;
     }
 
+    /// Get all complex ohmic currents in the system
+    ///
+    /// \return Map of complex ohmic currents
+    inline const std::map<std::string, ComplexOhmicCurr*>& _getAllComplexOhmicCurrs()
+        const noexcept {
+        return pComplexOhmicCurrs;
+    }
+
     /// Get all ghk currents in the system
     ///
     /// \return Map of ghk currents
     inline const std::map<std::string, GHKcurr*>& _getAllGHKcurrs() const noexcept {
         return pGHKcurrs;
+    }
+
+    /// Get all complex ghk currents in the system
+    ///
+    /// \return Map of complex ghk currents
+    inline const std::map<std::string, ComplexGHKcurr*>& _getAllComplexGHKcurrs() const noexcept {
+        return pComplexGHKcurrs;
     }
 
     /// Get all raft geneses in the surface system.
@@ -622,10 +693,13 @@ class Surfsys {
     Model& pModel;
     std::map<std::string, SReac*> pSReacs;
     std::map<std::string, ComplexSReac*> pComplexSReacs;
+    std::map<std::string, VDepComplexSReac*> pVDepComplexSReacs;
     std::map<std::string, Diff*> pDiffs;
     std::map<std::string, VDepSReac*> pVDepSReacs;
     std::map<std::string, OhmicCurr*> pOhmicCurrs;
+    std::map<std::string, ComplexOhmicCurr*> pComplexOhmicCurrs;
     std::map<std::string, GHKcurr*> pGHKcurrs;
+    std::map<std::string, ComplexGHKcurr*> pComplexGHKcurrs;
     std::map<std::string, RaftGen*> pRaftGens;
     std::map<std::string, Endocytosis*> pEndocytosis;
 

@@ -30,7 +30,6 @@ WarningsAsErrors: |-
     ,modernize-redundant-void-arg
     ,modernize-use-auto
     ,modernize-use-equals-default
-    ,modernize-use-nodiscard
     ,modernize-use-nullptr
     ,readability-implicit-bool-conversion
     ,readability-make-member-function-const

@@ -191,7 +191,6 @@ def run_sim(sim, dt, t_end, vertices, verbose=False):
         if verbose and not l%100:  print(str(l)+" out of "+str(N))
         if (l==int(N/2)):
             sim.checkpoint('./validation_cp_mpi/cp/rallpack1_membres')
-            sim.reset()
             sim.restore('./validation_cp_mpi/cp/rallpack1_membres')
         sim.run(l*dt)
         result[l,:] = [sim.getVertV(v) for v in vertices]

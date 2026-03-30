@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -297,6 +297,11 @@ class Model {
     /// \return Pointer to the complex.
     Complex& _getComplex(solver::complex_global_id gidx) const;
 
+    /// Count the complexes in the Model object.
+    ///
+    /// \return Number of complexes.
+    std::vector<Complex*> getAllComplexes() const;
+
     /// Count the channels in the Model object.
     ///
     /// \return Number of channels.
@@ -425,6 +430,11 @@ class Model {
     /// \return Number of ohmic currents.
     uint _countOhmicCurrs() const;
 
+    /// Count the complex ohmic currents in the Model object.
+    ///
+    /// \return Number of ohmic currents.
+    uint _countComplexOhmicCurrs() const;
+
     /// Return an ohmic current with index gidx.
     ///
     /// \param gidx Index of the ohmic current.
@@ -435,6 +445,11 @@ class Model {
     ///
     /// \return Number of ghk currents.
     uint _countGHKcurrs() const;
+
+    /// Count the complex ghk currents in the Model object.
+    ///
+    /// \return Number of ohmic currents.
+    uint _countComplexGHKCurrs() const;
 
     /// Return an ghk current with index gidx.
     ///

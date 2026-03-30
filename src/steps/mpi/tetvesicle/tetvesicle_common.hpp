@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -76,6 +76,7 @@ struct VesProxyV2R {
     solver::vesicle_individual_id vesicle_individual_index{};
     bool contains_link{};
     std::array<double, 3> vesicle_central_position{};
+    double diam{};
 };
 
 struct VesSurfSpecV2R {
@@ -290,10 +291,10 @@ struct MPIDataTypeUtil {
 
     void commitVesProxyV2R(MPI_Datatype& new_type) {
         VesProxyV2R temp{};
-        constexpr size_t num_blocks = 5;
-        int blocklens[num_blocks] = {1, 1, 1, 1, 3};
+        constexpr size_t num_blocks = 6;
+        int blocklens[num_blocks] = {1, 1, 1, 1, 3, 1};
         MPI_Datatype old_types[num_blocks] = {
-            MPI_STEPS_INDEX, MPI_STEPS_INDEX, MPI_STEPS_INDEX, MPI_C_BOOL, MPI_DOUBLE};
+            MPI_STEPS_INDEX, MPI_STEPS_INDEX, MPI_STEPS_INDEX, MPI_C_BOOL, MPI_DOUBLE, MPI_DOUBLE};
         MPI_Aint addr[num_blocks];
         MPI_Aint disp1[num_blocks];
         MPI_Get_address(&temp.tetrahedron_global_index, addr);
@@ -301,6 +302,7 @@ struct MPIDataTypeUtil {
         MPI_Get_address(&temp.vesicle_individual_index, addr + 2);
         MPI_Get_address(&temp.contains_link, addr + 3);
         MPI_Get_address(temp.vesicle_central_position.data(), addr + 4);
+        MPI_Get_address(&temp.diam, addr + 5);
         _process(new_type, blocklens, old_types, addr, disp1, num_blocks);
     }
 

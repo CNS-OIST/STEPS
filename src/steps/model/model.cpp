@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -47,6 +47,8 @@
 
 #include "util/checkid.hpp"
 #include "util/error.hpp"
+
+#include <numeric>
 
 namespace steps::model {
 
@@ -755,210 +757,178 @@ void Model::_handleRaftsysDel(Raftsys& raftsys) {
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countReacs() const {
-    uint nreacs = 0;
-
-    for (auto const& vs: pVolsys) {
-        nreacs += vs.second->_countReacs();
-    }
-    return nreacs;
+    return std::accumulate(pVolsys.begin(), pVolsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countReacs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countComplexReacs() const {
-    uint ncomplexreacs = 0;
-
-    for (auto const& vs: pVolsys) {
-        ncomplexreacs += vs.second->_countComplexReacs();
-    }
-    return ncomplexreacs;
+    return std::accumulate(pVolsys.begin(), pVolsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countComplexReacs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countSReacs() const {
-    uint nsreacs = 0;
-
-    for (auto const& ss: pSurfsys) {
-        nsreacs += ss.second->_countSReacs();
-    }
-    return nsreacs;
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countSReacs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countComplexSReacs() const {
-    uint ncomplexsreacs = 0;
-
-    for (auto const& ss: pSurfsys) {
-        ncomplexsreacs += ss.second->_countComplexSReacs();
-    }
-    return ncomplexsreacs;
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countComplexSReacs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countRaftGeneses() const {
-    uint nraftgens = 0;
-
-    for (auto const& ss: pSurfsys) {
-        nraftgens += ss.second->_countRaftGens();
-    }
-    return nraftgens;
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countRaftGens();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countRaftDiss() const {
-    uint nraftdiss = 0;
-
-    for (auto const& rs: pRaftsys) {
-        nraftdiss += rs.second->_countRaftDiss();
-    }
-    return nraftdiss;
+    return std::accumulate(pRaftsys.begin(), pRaftsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countRaftDiss();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countEndocytosis() const {
-    uint nendos = 0;
-
-    for (auto const& ss: pSurfsys) {
-        nendos += ss.second->_countEndocytosis();
-    }
-    return nendos;
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countEndocytosis();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countRaftEndocytosis() const {
-    uint nendos = 0;
-
-    for (auto const& rs: pRaftsys) {
-        nendos += rs.second->_countRaftEndocytosis();
-    }
-    return nendos;
+    return std::accumulate(pRaftsys.begin(), pRaftsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countRaftEndocytosis();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countExocytosis() const {
-    uint nexos = 0;
-
-    for (auto const& vs: pVesSurfsys) {
-        nexos += vs.second->_countExocytosis();
-    }
-    return nexos;
+    return std::accumulate(pVesSurfsys.begin(),
+                           pVesSurfsys.end(),
+                           0u,
+                           [](uint sum, auto const& sys) {
+                               return sum + sys.second->_countExocytosis();
+                           });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countVDiffs() const {
-    uint ndiffs = 0;
-
-    for (auto const& vs: pVolsys) {
-        ndiffs += vs.second->_countDiffs();
-    }
-    return ndiffs;
+    return std::accumulate(pVolsys.begin(), pVolsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countDiffs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countSDiffs() const {
-    uint ndiffs = 0;
-
-    for (auto const& ss: pSurfsys) {
-        ndiffs += ss.second->_countDiffs();
-    }
-    return ndiffs;
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countDiffs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countVDepSReacs() const {
-    uint nvdsrs = 0;
-
-    for (auto const& ss: pSurfsys) {
-        nvdsrs += ss.second->_countVDepSReacs();
-    }
-    return nvdsrs;
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countVDepSReacs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countOhmicCurrs() const {
-    uint nocs = 0;
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countOhmicCurrs();
+    });
+}
 
-    for (auto const& ss: pSurfsys) {
-        nocs += ss.second->_countOhmicCurrs();
-    }
-    return nocs;
+////////////////////////////////////////////////////////////////////////////////
+
+uint Model::_countComplexOhmicCurrs() const {
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countComplexOhmicCurrs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countGHKcurrs() const {
-    uint nghks = 0;
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countGHKcurrs();
+    });
+}
 
-    for (auto const& ss: pSurfsys) {
-        nghks += ss.second->_countGHKcurrs();
-    }
-    return nghks;
+////////////////////////////////////////////////////////////////////////////////
+
+uint Model::_countComplexGHKCurrs() const {
+    return std::accumulate(pSurfsys.begin(), pSurfsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countComplexGHKcurrs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countVesBinds() const {
-    uint nvesbinds = 0;
-
-    for (auto const& vs: pVolsys) {
-        nvesbinds += vs.second->_countVesBinds();
-    }
-    return nvesbinds;
+    return std::accumulate(pVolsys.begin(), pVolsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countVesBinds();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countVesUnbinds() const {
-    uint nvesunbinds = 0;
-
-    for (auto const& vs: pVolsys) {
-        nvesunbinds += vs.second->_countVesUnbinds();
-    }
-    return nvesunbinds;
+    return std::accumulate(pVolsys.begin(), pVolsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countVesUnbinds();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countVesSDiffs() const {
-    uint ndiffs = 0;
-
-    for (auto const& ss: pVesSurfsys) {
-        ndiffs += ss.second->_countVesSDiffs();
-    }
-    return ndiffs;
+    return std::accumulate(pVesSurfsys.begin(),
+                           pVesSurfsys.end(),
+                           0u,
+                           [](uint sum, auto const& sys) {
+                               return sum + sys.second->_countVesSDiffs();
+                           });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countVesSReacs() const {
-    uint nreacs = 0;
-
-    for (auto const& ss: pVesSurfsys) {
-        nreacs += ss.second->_countVesSReacs();
-    }
-    return nreacs;
+    return std::accumulate(pVesSurfsys.begin(),
+                           pVesSurfsys.end(),
+                           0u,
+                           [](uint sum, auto const& sys) {
+                               return sum + sys.second->_countVesSReacs();
+                           });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 uint Model::_countRaftSReacs() const {
-    uint nreacs = 0;
-
-    for (auto const& rss: pRaftsys) {
-        nreacs += rss.second->_countRaftSReacs();
-    }
-    return nreacs;
+    return std::accumulate(pRaftsys.begin(), pRaftsys.end(), 0u, [](uint sum, auto const& sys) {
+        return sum + sys.second->_countRaftSReacs();
+    });
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -986,6 +956,17 @@ Complex& Model::_getComplex(solver::complex_global_id gidx) const {
     auto cp_it = pComplexes.begin();
     std::advance(cp_it, gidx.get());
     return *cp_it->second;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<Complex*> Model::getAllComplexes() const {
+    std::vector<Complex*> complexes;
+    complexes.reserve(pComplexes.size());
+    for (auto const& s: pComplexes) {
+        complexes.push_back(s.second);
+    }
+    return complexes;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

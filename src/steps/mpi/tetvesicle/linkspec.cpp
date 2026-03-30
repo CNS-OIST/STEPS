@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -34,27 +34,6 @@
 #include "util/checkpointing.hpp"
 
 namespace steps::mpi::tetvesicle {
-
-////////////////////////////////////////////////////////////////////////////////
-
-// Just chuck this here for now
-void cross_prod(double a1,
-                double a2,
-                double a3,
-                double b1,
-                double b2,
-                double b3,
-                double& p1,
-                double& p2,
-                double& p3) {
-    p1 = (a2 * b3 - a3 * b2);
-    p2 = (a3 * b1 - a1 * b3);
-    p3 = (a1 * b2 - a2 * b1);
-}
-
-double dot_prod(double a1, double a2, double a3, double b1, double b2, double b3) {
-    return a1 * b1 + a2 * b2 + a3 * b3;
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -184,22 +163,42 @@ double LinkSpec::getLength() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool LinkSpec::movePosAllowed(const math::point3d& move_vector) const {
+bool LinkSpec::movePosAllowed(const math::point3d& ves_move_vector) const {
     if (!pLinked) {
         ProgErrLog("LinkSpecies has not been paired.");
     }
 
     auto posA_abs = getPosCartesian_abs();
 
-    math::position_abs posA_abs_new{posA_abs[0] + move_vector[0],
-                                    posA_abs[1] + move_vector[1],
-                                    posA_abs[2] + move_vector[2]};
+    math::position_abs posA_abs_new{posA_abs[0] + ves_move_vector[0],
+                                    posA_abs[1] + ves_move_vector[1],
+                                    posA_abs[2] + ves_move_vector[2]};
+
+    auto posA_rel = getPosCartesian_rel();
 
     auto posB_abs = getLinkedSpec()->getPosCartesian_abs();
 
     double newlength = math::distance(posA_abs_new, posB_abs);
 
-    return newlength <= pPair->max_length() && newlength >= pPair->min_length();
+    if (newlength > pPair->max_length() or newlength < pPair->min_length()) {
+        return false;
+    }
+
+    auto vectorA = posB_abs - posA_abs_new;
+    double newcos2A = math::cos2_signed(
+        posA_rel[0], posA_rel[1], posA_rel[2], vectorA[0], vectorA[1], vectorA[2]);
+
+    if (newcos2A <= getMinCos2()) {
+        return false;
+    }
+
+    // Also need to find new angle for the other linkspec to its vesicle
+    auto vectorB = posA_abs_new - posB_abs;
+    auto posB_rel = getLinkedSpec()->getPosCartesian_rel();
+    double newcos2B = math::cos2_signed(
+        posB_rel[0], posB_rel[1], posB_rel[2], vectorB[0], vectorB[1], vectorB[2]);
+
+    return (newcos2B > getLinkedSpec()->getMinCos2());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -232,7 +231,8 @@ void LinkSpec::updatePos(double theta, double phi) {
     double rotationaxis_x, rotationaxis_y,
         rotationaxis_z;  // z is overkill because it will always be zero
 
-    cross_prod(x_start, y_start, z_start, 0, 0, 1, rotationaxis_x, rotationaxis_y, rotationaxis_z);
+    math::cross_product(
+        x_start, y_start, z_start, 0, 0, 1, rotationaxis_x, rotationaxis_y, rotationaxis_z);
 
     double mod_rot_axis = sqrt((rotationaxis_x * rotationaxis_x) +
                                (rotationaxis_y * rotationaxis_y) +
@@ -249,16 +249,17 @@ void LinkSpec::updatePos(double theta, double phi) {
     // cross product and dot product:
 
     double cross_x, cross_y, cross_z;
-    cross_prod(x_rot,
-               y_rot,
-               z_rot,
-               rotationaxis_x,
-               rotationaxis_y,
-               rotationaxis_z,
-               cross_x,
-               cross_y,
-               cross_z);
-    double dot_p = dot_prod(rotationaxis_x, rotationaxis_y, rotationaxis_z, x_rot, y_rot, z_rot);
+    math::cross_product(x_rot,
+                        y_rot,
+                        z_rot,
+                        rotationaxis_x,
+                        rotationaxis_y,
+                        rotationaxis_z,
+                        cross_x,
+                        cross_y,
+                        cross_z);
+    double dot_p =
+        math::dot_product(rotationaxis_x, rotationaxis_y, rotationaxis_z, x_rot, y_rot, z_rot);
 
     // Apply Rodrigues' formula
     double v_x = x_rot * cos(phi_old) + cross_x * (sin(phi_old)) +
@@ -276,14 +277,5 @@ void LinkSpec::updatePos(double theta, double phi) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-bool LinkSpec::withinBounds() const {
-    if (!pLinked) {
-        ProgErrLog("LinkSpecies has not been paired.");
-    }
-
-    double newlength = getLength();
-    return newlength <= pPair->max_length() && newlength >= pPair->min_length();
-}
 
 }  // namespace steps::mpi::tetvesicle

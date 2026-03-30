@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16.3)
+cmake_minimum_required(VERSION 3.20.0)
 if(POLICY CMP0042)
   # Use rpath on Mac OS X
   cmake_policy(SET CMP0042 NEW)
@@ -9,32 +9,34 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMake)
 project(STEPS LANGUAGES CXX)
 
 set(VERSION_MAJOR 5)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH 4)
+set(VERSION_MINOR 1)
+set(VERSION_PATCH 0)
 set(STEPS_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
-# hpc coding conventions
-if(NOT EXISTS "${CMAKE_SOURCE_DIR}/CMake/hpc-coding-conventions/cpp")
-  message(
-    FATAL_ERROR
-      "Submodules do not seem to be initialized. Please run 'git submodule update --init --recursive'"
-  )
-endif()
-set(${PROJECT_NAME}_ClangFormat_EXCLUDES_RE
-    "pysteps/.*$$" "src/third_party/.*$$" "test/third_party/.*$$"
-    CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
-set(${PROJECT_NAME}_ClangTidy_EXCLUDES_RE
-    "pysteps/.*$$" "src/third_party/.*$$" "test/third_party/.*$$"
-    CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
-add_subdirectory(CMake/hpc-coding-conventions/cpp)
+if(NOT SKBUILD_PROJECT_NAME)
+  # hpc coding conventions
+  if(NOT EXISTS "${CMAKE_SOURCE_DIR}/CMake/hpc-coding-conventions/cpp")
+    message(
+      FATAL_ERROR
+        "Submodules do not seem to be initialized. Please run 'git submodule update --init --recursive'"
+    )
+  endif()
+  set(${PROJECT_NAME}_ClangFormat_EXCLUDES_RE
+      "pysteps/.*$$" "src/third_party/.*$$" "test/third_party/.*$$"
+      CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
+  set(${PROJECT_NAME}_ClangTidy_EXCLUDES_RE
+      "pysteps/.*$$" "src/third_party/.*$$" "test/third_party/.*$$"
+      CACHE STRING "list of regular expressions to exclude C/C++ files from formatting" FORCE)
+  add_subdirectory(CMake/hpc-coding-conventions/cpp)
 
-# Sanitizers
-include(sanitizers)
-if(STEPS_SANITIZERS)
-  foreach(var COMPILER_FLAGS ENABLE_ENVIRONMENT DISABLE_ENVIRONMENT PRELOAD_VAR LIBRARY_PATH
-              LIBRARY_DIR)
-    message(STATUS "STEPS_SANITIZER_${var}=${STEPS_SANITIZER_${var}}")
-  endforeach()
+  # Sanitizers
+  include(sanitizers)
+  if(STEPS_SANITIZERS)
+    foreach(var COMPILER_FLAGS ENABLE_ENVIRONMENT DISABLE_ENVIRONMENT PRELOAD_VAR LIBRARY_PATH
+                LIBRARY_DIR)
+      message(STATUS "STEPS_SANITIZER_${var}=${STEPS_SANITIZER_${var}}")
+    endforeach()
+  endif()
 endif()
 
 # OPTIONS
@@ -72,16 +74,26 @@ mark_as_advanced_all("PROFILING")
 include(CTest)
 
 find_package(
-  Python 3.8
+  Python 3.9
   COMPONENTS Interpreter Development
   REQUIRED)
 include(FindPythonModule)
 
-foreach (_pyprefix ${CMAKE_PREFIX_PATH})
-  if (IS_DIRECTORY ${_pyprefix}/cmeel.prefix)
-    list(APPEND CMAKE_PREFIX_PATH ${_pyprefix}/cmeel.prefix)
+if(SKBUILD_PROJECT_NAME)
+  # Add cmeel prefix to CMAKE_PREFIX_PATH
+  execute_process(
+    COMMAND "${Python_EXECUTABLE}" "-m" "cmeel" "cmake"
+    OUTPUT_VARIABLE cmeel_CMAKE_PATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(EXISTS "${cmeel_CMAKE_PATH}")
+    list(APPEND CMAKE_PREFIX_PATH ${cmeel_CMAKE_PATH})
+    # Also add the corresponding site-packages
+    list(APPEND CMAKE_PREFIX_PATH "${cmeel_CMAKE_PATH}/..")
   endif()
-  if (IS_DIRECTORY ${_pyprefix}/petsc/lib/pkgconfig)
+endif()
+
+foreach(_pyprefix ${CMAKE_PREFIX_PATH})
+  if(IS_DIRECTORY ${_pyprefix}/petsc/lib/pkgconfig)
     set(ENV{PKG_CONFIG_PATH} "${_pyprefix}/petsc/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
   elseif(IS_DIRECTORY ${_pyprefix}/petsc/lib)
     set(PETSC_DIR ${_pyprefix}/petsc)
@@ -98,58 +110,57 @@ set(USE_PETSC
     CACHE STRING "Use PETSC library for parallel E-Field solver")
 set_property(CACHE USE_PETSC PROPERTY STRINGS "Default;True;False")
 
-# Install Paths
-# Use ~/.local as default CMAKE_INSTALL_PREFIX to avoid requiring a sudo make install
+# Install Paths Use ~/.local as default CMAKE_INSTALL_PREFIX to avoid requiring a sudo make install
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   # Default python installation to site-packages, do not use Python_SITEARCH since it points to
   # dist-packages
   if(NOT DEFINED Python_INSTALL_PREFIX)
     execute_process(
-            COMMAND
-            ${Python_EXECUTABLE} -c
-            "import os,sys,sysconfig; print(sysconfig.get_path('platlib') if (sys.prefix != sys.base_prefix or os.path.exists(os.path.join(sys.prefix, 'conda-meta'))) else sysconfig.get_path('platlib', 'osx_framework_user' if bool(sysconfig.get_config_var('PYTHONFRAMEWORK')) else f'{os.name}_user'))"
-            OUTPUT_VARIABLE _python_site_packages_dir
-            ERROR_VARIABLE _python_site_packages_error
-            OUTPUT_STRIP_TRAILING_WHITESPACE)
+      COMMAND
+        ${Python_EXECUTABLE} -c
+        "import os,sys,sysconfig; print(sysconfig.get_path('platlib') if (sys.prefix != sys.base_prefix or os.path.exists(os.path.join(sys.prefix, 'conda-meta'))) else sysconfig.get_path('platlib', 'osx_framework_user' if bool(sysconfig.get_config_var('PYTHONFRAMEWORK')) else f'{os.name}_user'))"
+      OUTPUT_VARIABLE _python_site_packages_dir
+      ERROR_VARIABLE _python_site_packages_error
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(EXISTS ${_python_site_packages_dir})
       set(Python_INSTALL_PREFIX
-              ${_python_site_packages_dir}
-              CACHE PATH "Path to install steps Python package")
+          ${_python_site_packages_dir}
+          CACHE PATH "Path to install steps Python package")
     else()
       message(
-              FATAL_ERROR
-              "Could not determine the python install directory. Please provide it with the -DPython_INSTALL_PREFIX=/path/to/dir option.\n"
-              "The following error was encountered: ${_python_site_packages_error}")
+        FATAL_ERROR
+          "Could not determine the python install directory. Please provide it with the -DPython_INSTALL_PREFIX=/path/to/dir option.\n"
+          "The following error was encountered: ${_python_site_packages_error}")
     endif()
   endif()
 
-  if (SKBUILD_PROJECT_NAME)
+  if(SKBUILD_PROJECT_NAME)
     # third parties libraries are installed within the Python lib directory
     cmake_path(GET Python_INSTALL_PREFIX PARENT_PATH Python_INSTALL_LIB)
     cmake_path(GET Python_INSTALL_LIB PARENT_PATH Python_INSTALL_LIB)
     cmake_path(GET Python_INSTALL_LIB PARENT_PATH Python_INSTALL_LIB)
     set(CMAKE_INSTALL_PREFIX
-            ${Python_INSTALL_LIB}
-            CACHE PATH "Install path prefix" FORCE)
+        ${Python_INSTALL_LIB}
+        CACHE PATH "Install path prefix" FORCE)
   else()
     set(CMAKE_INSTALL_PREFIX
-            "~/.local/"
-            CACHE PATH "Install path prefix" FORCE)
+        "~/.local/"
+        CACHE PATH "Install path prefix" FORCE)
   endif()
 else()
   # If the user supplied CMAKE_INSTALL_PREFIX, also install python package there (unless
   # Python_INSTALL_PREFIX is also supplied), and deactivate python dependencies installation (unless
   # STEPS_INSTALL_PYTHON_DEPS is supplied).
   set(Python_INSTALL_PREFIX
-          ${CMAKE_INSTALL_PREFIX}
-          CACHE PATH "Path to install steps Python package")
+      ${CMAKE_INSTALL_PREFIX}
+      CACHE PATH "Path to install steps Python package")
   set(STEPS_INSTALL_PYTHON_DEPS
-          OFF
-          CACHE BOOL "Install the Python dependencies")
+      OFF
+      CACHE BOOL "Install the Python dependencies")
   if(NOT STEPS_INSTALL_PYTHON_DEPS)
     message(
-            STATUS
-            "Automatic installation of STEPS python dependencies is disabled, it can be enabled with -DSTEPS_INSTALL_PYTHON_DEPS=True"
+      STATUS
+        "Automatic installation of STEPS python dependencies is disabled, it can be enabled with -DSTEPS_INSTALL_PYTHON_DEPS=True"
     )
   endif()
 endif()
@@ -346,12 +357,6 @@ set_property(CACHE CMAKE_BUILD_TYPE
 
 # Requirements
 # -------------------------------------------------------------------
-if(STEPS_USE_STEPSBLENDER AND (Python_VERSION VERSION_LESS 3.9.0))
-  message(
-    FATAL_ERROR
-      "The stepsblender python package requires python 3.9 but only python ${Python_VERSION} was found. If the stepsblender python package is not needed, it can be deactivated by using the following cmake argument: -DSTEPS_USE_STEPSBLENDER=False"
-  )
-endif()
 
 if(APPLE)
   # assume built-in pthreads on MacOS https://stackoverflow.com/questions/54587052
@@ -490,8 +495,10 @@ if(USE_BDSYSTEM_LAPACK AND NOT LAPACK_FOUND)
   message(STATUS "Unable to find LAPACK; will not build BDSystem/Lapack code.")
 endif()
 
-# Python dependencies
-find_python_module(build REQUIRED)
+if(NOT SKBUILD_PROJECT_NAME)
+  # Python build dependencies for local build
+  find_python_module(build REQUIRED)
+endif()
 
 # Python bindings tech Makes steps Python bindings based on Cython
 if(Python_FOUND)

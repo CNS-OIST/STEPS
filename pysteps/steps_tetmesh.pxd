@@ -183,6 +183,7 @@ cdef extern from "geom/tetmesh.hpp" namespace "steps::tetmesh":
         std.vector[double] getBoundMax() except +
         double getMeshVolume() except +
         std.vector[steps.index_t] getSurfTris() except +
+        std.vector[int] getWeightedPartition(int, uint, std.vector[int]) except +
         std.vector[double] getBatchTetBarycenters(std.vector[steps.tetrahedron_global_id]) except +
         void getBatchTetBarycentersNP(steps.tetrahedron_global_id*, int, double*, int) except +
         std.vector[double] getBatchTriBarycenters(std.vector[steps.tetrahedron_global_id]) except +

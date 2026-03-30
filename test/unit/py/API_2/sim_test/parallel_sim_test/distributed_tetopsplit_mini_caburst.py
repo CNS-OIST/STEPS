@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -56,7 +56,7 @@ N_AVOGADRO = spc.physical_constants['Avogadro constant'][0]
 class DistTetopsplitMiniCaburst(unittest.TestCase):
     """Test loosely based on ca burst"""
 
-    def setConstants(self, trash_eqv=False):
+    def setConstants(self, trash_eqv=False, **kwargs):
         self.DT = 1e-4
         self.EFIELD_DT = 1e-5
         self.NTSTEPS = 10
@@ -145,12 +145,12 @@ class DistTetopsplitMiniCaburst(unittest.TestCase):
             memb1 = Membrane.Create([patch1], capacitance=1)
             membInBetween = Membrane.Create([patchInBetween], capacitance=1)
 
-    def setUpSimulation(self):
+    def setUpSimulation(self, indepKProcs=False, **kwargs):
         """Instantiate main simulator object"""
         rng = RNG('mt19937', 512, MPI.rank)
-        self.sim = Simulation('DistTetOpSplit', self.model, self.mesh, rng, isEfield=True, searchMethod=NextEventSearchMethod.GIBSON_BRUCK)
+        self.sim = Simulation('DistTetOpSplit', self.model, self.mesh, rng, isEfield=True, searchMethod=NextEventSearchMethod.GIBSON_BRUCK, indepKProcs=indepKProcs)
 
-    def setUpInitialConditions(self, trash_eqv=False):
+    def setUpInitialConditions(self, trash_eqv=False, **kwargs):
         """Set initial conditions"""
         self.sim.Temp = self.base_temp
         self.sim.ALL(Membrane).Potential = self.eqV
@@ -184,7 +184,7 @@ class DistTetopsplitMiniCaburst(unittest.TestCase):
     def run_sim(self, **kwargs):
         """Test after ENDTIME that the counts match with the results of a previous run taken as reference"""
 
-        self.setUpSimulation()
+        self.setUpSimulation(**kwargs)
         tris = self.mesh.patch1.tris
         rs = ResultSelector(self.sim)
         counts = rs.comp1.LIST('SA', 'SB', 'SC').Count << rs.patch1.SC.Count
@@ -197,17 +197,33 @@ class DistTetopsplitMiniCaburst(unittest.TestCase):
 
         self.sim.run(self.END_TIME)
 
+        # Check that diffusions happened
+        self.assertGreater(self.sim.solver.getDiffExtent(), 0)
+
         if MPI.rank == 0:
             print("Counts: SA_comp1, SB_comp1, SC_comp1, SC_patch1\n", counts.data[0])
             print("Potential on verts: min_patch1, max_patch1\n", voltages.data[0])
             print("GHKcurr_patch1:\n", GHKCurr.data[0])
             self.assertTrue(np.isclose(voltages.data[0,-1,1], -0.0639663, rtol=0, atol=1e-4))
 
-            # test dumpDepGraphToFile
-            dep_graph_path = "dep_graph.dot"
-            self.assertFalse(os.path.exists(dep_graph_path))
-            self.sim.dumpDepGraphToFile("dep_graph.dot")
-            self.assertTrue(os.path.exists(dep_graph_path))
+        # test dumpDepGraphToFile
+        dep_graph_path = f"dep_graph_{MPI.rank}.dot"
+        self.assertFalse(os.path.exists(dep_graph_path))
+        self.sim.dumpDepGraphToFile(dep_graph_path)
+        self.assertTrue(os.path.exists(dep_graph_path))
+        if kwargs.get('indepKProcs', False) and MPI.nhosts == 1:
+            # Check that there are more than one propensity group, if pydot is available
+            try:
+                import pydot, networkx
+                pydot_graph, = pydot.graph_from_dot_file(dep_graph_path)
+                nx_graph = networkx.nx_pydot.from_pydot(pydot_graph)
+                cc = list(networkx.connected_components(nx_graph.to_undirected()))
+                self.assertGreaterEqual(len(cc), 2)
+            except ImportError:
+                pass
+            finally:
+                os.remove(dep_graph_path)
+        else:
             os.remove(dep_graph_path)
 
 
@@ -217,10 +233,12 @@ class DistTetopsplitMiniCaburst(unittest.TestCase):
         self.setUpMeshes(mesh_file)
         self.run_sim(**kwargs)
 
-    def _test_tetopsplit_mini_caburst(self, mesh_file):
+    def _test_tetopsplit_mini_caburst(self, mesh_file, **kwargs):
         subtests = [
             # straightforward caburst
             dict(mesh_file=mesh_file, trash_eqv=False),
+            # caburst with independent KProcs
+            dict(mesh_file=mesh_file, trash_eqv=False, indepKProcs=True),
 
             # originally set an invalid reversal potential for ohmic current
             # and fix it with get/setOhmicErev methods

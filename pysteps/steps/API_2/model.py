@@ -1,21 +1,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -29,6 +29,7 @@ import inspect
 import itertools
 import numbers
 import warnings
+import math
 
 from steps import stepslib
 
@@ -318,6 +319,7 @@ class SurfaceSystem(SpaceSystem):
                 # GHKCurr._FromStepsObject(ghkc, mdl)
             # for ohmc in obj.getAllOhmicCurrs():
                 # OhmicCurr._FromStepsObject(ohmc, mdl)
+            # TODO potentially not needed: implement it for complex reactions
 
         return ssys
 
@@ -927,13 +929,11 @@ class Channel(Complex):
     Channels behave like complexes. This simplifies the declaration of reactions between channel
     states in cases like the Hodgkin-Huxley model of Na+ channel, in which gating variable m and h
     are independent and can thus be declared as separate SubUnits. All combinations are then
-    automatically computed for creating the channel states.
+    automatically computed for creating the channel states, unless created with ``statesAsSpecies=False``.
     """
 
     def __init__(self, subUnits, *args, statesAsSpecies=True, **kwargs):
-        if not statesAsSpecies:
-            raise NotImplementedError()
-        super().__init__(subUnits, *args, statesAsSpecies=True, **kwargs)
+        super().__init__(subUnits, *args, statesAsSpecies=statesAsSpecies, **kwargs)
 
     @classmethod
     def _FromStepsObject(cls, obj, mdl):
@@ -1644,22 +1644,26 @@ class LinkSpecies(
     vesicles (by forming a bond with another link species). A link species is
     formed by a vesicle binding event and exists within a specified upper and
     lower bound of length for the duration of its existence. A link species
-    may diffuse on a vesicle surface, but only within this length bound. Link
+    may diffuse on a vesicle surface, but only within this length bound, and within
+    a specified angle to the vesicle surface, which defaults to pi radians. Link
     species are destroyed by a vesicle unbinding event.
 
     :param dcst: Optional, diffusion coefficient of the vesicle (in m^2 s^-1, defaults to 0)
     :type dcst: float
+    :param max_angle: Optional, maximum angle to vesicle surface (in radians, defaults to pi)
+    :type max_angle: float
     """
 
     _elemStr = 'LinkSpec'
 
-    def __init__(self, dcst=0, _createObj=True, **kwargs):
+    def __init__(self, dcst=0, max_angle=math.pi, _createObj=True, **kwargs):
         super().__init__(**kwargs)
         (mdl,) = self._getUsedObjects()
 
         self._setParameter('Dcst', dcst, nutils.Units('m^2 s^-1'))
+        self._setParameter('MaxAngle', max_angle)
 
-        self.stepsSpecies = stepslib._py_LinkSpec(self.name, mdl.stepsModel, self.Dcst) if _createObj else None
+        self.stepsSpecies = stepslib._py_LinkSpec(self.name, mdl.stepsModel, self.Dcst, self.MaxAngle) if _createObj else None
 
     def _getStepsObjects(self):
         """Return a list of the steps objects that this named object holds."""
@@ -1676,6 +1680,15 @@ class LinkSpecies(
     @nutils.ParameterizedObject.RegisterGetter(units=nutils.Units('m^2 s^-1'))
     def Dcst(self):
         """Diffusion constant (in m^2 s^-1)
+
+        :type: float, read-only
+        """
+        pass
+
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def MaxAngle(self):
+        """Maximum angle (radians)
 
         :type: float, read-only
         """
@@ -2385,6 +2398,13 @@ class ComplexSelector(_ComplexReactionElement, nutils.MultiUsable):
         """
         return self._complex
 
+    def _hasSameSubSelectors(self, other):
+        """
+        Return whether the complex selector has the same subselectors as ``other``
+        """
+        return isinstance(other, ComplexSelector)\
+            and (self._complex, self._subSels) == (other._complex, other._subSels)
+
     def _areStatesAsSpecies(self):
         return self._complex._areStatesAsSpecies()
 
@@ -2409,6 +2429,9 @@ class ComplexSelector(_ComplexReactionElement, nutils.MultiUsable):
     def _isEmpty(self):
         """Return True if no state can match the ComplexSelector."""
         return len(self._subSels) == 0
+
+    def _toComplexSelector(self):
+        return self
 
     def _toUnorderedFilter(self):
         """
@@ -2864,6 +2887,9 @@ class ComplexSelector(_ComplexReactionElement, nutils.MultiUsable):
         return ' | '.join(f'{self._complex.name}[' + ', '.join(map(str, row)) + ']' for row in self._subSels)
 
     def __eq__(self, other):
+        # ComplexSelector are considered different unless they represent the same complex in e.g. a reaction.
+        # This is determined through their name so even if they correspond to the same states, they might
+        # not be equal. Use ._hasSameSubSelectors() to test for subselectors equality.
         return isinstance(other, ComplexSelector) and self.name == other.name
 
     def __hash__(self):
@@ -3423,6 +3449,7 @@ class _SubReaction(nutils.NamedObject):
         stepslib._py_RaftSReac: 'RaftSReac',
         stepslib._py_ComplexReac: 'ComplexReac',
         stepslib._py_ComplexSReac: 'ComplexSReac',
+        stepslib._py_VDepComplexSReac: 'VDepComplexSReac',
     }
 
     def __init__(self, parent, stepsReac, lhs=None, rateMult=1, *args, **kwargs):
@@ -3722,6 +3749,40 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
         if md is not None and (isinstance(md, bool) or not isinstance(md, (numbers.Number, CompDepFunc))):
             raise TypeError(f'{md} cannot be used as maximum distance.')
 
+    @property
+    @nutils.ParameterizedObject.RegisterGetter(units=None)
+    def Charge(self):
+        """Elementary charge that is moved across the membrane when the reaction happens
+
+        Note that this only has an effect if the patch on which this reaction happens is also part
+        of a membrane.
+        A positive charge value corresponds to positively charged ions moving from outside to inside
+        the membrane.
+
+        Usage examples::
+
+            # Calcium pump
+            Ca.i + PMCA.s >r[1]> Ca.o + PMCA.s
+            r[1].K = pump_rate
+            r[1].Charge = -2
+
+        In that example, the reaction corresponds to calcium being pumped outside the membrane. Calcium
+        is positively charged with valence 2, but it moves from inside to outside, so the Charge
+        property should be set to -2.
+
+        The charge defaults to None, i.e. no charge movement when the reaction happens
+
+        :type: Union[int, None]
+        """
+        # Return a default value if the property was not set
+        return None
+
+    @Charge.setter
+    @nutils.ParameterizedObject.RegisterSetter(units=None)
+    def Charge(self, c):
+        if c is not None and (isinstance(c, bool) or not isinstance(c, numbers.Integral)):
+            raise TypeError(f'{c} cannot be used as charge, an integer is required.')
+
     def __repr__(self):
         if self._isFwd:
             return f'{self._parent.lhs} → {self._parent.rhs}'
@@ -3781,27 +3842,35 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
 
                 # Declare reaction
                 name = self._reacName + (f'_{i}' if len(self._LRP) > 1 else '')
+                charge = 0 if self.Charge is None else self.Charge
                 if len(compEvents) > 0:
                     name_c = name + (f'_{j}' if len(self._compEvs) > 1 else '')
                     res = self._declareComplexReac(
                         name_c, l, r, compEvents, mdl, volSys, surfSys, rm * self.K, rm,
-                        self.Dependencies, self.AntiDependencies, self.Immobilization, self.MaxDistance
+                        self.Dependencies, self.AntiDependencies, self.Immobilization, self.MaxDistance,
+                        charge
                     )
                 else:
                     res = self._declareSimpleReac(
                         name, l, r, mdl, volSys, surfSys, rm * self.K, rm, self.Dependencies,
-                        self.AntiDependencies, self.Immobilization, self.MaxDistance
+                        self.AntiDependencies, self.Immobilization, self.MaxDistance, charge
                     )
 
                 # Add the subreactions to self
                 self.append(res)
 
     def _declareComplexReac(self, name, simpLHS, simpRHS, compEvents, mdl, volSys, surfSys, rate, rateMult,
-            deps, antideps, immobilization, max_dist):
+            deps, antideps, immobilization, max_dist, charge):
         """Declare complex reaction involving real complexes."""
 
         if deps is not None:
             raise Exception(f'Cannot use dependencies with complex reactions.')
+
+        if isinstance(rate, CompDepRate):
+            raise NotImplementedError(
+                f'{self._decl()}: Cannot use CompDepRate with complexes that do not use '
+                f'statesAsSpecies=True.'
+            )
 
         nutils._print(f'\tAdding STEPS complex reaction {name}: {compEvents}, rate = {rate}', 3)
 
@@ -3813,37 +3882,45 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
             srhs = simpRHS._GetStepsElems(Location.SURF)
             orhs = simpRHS._GetStepsElems(Location.OUT)
 
-            if isinstance(rate, VDepRate):
-                raise NotImplementedError('Cannot use voltage dependent rates with STEPS complex reactions')
-
             icompEvs = [ce._stepsObj for ce in compEvents if ce.loc == Location.IN]
             scompEvs = [ce._stepsObj for ce in compEvents if ce.loc == Location.SURF]
             ocompEvs = [ce._stepsObj for ce in compEvents if ce.loc == Location.OUT]
 
-            stepsReac = stepslib._py_ComplexSReac(
-                name,
-                surfSys.stepsSys,
-                ilhs=ilhs,
-                slhs=slhs,
-                olhs=olhs,
-                irhs=irhs,
-                srhs=srhs,
-                orhs=orhs,
-                icompEvs=icompEvs,
-                scompEvs=scompEvs,
-                ocompEvs=ocompEvs,
-                kcst=rate,
-            )
+            if isinstance(rate, VDepRate):
+                stepsReac = stepslib._py_VDepComplexSReac(
+                    name,
+                    surfSys.stepsSys,
+                    ilhs=ilhs,
+                    slhs=slhs,
+                    olhs=olhs,
+                    irhs=irhs,
+                    srhs=srhs,
+                    orhs=orhs,
+                    icompEvs=icompEvs,
+                    scompEvs=scompEvs,
+                    ocompEvs=ocompEvs,
+                    **rate._getVDepSReacParams(self._getRateUnits()),
+                    charge=charge,
+                )
+            else:
+                stepsReac = stepslib._py_ComplexSReac(
+                    name,
+                    surfSys.stepsSys,
+                    ilhs=ilhs,
+                    slhs=slhs,
+                    olhs=olhs,
+                    irhs=irhs,
+                    srhs=srhs,
+                    orhs=orhs,
+                    icompEvs=icompEvs,
+                    scompEvs=scompEvs,
+                    ocompEvs=ocompEvs,
+                    kcst=rate,
+                    charge=charge,
+                )
         else:
             lhs = simpLHS._GetStepsElems()
             rhs = simpRHS._GetStepsElems()
-
-            if isinstance(rate, CompDepRate):
-                raise NotImplementedError(
-                    f'{self._decl()}: Cannot use CompDepRate with STEPS complex '
-                    f'reactions.'
-                )
-
 
             compEvs = [ev._stepsObj for ev in compEvents]
 
@@ -3852,7 +3929,7 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
         return _SubReaction(self, stepsReac, rateMult=rateMult, name=name)
 
     def _declareSimpleReac(self, name, lhs, rhs, mdl, volSys, surfSys, rate, rateMult, deps, antideps,
-            immobilization, max_dist):
+            immobilization, max_dist, charge):
         """Declare and return the steps reactions from the final sides lhs and rhs."""
 
         # Compute rates and other parameters in case of complex dependencies
@@ -4024,7 +4101,8 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
                         irhs=irhs,
                         srhs=srhs,
                         orhs=orhs,
-                        **rate._getVDepSReacParams(self._getRateUnits())
+                        **rate._getVDepSReacParams(self._getRateUnits()),
+                        charge=charge,
                     )
                 else:
                     stepsReac = stepslib._py_SReac(
@@ -4037,6 +4115,7 @@ class _SubReactionList(nutils.SolverPathObject, nutils.ParameterizedObject, list
                         srhs=srhs,
                         orhs=orhs,
                         kcst=rate,
+                        charge=charge,
                     )
         else:
             # Volume system reaction
@@ -4261,6 +4340,12 @@ class Reaction(
         # MaxDistance
         if isinstance(obj, stepslib._py_VesSReac) and obj.getMaxDistance() != -1.0:
             reac.MaxDistance = obj.getMaxDistance()
+
+        # Charge
+        if isinstance(obj, (
+                stepslib._py_SReac, stepslib._py_VDepSReac,
+                stepslib._py_ComplexSReac, stepslib._py_VDepComplexSReac)):
+            reac.Charge = obj.getCharge()
 
         # Dependencies
         if isinstance(obj, (stepslib._py_VesSReac, stepslib._py_RaftSReac)):
@@ -6424,11 +6509,11 @@ class _SubCurrent(nutils.NamedObject):
 
     def _solverStr(self):
         """Return the string that is used as part of method names for this specific object."""
-        return self._parent.__class__._currStr
+        return self._parent._currStr
 
     def _simPathAutoMetaData(self):
         """Return a dictionary with string keys and string or numbers values."""
-        mtdt = {'obj_type': self._parent.__class__._currStr, 'obj_id': self.name}
+        mtdt = {'obj_type': self._parent._currStr, 'obj_id': self.name}
         # Add information about parent comp or patch
         for key, val in self._parent._simPathAutoMetaData().items():
             mtdt['parent_' + key] = val
@@ -6465,16 +6550,16 @@ class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject, nut
         only its subclasses should be instantiated. It is only documented for clarity.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, states, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._currents = {}
-        self._complex = None
+        self._complex, self._states = self._getComplexStates(states)
         self._added = False
         self._declared = False
 
     def _getAllElems(self, loc):
         return (
-            list(set(state._comp for state, curr in self._currents.items()))
+            list(set(state._getReferenceObject() for state, curr in self._currents.items()))
             + [state for state, curr in self._currents.items()]
             + [curr for state, curr in self._currents.items()]
         )
@@ -6482,11 +6567,11 @@ class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject, nut
     def _getComplexStates(self, states):
         self._setParameter('Opened state', states)
         if isinstance(states, Complex):
-            return states, states[...]._getAllStates()
+            return states, (states[...]._getAllStates() if states._statesAsSpecies else states[...])
         if isinstance(states, ComplexSelector):
-            return states._complex, states._getAllStates()
+            return states._complex, (states._getAllStates() if states._complex._statesAsSpecies else states)
         elif isinstance(states, ComplexState):
-            return states._comp, [states]
+            return states._comp, ([states] if states._comp._statesAsSpecies else states._toComplexSelector())
         else:
             raise TypeError(f'Expected a ComplexSelector or a ComplexState, got {states} instead.')
 
@@ -6512,13 +6597,16 @@ class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject, nut
 
         :meta public:
         """
-        state = self._complex.__getitem__(key)
-        if isinstance(state, ComplexState):
-            return self._getCurrentFromState(state)
-        elif isinstance(state, ComplexSelector):
-            return _SubCurrentList([self._getCurrentFromState(s) for s in state._getAllStates()])
+        state = self._complex.__getitem__(key)._toComplexSelector()
+        if self._complex._statesAsSpecies:
+            if len(state) == 1:
+                return self._getCurrentFromState(next(iter(state)))
+            else:
+                return _SubCurrentList([self._getCurrentFromState(s) for s in state._getAllStates()])
+        elif state._hasSameSubSelectors(self._states):
+            return self._getCurrentFromState(self._states)
         else:
-            raise NotImplementedError()
+            raise KeyError(f'Cannot access subcurrents for channels with statesAsSpecies=True.')
 
     def __iter__(self):
         return iter([curr for state, curr in self._currents.items()])
@@ -6557,7 +6645,7 @@ class Current(nutils.UsingObjects(SurfaceSystem), nutils.StepsWrapperObject, nut
 
     def _simPathAutoMetaData(self):
         """Return a dictionary with string keys and string or numbers values."""
-        return {'obj_type': self.__class__._currStr, 'obj_id': self.name}
+        return {'obj_type': self._currStr, 'obj_id': self.name}
 
 
 @nutils.FreezeAfterInit
@@ -6609,8 +6697,7 @@ class OhmicCurr(Current):
     _currStr = 'Ohmic'
 
     def __init__(self, states, conduct=0, rev_pot=0, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._complex, self._states = self._getComplexStates(states)
+        super().__init__(states, *args, **kwargs)
 
         # Properties
         self.G = conduct
@@ -6627,20 +6714,29 @@ class OhmicCurr(Current):
         conduct = self.G
         rev_pot = self.ERev
 
-        if isinstance(conduct, CompDepFunc):
-            if len(conduct._complexes) != 1 or conduct._complexes[0] is not self._complex:
-                raise Exception('The CompDepFunc used as conductance is not compatible with the channel.')
-            condStates = [(s, conduct(s)) for s in self._states]
-        else:
-            condStates = [(s, conduct) for s in self._states]
+        if self._complex._statesAsSpecies:
+            if isinstance(conduct, CompDepFunc):
+                if len(conduct._complexes) != 1 or conduct._complexes[0] is not self._complex:
+                    raise Exception('The CompDepFunc used as conductance is not compatible with the channel.')
+                condStates = [(s, conduct(s)) for s in self._states]
+            else:
+                condStates = [(s, conduct) for s in self._states]
 
-        for state, g in condStates:
-            chanState = self._complex._compStates[state]
-            self._currents[state] = _SubCurrent(
-                self,
-                stepslib._py_OhmicCurr(
-                    f'{self.name}_{state.name}', surfSys.stepsSys, chanstate=chanState, g=g, erev=rev_pot
-                ),
+            for state, g in condStates:
+                chanState = self._complex._compStates[state]
+                self._currents[state] = _SubCurrent(
+                    self,
+                    stepslib._py_OhmicCurr(
+                        f'{self.name}_{state.name}', surfSys.stepsSys, chanstate=chanState, g=g, erev=rev_pot
+                    ),
+                )
+        else:
+            if isinstance(conduct, CompDepFunc):
+                raise TypeError(f'Cannot use CompDepCond with a channel that has statesAsSpecies=False.')
+            self._currStr = 'ComplexOhmic'
+            self._currents[self._states] = _SubCurrent(self,
+                stepslib._py_ComplexOhmicCurr(self.name, surfSys.stepsSys, *self._states._solverId(),
+                                              g=conduct, erev=rev_pot)
             )
 
     @property
@@ -6676,8 +6772,12 @@ class OhmicCurr(Current):
     @nutils.ParameterizedObject.RegisterSetter(units=nutils.Units('S'))
     def G(self, val):
         self._checkNotAdded()
-        if not isinstance(val, (numbers.Number, CompDepCond)):
-            raise TypeError(f'Expected a float or a CompDepCond object, got {val} instead')
+        if not (isinstance(val, numbers.Number)
+                or (isinstance(val, CompDepCond) and self._complex._statesAsSpecies)):
+            raise TypeError(
+                f'Expected a float or a CompDepCond object (only if the channel has statesAsSpecies=True),'
+                f'got {val} instead'
+            )
 
 
 @nutils.FreezeAfterInit
@@ -6774,12 +6874,11 @@ class GHKCurr(Current):
     _GHKCurrPInfo.RegisterParameter('iconc', nutils.Units('M'))
 
     def __init__(self, states, spec, P, computeflux=True, virtual_oconc=None, vshift=0, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(states, *args, **kwargs)
 
         if not isinstance(spec, Species):
             raise TypeError(f'Expected a Species, got {spec} instead.')
         self._spec = spec
-        self._complex, self._states = self._getComplexStates(states)
         self._computeflux = computeflux
         self._vshift = vshift
 
@@ -6792,6 +6891,17 @@ class GHKCurr(Current):
 
         self._declared = True
 
+    def _setCurrentPermeability(self, state, perm):
+        """Set the permeability for the current associated with state."""
+        if isinstance(perm, numbers.Number):
+            self._currents[state].stepsCurrent.setP(perm)
+        elif isinstance(perm, GHKCurr._GHKCurrPInfo):
+            self._currents[state].stepsCurrent.setPInfo(
+                perm.g, perm.V, perm.T, perm.oconc, perm.iconc
+            )
+        else:
+            raise TypeError(f'Expected a permeability, got {perm} instead.')
+
     def _createStepsObj(self):
         """Create the actual STEPS objects and populate self._currents"""
         if not self._declared:
@@ -6801,35 +6911,45 @@ class GHKCurr(Current):
         P = self.P
         virtual_oconc = self.VOConc if self.VOConc is not None else -1
 
-        if isinstance(P, CompDepFunc):
-            if len(P._complexes) != 1 or P._complexes[0] is not self._complex:
-                raise Exception('The CompDepFunc used as permeability is not compatible with the channel.')
-            condStates = [(s, P(s)) for s in self._states]
-        else:
-            condStates = [(s, P) for s in self._states]
+        if self._complex._statesAsSpecies:
+            if isinstance(P, CompDepFunc):
+                if len(P._complexes) != 1 or P._complexes[0] is not self._complex:
+                    raise Exception('The CompDepFunc used as permeability is not compatible with the channel.')
+                condStates = [(s, P(s)) for s in self._states]
+            else:
+                condStates = [(s, P) for s in self._states]
 
-        for state, perm in condStates:
-            chanState = self._complex._compStates[state]
-            self._currents[state] = _SubCurrent(
-                self,
-                stepslib._py_GHKcurr(
-                    f'{self.name}_{state.name}',
+            for state, perm in condStates:
+                chanState = self._complex._compStates[state]
+                self._currents[state] = _SubCurrent(
+                    self,
+                    stepslib._py_GHKcurr(
+                        f'{self.name}_{state.name}',
+                        surfSys.stepsSys,
+                        chanState,
+                        self._spec.stepsSpecies,
+                        computeflux=self._computeflux,
+                        virtual_oconc=virtual_oconc,
+                        vshift=self._vshift,
+                    ),
+                )
+                self._setCurrentPermeability(state, perm)
+        else:
+            if isinstance(P, CompDepFunc):
+                raise TypeError(f'Cannot use CompDepFunc with a channel that has statesAsSpecies=False.')
+            self._currStr = 'ComplexGHK'
+            self._currents[self._states] = _SubCurrent(self,
+                stepslib._py_ComplexGHKcurr(
+                    self.name,
                     surfSys.stepsSys,
-                    chanState,
+                    *self._states._solverId(),
                     self._spec.stepsSpecies,
                     computeflux=self._computeflux,
                     virtual_oconc=virtual_oconc,
                     vshift=self._vshift,
-                ),
-            )
-            if isinstance(perm, numbers.Number):
-                self._currents[state].stepsCurrent.setP(perm)
-            elif isinstance(perm, GHKCurr._GHKCurrPInfo):
-                self._currents[state].stepsCurrent.setPInfo(
-                    perm.g, perm.V, perm.T, perm.oconc, perm.iconc
                 )
-            else:
-                raise TypeError(f'Expected a permeability, got {perm} instead.')
+            )
+            self._setCurrentPermeability(self._states, P)
 
     @classmethod
     def PInfo(cls, g, V, T, oconc, iconc):

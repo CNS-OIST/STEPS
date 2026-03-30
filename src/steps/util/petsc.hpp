@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include <petscsystypes.h>
+#include <vector>
 
 namespace steps::util::petsc {
 
@@ -74,6 +75,15 @@ class scalars<Array, true> {
 [[maybe_unused]] constexpr PetscReal to_real(const PetscReal& real) {
     return real;
 }
+
+struct PetscFixture {
+    PetscFixture(int* argc, char*** argv, const char file[], const char help[]);
+    ~PetscFixture();
+};
+
+void Init(int* argc, char*** argv, const char file[], const char help[]);
+
+void Finalize();
 
 #if PETSC_USE_COMPLEX
 #define MPI_PETSC_SCALAR MPI_DOUBLE_COMPLEX

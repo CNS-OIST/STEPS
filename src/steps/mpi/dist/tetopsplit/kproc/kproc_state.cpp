@@ -1,6 +1,7 @@
 
 #include "kproc_state.hpp"
 
+#include <cstddef>
 #include <stdexcept>
 
 #include <Omega_h_for.hpp>
@@ -11,6 +12,8 @@
 #include "diffusions.hpp"
 #include "mpi/dist/tetopsplit/definition/compdef.hpp"
 #include "mpi/dist/tetopsplit/definition/statedef.hpp"
+#include "mpi/dist/tetopsplit/kproc/kproc_id.hpp"
+#include "solver/fwd.hpp"
 #include "util/vocabulary.hpp"
 
 namespace steps::dist::kproc {
@@ -22,12 +25,29 @@ KProcState::KProcState(const Statedef& statedef,
                        bool independent_kprocs)
     : mol_state_(mol_state)
     , reactions_(statedef, mesh, mol_state)
+    , complex_reactions_(statedef, mesh, mol_state)
     , surface_reactions_(statedef, mesh, mol_state)
+    , complex_surface_reactions_(statedef, mesh, mol_state)
+    , vdep_complex_surface_reactions_(statedef, mesh, mol_state)
     , vdep_surface_reactions_(statedef, mesh, mol_state)
-    , ghk_surface_reactions_(statedef, mesh, mol_state) {
+    , ghk_surface_reactions_(statedef, mesh, mol_state)
+    , complex_ghk_surface_reactions_(statedef, mesh, mol_state) {
     setupDependencies();
     // extract connected components of the Gibson-Bruck dependency graph
     setupGroups(independent_kprocs);
+}
+
+//------------------------------------------------------------------
+
+void KProcState::reset() {
+    reactions_.reset();
+    surface_reactions_.reset();
+    vdep_surface_reactions_.reset();
+    ghk_surface_reactions_.reset();
+    complex_reactions_.reset();
+    vdep_complex_surface_reactions_.reset();
+    complex_ghk_surface_reactions_.reset();
+    resetCurrents();
 }
 
 //------------------------------------------------------------------
@@ -36,19 +56,31 @@ KProcState::KProcState(const Statedef& statedef,
 #pragma GCC diagnostic ignored "-Wreturn-type"
 typename propensity_function_traits::value KProcState::propensityFun() const {
     return [this](KProcID k_id, const MolState& mol_state) {
-        osh::Real rate;
+        osh::Real rate = 0.0;
         switch (k_id.type()) {
         case KProcType::Reac:
             rate = reactions_.computeRate(mol_state, k_id.id());
             break;
+        case KProcType::ComplexReac:
+            rate = complex_reactions_.computeRate(mol_state, k_id.id());
+            break;
         case KProcType::SReac:
             rate = surface_reactions_.computeRate(mol_state, k_id.id());
+            break;
+        case KProcType::ComplexSReac:
+            rate = complex_surface_reactions_.computeRate(mol_state, k_id.id());
+            break;
+        case KProcType::VDepComplexSReac:
+            rate = vdep_complex_surface_reactions_.computeRate(mol_state, k_id.id());
             break;
         case KProcType::VDepSReac:
             rate = vdep_surface_reactions_.computeRate(mol_state, k_id.id());
             break;
         case KProcType::GHKSReac:
             rate = ghk_surface_reactions_.computeRate(mol_state, k_id.id());
+            break;
+        case KProcType::ComplexGHKSReac:
+            rate = complex_ghk_surface_reactions_.computeRate(mol_state, k_id.id());
             break;
         case KProcType::Diff:
             throw std::logic_error("Unhandled kinetic process type: Diff");
@@ -99,6 +131,36 @@ void KProcState::countDependencies(const KineticProcesses& processes,
 //------------------------------------------------------------------
 
 template <typename KineticProcesses>
+void KProcState::countComplexDependencies(const KineticProcesses& processes,
+                                          osh::Write<osh::LO>& dep_map_elems_num_data,
+                                          osh::Write<osh::LO>& dep_map_bnds_num_data) const {
+    for (const auto& process: processes) {
+        for (const auto& dependency: process.getComplexPropensityDependency()) {
+            auto compId = std::get<1>(dependency);
+            auto susId = std::get<2>(dependency);
+            std::visit(
+                [&](auto& entity) {
+                    using T = std::decay_t<decltype(entity)>;
+
+                    if constexpr (std::is_same_v<T, mesh::tetrahedron_id_t>) {
+                        const auto idx = mol_state_.moleculesOnElements().ab(entity, compId, susId);
+                        ++dep_map_elems_num_data[idx];
+                    } else if constexpr (std::is_same_v<T, mesh::triangle_id_t>) {
+                        const auto idx =
+                            mol_state_.moleculesOnPatchBoundaries().ab(entity, compId, susId);
+                        ++dep_map_bnds_num_data[idx];
+                    } else {
+                        static_assert(util::always_false_v<T>, "unmanaged entity type");
+                    }
+                },
+                std::get<0>(dependency));
+        }
+    }
+}
+
+//------------------------------------------------------------------
+
+template <typename KineticProcesses>
 void KProcState::fillDependencies(const KineticProcesses& processes,
                                   osh::Write<osh::LO>& elems_curr_counters,
                                   osh::Write<osh::LO>& bnds_curr_counters) {
@@ -131,10 +193,43 @@ void KProcState::fillDependencies(const KineticProcesses& processes,
 //------------------------------------------------------------------
 
 template <typename KineticProcesses>
+void KProcState::fillComplexDependencies(const KineticProcesses& processes,
+                                         osh::Write<osh::LO>& elems_curr_counters,
+                                         osh::Write<osh::LO>& bnds_curr_counters) {
+    for (const auto& process: processes) {
+        auto kid = KProcID(processes.getKProcType(), process.getIndex());
+        for (const auto& dependency: process.getComplexPropensityDependency()) {
+            auto compId = std::get<1>(dependency);
+            auto susId = std::get<2>(dependency);
+            std::visit(
+                [&](auto& entity) {
+                    using T = std::decay_t<decltype(entity)>;
+
+                    if constexpr (std::is_same_v<T, mesh::tetrahedron_id_t>) {
+                        const auto idx = mol_state_.moleculesOnElements().ab(entity, compId, susId);
+                        // elems_curr_counters is always off by one. -- goes first
+                        complex_dependency_map_elems_(idx, --elems_curr_counters[idx]) = kid.data();
+                    } else if constexpr (std::is_same_v<T, mesh::triangle_id_t>) {
+                        const auto idx =
+                            mol_state_.moleculesOnPatchBoundaries().ab(entity, compId, susId);
+                        // dependency_map_bnds_ is always off by one. -- goes first
+                        complex_dependency_map_bnds_(idx, --bnds_curr_counters[idx]) = kid.data();
+                    } else {
+                        static_assert(util::always_false_v<T>, "unmanaged entity type");
+                    }
+                },
+                std::get<0>(dependency));
+        }
+    }
+}
+
+//------------------------------------------------------------------
+
+template <typename KineticProcesses>
 void KProcState::cacheDependencies(const KineticProcesses& processes,
                                    dependencies_t& dependencies) {
     std::vector<std::set<KProcID>> unique_deps(processes.size());
-    osh::Write<osh::LO> sizes(static_cast<osh::LO>(processes.size()));
+    osh::Write<osh::LO> sizes(static_cast<osh::LO>(processes.size()), 0);
 
     // compute dependencies in a temporary datastructure that avoid taking the
     // same dependency more than once
@@ -167,6 +262,36 @@ void KProcState::cacheDependencies(const KineticProcesses& processes,
             sizes[static_cast<osh::LO>(process.getIndex())] = static_cast<osh::LO>(
                 unique_deps[process.getIndex()].size());
         }
+
+        const auto& complex_elements_to_update = process.getComplexElementsUpdates();
+        for (const auto& complex_element: complex_elements_to_update) {
+            auto compId = std::get<1>(complex_element);
+            auto susId = std::get<2>(complex_element);
+            std::visit(
+                [&](auto& entity) {
+                    using T = std::decay_t<decltype(entity)>;
+
+                    if constexpr (std::is_same_v<T, mesh::tetrahedron_id_t>) {
+                        const auto idx = mol_state_.moleculesOnElements().ab(entity, compId, susId);
+                        auto& deps = unique_deps[process.getIndex()];
+                        for (auto elem: complex_dependency_map_elems_[idx]) {
+                            deps.emplace(elem);
+                        }
+                    } else if constexpr (std::is_same_v<T, mesh::triangle_id_t>) {
+                        const auto idx =
+                            mol_state_.moleculesOnPatchBoundaries().ab(entity, compId, susId);
+                        auto& deps = unique_deps[process.getIndex()];
+                        for (auto bound: complex_dependency_map_bnds_[idx]) {
+                            deps.emplace(bound);
+                        }
+                    } else {
+                        static_assert(util::always_false_v<T>, "unmanaged entity type");
+                    }
+                },
+                std::get<0>(complex_element));
+            sizes[static_cast<osh::LO>(process.getIndex())] = static_cast<osh::LO>(
+                unique_deps[process.getIndex()].size());
+        }
     }
 
     dependencies.reshape(sizes);
@@ -195,8 +320,8 @@ std::ostream& KProcState::write_dependency_graph(std::ostream& ostr) const {
     auto it = boost::make_iterator_property_map(color.begin(), get(boost::vertex_index, grd));
     boost::connected_components(grd, it);
     const std::vector<std::string> col_vals{"red", "blue", "green", "yellow", "magenta", "grey"};
-    auto node_fmt = [labels = &labels, &color, &col_vals](std::ostream& out, unsigned v) {
-        out << " [label=\"" << (*labels)[v] << "\"]" << std::endl;
+    auto node_fmt = [labelsa = &labels, &color, &col_vals](std::ostream& out, unsigned v) {
+        out << " [label=\"" << (*labelsa)[v] << "\"]" << std::endl;
         out << " [color=" << col_vals[color[v] % col_vals.size()] << "]" << std::endl;
     };
     boost::write_graphviz(ostr, gd, node_fmt);
@@ -211,30 +336,58 @@ void KProcState::setupDependencies() {
 
     // counting all the dependencies to create/reshape the flat multimaps for the dependencies
     countDependencies(reactions(), elems_a2ab, bnds_a2ab);
+    countDependencies(complexReactions(), elems_a2ab, bnds_a2ab);
     countDependencies(surfaceReactions(), elems_a2ab, bnds_a2ab);
+    countDependencies(complexSurfaceReactions(), elems_a2ab, bnds_a2ab);
+    countDependencies(vDepComplexSurfaceReactions(), elems_a2ab, bnds_a2ab);
     countDependencies(vDepSurfaceReactions(), elems_a2ab, bnds_a2ab);
     countDependencies(ghkSurfaceReactions(), elems_a2ab, bnds_a2ab);
+    countDependencies(complexGhkSurfaceReactions(), elems_a2ab, bnds_a2ab);
+
+    // Count complex-related dependencies
+    osh::Write<osh::LO> complex_elems_a2ab(mol_state_.moleculesOnElements().num_complex_data(), 0);
+    osh::Write<osh::LO> complex_bnds_a2ab(
+        mol_state_.moleculesOnPatchBoundaries().num_complex_data(), 0);
+    countComplexDependencies(complexReactions(), complex_elems_a2ab, complex_bnds_a2ab);
+    countComplexDependencies(complexSurfaceReactions(), complex_elems_a2ab, complex_bnds_a2ab);
+    countComplexDependencies(vDepComplexSurfaceReactions(), complex_elems_a2ab, complex_bnds_a2ab);
+    countComplexDependencies(complexGhkSurfaceReactions(), complex_elems_a2ab, complex_bnds_a2ab);
 
     // reshaping/creation
     dependency_map_elems_.reshape(elems_a2ab);
     dependency_map_bnds_.reshape(bnds_a2ab);
+    complex_dependency_map_elems_.reshape(complex_elems_a2ab);
+    complex_dependency_map_bnds_.reshape(complex_bnds_a2ab);
 
     // filling of the dep maps. Reverse order (compared to counting) for max efficiency.
     // elems_a2ab and bnds_a2ab get gradually emptied. All their elements must be 0 at the end.
     // No checks for improved efficiency, this bug is improbable once it is set correctly
     fillDependencies(reactions(), elems_a2ab, bnds_a2ab);
+    fillDependencies(complexReactions(), elems_a2ab, bnds_a2ab);
     fillDependencies(surfaceReactions(), elems_a2ab, bnds_a2ab);
+    fillDependencies(complexSurfaceReactions(), elems_a2ab, bnds_a2ab);
+    fillDependencies(vDepComplexSurfaceReactions(), elems_a2ab, bnds_a2ab);
     fillDependencies(vDepSurfaceReactions(), elems_a2ab, bnds_a2ab);
     fillDependencies(ghkSurfaceReactions(), elems_a2ab, bnds_a2ab);
+    fillDependencies(complexGhkSurfaceReactions(), elems_a2ab, bnds_a2ab);
+
+    fillComplexDependencies(complexReactions(), complex_elems_a2ab, complex_bnds_a2ab);
+    fillComplexDependencies(complexSurfaceReactions(), complex_elems_a2ab, complex_bnds_a2ab);
+    fillComplexDependencies(vDepComplexSurfaceReactions(), complex_elems_a2ab, complex_bnds_a2ab);
+    fillComplexDependencies(complexGhkSurfaceReactions(), complex_elems_a2ab, complex_bnds_a2ab);
 
     // dependency. It says from which kprocids a certain kproc depends
     // dep_map.first depends on all the seconds
     // caching the kinetic processes dependencies
     // necessary for the ssa operator
     cacheDependencies(reactions(), reactions_dependencies_);
+    cacheDependencies(complexReactions(), complex_reactions_dependencies_);
     cacheDependencies(surfaceReactions(), surface_reactions_dependencies_);
+    cacheDependencies(complexSurfaceReactions(), complex_surface_reactions_dependencies_);
+    cacheDependencies(vDepComplexSurfaceReactions(), vdep_complex_surface_reactions_dependencies_);
     cacheDependencies(vDepSurfaceReactions(), vdep_surface_reactions_dependencies_);
     cacheDependencies(ghkSurfaceReactions(), ghk_surface_reactions_dependencies_);
+    cacheDependencies(complexGhkSurfaceReactions(), complex_ghk_surface_reactions_dependencies_);
 }
 
 
@@ -254,9 +407,13 @@ typename KProcState::Graph KProcState::getDependenciesGraph(
 
 
     const size_t tot_num_edges = num_edges(reactions_dependencies_) +
+                                 num_edges(complex_reactions_dependencies_) +
                                  num_edges(surface_reactions_dependencies_) +
+                                 num_edges(complex_surface_reactions_dependencies_) +
+                                 num_edges(vdep_complex_surface_reactions_dependencies_) +
                                  num_edges(vdep_surface_reactions_dependencies_) +
-                                 num_edges(ghk_surface_reactions_dependencies_);
+                                 num_edges(ghk_surface_reactions_dependencies_) +
+                                 num_edges(complex_ghk_surface_reactions_dependencies_);
     using Edge = std::pair<unsigned, unsigned>;
     std::vector<Edge> edges;
     edges.reserve(tot_num_edges);
@@ -275,11 +432,17 @@ typename KProcState::Graph KProcState::getDependenciesGraph(
     populate_edges(KProcType::SReac, surface_reactions_dependencies_);
     populate_edges(KProcType::VDepSReac, vdep_surface_reactions_dependencies_);
     populate_edges(KProcType::GHKSReac, ghk_surface_reactions_dependencies_);
+    populate_edges(KProcType::ComplexReac, complex_reactions_dependencies_);
+    populate_edges(KProcType::ComplexSReac, complex_surface_reactions_dependencies_);
+    populate_edges(KProcType::VDepComplexSReac, vdep_complex_surface_reactions_dependencies_);
+    populate_edges(KProcType::ComplexGHKSReac, complex_ghk_surface_reactions_dependencies_);
 
     return {edges.begin(),
             edges.end(),
             reactions().size() + surfaceReactions().size() + vDepSurfaceReactions().size() +
-                ghkSurfaceReactions().size()};
+                ghkSurfaceReactions().size() + complexReactions().size() +
+                complexSurfaceReactions().size() + vDepComplexSurfaceReactions().size() +
+                complexGhkSurfaceReactions().size()};
 }
 
 //------------------------------------------------------------------
@@ -287,7 +450,13 @@ typename KProcState::Graph KProcState::getDependenciesGraph(
 void KProcState::setupGroups(bool independent_kprocs) {
     // propensities needed to extract a kproc. index
     Propensities propensities;
-    propensities.init(handledKProcsClassesAndSizes());
+    const auto kProcs_sizes = handledKProcsClassesAndSizes();
+    propensities.init(kProcs_sizes);
+
+    osh::Write<osh::LO> kid_sizes(num_kproc_types(), 0);
+    std::copy(kProcs_sizes.begin(), kProcs_sizes.end(), kid_sizes.begin());
+    kprocID_to_groupID.reshape(kid_sizes);
+
     // extract the number of kproc dependencies
     if (independent_kprocs) {
         auto graph = getDependenciesGraph(propensities);
@@ -307,13 +476,20 @@ void KProcState::setupGroups(bool independent_kprocs) {
             std::copy(disjoint_k_procs_w[k].begin(),
                       disjoint_k_procs_w[k].end(),
                       disjoint_kprocs_[static_cast<osh::LO>(k)].begin());
+            for (const auto _kid: disjoint_k_procs_w[k]) {
+                KProcID kid(_kid);
+                kprocID_to_groupID(static_cast<osh::LO>(kid.type()), kid.id()) = k;
+            }
         }
+        outdated_kprocs_.resize(num_components);
     } else {
         disjoint_kprocs_.reshape({static_cast<osh::LO>(propensities.size())});
         size_t k = 0;
         for (auto it = disjoint_kprocs_[0].begin(); it != disjoint_kprocs_[0].end(); it++, k++) {
             *it = static_cast<osh::LO>(propensities.kProcId(k).data());
         }
+        kprocID_to_groupID.assign(0);
+        outdated_kprocs_.resize(1);
     }
 }
 
@@ -323,33 +499,112 @@ void KProcState::setupGroups(bool independent_kprocs) {
 #pragma GCC diagnostic ignored "-Wreturn-type"
 const std::vector<MolStateElementID>& KProcState::updateMolStateAndOccupancy(
     MolState& mol_state,
+    rng::RNG& rng,
     const osh::Real event_time,
-    const KProcID& event) const {
+    const KProcID& event,
+    int nb) const {
     switch (event.type()) {
-    case KProcType ::Reac:
-        return reactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
+    case KProcType::Reac:
+        return reactions().updateMolStateAndOccupancy(mol_state, rng, event.id(), event_time, nb);
+    case KProcType::ComplexReac:
+        assert(nb == 1);  // No R-Leaping for complex reactions
+        return complexReactions().updateMolStateAndOccupancy(mol_state,
+                                                             rng,
+                                                             event.id(),
+                                                             event_time);
     case KProcType::SReac:
-        return surfaceReactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
+        return surfaceReactions().updateMolStateAndOccupancy(
+            mol_state, rng, event.id(), event_time, nb);
+    case KProcType::ComplexSReac:
+        assert(nb == 1);  // No R-Leaping for complex reactions
+        return complexSurfaceReactions().updateMolStateAndOccupancy(mol_state,
+                                                                    rng,
+                                                                    event.id(),
+                                                                    event_time);
+    case KProcType::VDepComplexSReac:
+        assert(nb == 1);  // No R-Leaping for complex reactions
+        return vDepComplexSurfaceReactions().updateMolStateAndOccupancy(mol_state,
+                                                                        rng,
+                                                                        event.id(),
+                                                                        event_time);
     case KProcType::VDepSReac:
-        return vDepSurfaceReactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
+        return vDepSurfaceReactions().updateMolStateAndOccupancy(
+            mol_state, rng, event.id(), event_time, nb);
     case KProcType::GHKSReac:
-        return ghkSurfaceReactions().updateMolStateAndOccupancy(mol_state, event.id(), event_time);
+        return ghkSurfaceReactions().updateMolStateAndOccupancy(
+            mol_state, rng, event.id(), event_time, nb);
+    case KProcType::ComplexGHKSReac:
+        assert(nb == 1);  // No R-Leaping for complex reactions
+        return complexGhkSurfaceReactions().updateMolStateAndOccupancy(
+            mol_state, rng, event.id(), event_time, 1);
     case KProcType::Diff:
         throw std::logic_error("Unhandled kinetic process: Diffusion");
     }
 }
 
+//------------------------------------------------------------------
+
+void KProcState::updateChargeFlow(const KProcID& event, int nb) {
+    switch (event.type()) {
+    case KProcType::SReac:
+        surfaceReactions().updateChargeFlow(event.id(), nb);
+        break;
+    case KProcType::VDepSReac:
+        vDepSurfaceReactions().updateChargeFlow(event.id(), nb);
+        break;
+    case KProcType::ComplexSReac:
+        complexSurfaceReactions().updateChargeFlow(event.id(), nb);
+        break;
+    case KProcType::VDepComplexSReac:
+        assert(nb == 1);
+        vDepComplexSurfaceReactions().updateChargeFlow(event.id(), nb);
+        break;
+    case KProcType::GHKSReac:
+        ghkSurfaceReactions().updateChargeFlow(event.id(), nb);
+        break;
+    case KProcType::ComplexGHKSReac:
+        assert(nb == 1);
+        complexGhkSurfaceReactions().updateChargeFlow(event.id(), nb);
+        break;
+    case KProcType::Reac:
+    case KProcType::ComplexReac:
+    case KProcType::Diff:
+        break;
+    }
+}
+
+//------------------------------------------------------------------
+
+void KProcState::finalizeCurrents(double period) {
+    surfaceReactions().finalizeCurrents(period);
+    vDepSurfaceReactions().finalizeCurrents(period);
+    complexSurfaceReactions().finalizeCurrents(period);
+    vDepComplexSurfaceReactions().finalizeCurrents(period);
+    ghkSurfaceReactions().finalizeCurrents(period);
+    complexGhkSurfaceReactions().finalizeCurrents(period);
+}
+
+//------------------------------------------------------------------
+
 #pragma GCC diagnostic ignored "-Wreturn-type"
 void KProcState::report(std::ostream& report_stream, KProcID kid) const {
     switch (kid.type()) {
-    case KProcType ::Reac:
+    case KProcType::Reac:
         return reactions().report(report_stream, kid.id());
+    case KProcType::ComplexReac:
+        return complexReactions().report(report_stream, kid.id());
     case KProcType::SReac:
         return surfaceReactions().report(report_stream, kid.id());
+    case KProcType::ComplexSReac:
+        return complexSurfaceReactions().report(report_stream, kid.id());
+    case KProcType::VDepComplexSReac:
+        return vDepComplexSurfaceReactions().report(report_stream, kid.id());
     case KProcType::VDepSReac:
         return vDepSurfaceReactions().report(report_stream, kid.id());
     case KProcType::GHKSReac:
         return ghkSurfaceReactions().report(report_stream, kid.id());
+    case KProcType::ComplexGHKSReac:
+        return complexGhkSurfaceReactions().report(report_stream, kid.id());
     case KProcType::Diff:
         throw std::logic_error("Unhandled kinetic process: Diffusion");
     }
@@ -373,34 +628,5 @@ KProcState::getDependenciesGraphAndLabels() const {
                    });
     return {getDependenciesGraph(propensities), labels};
 }
-
-//--------------------------------------------------------
-
-// explicit template instantiation definitions
-template void KProcState::countDependencies(const Reactions& processes,
-                                            osh::Write<osh::LO>& dep_map_elems_num_data,
-                                            osh::Write<osh::LO>& dep_map_bnds_num_data) const;
-template void KProcState::countDependencies(const SurfaceReactions& processes,
-                                            osh::Write<osh::LO>& dep_map_elems_num_data,
-                                            osh::Write<osh::LO>& dep_map_bnds_num_data) const;
-template void KProcState::countDependencies(const VDepSurfaceReactions& processes,
-                                            osh::Write<osh::LO>& dep_map_elems_num_data,
-                                            osh::Write<osh::LO>& dep_map_bnds_num_data) const;
-template void KProcState::countDependencies(const GHKSurfaceReactions& processes,
-                                            osh::Write<osh::LO>& dep_map_elems_num_data,
-                                            osh::Write<osh::LO>& dep_map_bnds_num_data) const;
-
-template void KProcState::fillDependencies(const Reactions& processes,
-                                           osh::Write<osh::LO>& elems_curr_counters,
-                                           osh::Write<osh::LO>& bnds_curr_counters);
-template void KProcState::fillDependencies(const SurfaceReactions& processes,
-                                           osh::Write<osh::LO>& elems_curr_counters,
-                                           osh::Write<osh::LO>& bnds_curr_counters);
-template void KProcState::fillDependencies(const VDepSurfaceReactions& processes,
-                                           osh::Write<osh::LO>& elems_curr_counters,
-                                           osh::Write<osh::LO>& bnds_curr_counters);
-template void KProcState::fillDependencies(const GHKSurfaceReactions& processes,
-                                           osh::Write<osh::LO>& elems_curr_counters,
-                                           osh::Write<osh::LO>& bnds_curr_counters);
 
 }  // namespace steps::dist::kproc

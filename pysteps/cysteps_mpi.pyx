@@ -2,21 +2,21 @@
 ####################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -77,11 +77,11 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
     cdef TetOpSplitP *ptrx(self):
         return <TetOpSplitP*> self._ptr
 
-    def __init__(self, _py_Model model, _py_Geom geom, _py_RNG rng, int calcMembPot=0, std.vector[int] tet_hosts = [], dict tri_hosts = {}, std.vector[int] wm_hosts = []):
+    def __init__(self, _py_Model model, _py_Geom geom, _py_RNG rng, int calcMembPot=0, std.vector[int] tet_hosts = [], dict tri_hosts = {}, std.vector[int] wm_hosts = [], calcMembPot_lenient=False):
         """
         Construction::
 
-            sim = steps.solver.TetOpSplit(model, geom, rng, tet_hosts=[], tri_hosts={}, wm_hosts=[], calcMembPot=0)
+            sim = steps.solver.TetOpSplit(model, geom, rng, tet_hosts=[], tri_hosts={}, wm_hosts=[], calcMembPot=0, calcMembPot_lenient=False)
 
         Create a spatial stochastic solver based on operator splitting: reaction events are partitioned and diffusion is approximated.
         If voltage is to be simulated, argument calcMembPot specifies the solver. E.g. calcMembPot=steps.solver.EF_DV_PETSC will utilise the PETSc library. calcMembPot=0 means that voltage will not be simulated.
@@ -94,6 +94,7 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
         dict<index_t, int> tri_hosts (default={})
         list<int> wm_hosts (default=[])
         int calcMemPot (default=0)
+        bool calcMembPot_lenient (default=False)
 
         """
         cdef std.map[steps.triangle_global_id, int] _tri_hosts
@@ -106,7 +107,7 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
             raise TypeError('The Geom object is empty.')
         if rng == None:
             raise TypeError('The RNG object is empty.')
-        self._ptr = new TetOpSplitP(model.ptr(), geom.ptr(), rng.ptr(), calcMembPot, tet_hosts, _tri_hosts, wm_hosts)
+        self._ptr = new TetOpSplitP(model.ptr(), geom.ptr(), rng.ptr(), calcMembPot, calcMembPot_lenient, tet_hosts, _tri_hosts, wm_hosts)
 
     def getSolverName(self, ):
         """
@@ -456,7 +457,6 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
 
         """
         self.ptrx().setNSteps(nsteps)
-
 
     def getBatchTetSpecCounts(self, std.vector[index_t] tets, str s):
         """
@@ -1531,8 +1531,165 @@ cdef class _py_TetOpSplitP(_py_TetAPI):
             None
         """
         if tri_hosts is None: tri_hosts = {}
-        cdef std.map[unsigned int, int] _tri_hosts = tri_hosts
+        cdef std.map[uint, int] _tri_hosts = tri_hosts
         self.ptrx().repartitionAndReset(tet_hosts, _tri_hosts, wm_hosts)
+    
+    def getTetA(self, steps.index_t idx):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in a tetrahedron.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTetA(steps.tetrahedron_global_id(idx))
+
+    def getTetExtent(self, steps.index_t idx):
+        """
+        Returns the cumulative extent of all reactions in a tetrahedron.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTetExtent(steps.tetrahedron_global_id(idx))
+
+    def getTetWeightedExtent(self, steps.index_t idx):
+        """
+        Weighting based on reactions present in the tetrahedron, and how expensive
+        those reaction are. Weighting for a singular reaction is calculated by multiplying how many times
+        the reaction has occurred (extent) by the number of reactions dependent on it. This function
+        returns the sum of these weightings for all reactions in the tetrahedron.
+
+        Can be used to estimate the computational cost of the tetrahedron.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+        :rtype: int
+        """
+
+        return self.ptrx().getTetWeightedExtent(steps.tetrahedron_global_id(idx))
+
+    def getTriA(self, steps.index_t idx):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in a triangle.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+
+        :param idx: Index of the triangle.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTriA(steps.triangle_global_id(idx))
+
+    def getTriExtent(self, steps.index_t idx):
+        """
+        Returns the cumulative extent of all reactions in a triangle.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+
+        :param idx: Index of the triangle.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTriExtent(steps.triangle_global_id(idx))
+
+    def getBatchTetA(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in each given tetrahedron.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+        Values are returned in a list the size of idxs with propensity values in corresponding indices.
+
+        :param idxs: List of tetrahedron indices.
+        :rtype: List[float]
+        """
+        return [val for val in self.ptrx().getBatchTetA(idxs)]
+
+    def getBatchTetExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative extents of all reactions in each given tetrahedron.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+        Values are returned in a list the size of idxs with extent values in corresponding indices.
+
+        :param idxs: List of tetrahedron indices.
+        :rtype: List[float]
+        """
+
+        return [val for val in self.ptrx().getBatchTetExtent(idxs)]
+
+    def getBatchTetWeightedExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Weighting based on reactions present in the tetrahedron, and how expensive
+        those reaction are. Weighting for a singular reaction is calculated by multiplying how many times
+        the reaction has occurred (extent) by the number of reactions dependent on it. This function
+        returns the sum of these weightings for all reactions in each provided tetrahedron.
+
+        Can be used to estimate the computational cost of the tetrahedron.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+        :rtype: int
+        """
+
+        return [val for val in self.ptrx().getBatchTetWeightedExtent(idxs)]
+
+    def getBatchTriA(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in each given triangle.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+        Values are returned in a list the size of idxs with propensity values in corresponding indices.
+        
+        :param idxs: List of triangle indices.
+        :rtype: List[float]
+        """
+
+        return [val for val in self.ptrx().getBatchTriA(idxs)]
+
+    def getBatchTriExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative extents of all reactions in each given triangle.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+        Values are returned in a list the size of idxs with extent values in corresponding indices.
+
+        :param idxs: List of triangle indices.
+        :rtype: List[float]
+        """
+
+        return [val for val in self.ptrx().getBatchTriExtent(idxs)]
+
+    def getBatchTriWeightedExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the number of reactions and diffusions that each triangle influences.
+        Based on the chemical species defined in the reactions and diffusions for each triangle.
+        Can be used to estimate the computational cost of triangles.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+        :rtype: int
+        """
+
+        return [val for val in self.ptrx().getBatchTriWeightedExtent(idxs)]
+
 
     @staticmethod
     cdef _py_TetOpSplitP from_ptr(TetOpSplitP *ptr):
@@ -1551,11 +1708,11 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
     cdef TetVesicleRDEF *ptrx(self):
         return <TetVesicleRDEF*> self._ptr
 
-    def __init__(self, _py_Model model, _py_Geom geom, _py_RNG rng, int calcMembPot=0):
+    def __init__(self, _py_Model model, _py_Geom geom, _py_RNG rng, int calcMembPot=0, calcMembPot_lenient=False, double vesSDiffTol = 0.01, std.vector[int] tet_hosts = [], dict tri_hosts = {}, std.vector[int] wm_hosts = []):
         """
         Construction::
 
-            sim = steps.mpi.solver.TetVesicleRDEF(model, geom, rng, calcMembPot=0)
+            sim = steps.mpi.solver.TetVesicleRDEF(model, geom, rng, calcMembPot=0, calcMembPot_lenient=False, vesSDiffTol = 0.01)
 
         Create a spatial stochastic solver based on operator-splitting, which also supports vesicles, 'rafts' and related phenomena such as exocytosis and endocytosis.
         If voltage is to be simulated, argument calcMembPot specifies the solver. E.g. calcMembPot=steps.solver.EF_DV_PETSC will utilise the PETSc library. calcMembPot=0 means that voltage will not be simulated.
@@ -1564,16 +1721,26 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         steps.model.Model model
         steps.geom.Geom geom
         steps.rng.RNG rng
-        int calcMemPot (default=0)
+        int calcMembPot (default=0)
+        bool calcMembPot_lenient (default=False)
+        float vesSDiffTol (default=0.01)
+        list<int> tet_hosts (default=[])
+        dict<index_t, int> tri_hosts (default={})
+        list<int> wm_hosts (default=[])
 
         """
+
+        cdef std.map[steps.triangle_global_id, int] _tri_hosts
+        for key, elem in tri_hosts.items():
+            _tri_hosts[steps.triangle_global_id(key)] = elem
+
         if model == None:
             raise TypeError('The Model object is empty.')
         if geom == None:
             raise TypeError('The Geom object is empty.')
         if rng == None:
             raise TypeError('The RNG object is empty.')
-        self._ptr = new TetVesicleRDEF(model.ptr(), geom.ptr(), rng.ptr(), calcMembPot)
+        self._ptr = new TetVesicleRDEF(model.ptr(), geom.ptr(), rng.ptr(), calcMembPot, calcMembPot_lenient, vesSDiffTol, tet_hosts, _tri_hosts, wm_hosts)
 
     def getSolverName(self, ):
         """
@@ -1794,17 +1961,20 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         """
         return self.ptrx().getVesicleDT()
 
-    def createPath(self, str path):
+
+    def createPath(self, str path, bool bind_to_start):
         """
         Create a path
 
         :param path: Name of the path
         :type path: str
+        :param bind_to_start: See API_2 docstrings
+        :type bind_to_start: bool
 
 
         :rtype: None
         """
-        self.ptrx().createPath(to_std_string(path))
+        self.ptrx().createPath(to_std_string(path), bind_to_start)
 
     def addPathPoint(self, str path, uint point_idx, std.vector[double] position):
         """
@@ -1822,6 +1992,26 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         """
         self.ptrx().addPathPoint(to_std_string(path), point_idx, position)
 
+    def addPathEdge(self, str path, uint sourcepoint_idx, uint destpoint_idx, double weight, bool allow_binding):
+        """
+        Add a directed edge between two points of a path
+
+        :param path: Name of the path
+        :type path: str
+        :param sourcepoint_idx: An index for the source point, positive integer
+        :type sourcepoint_idx: int
+        :param destpoint_idx: See API_2 docstrings
+        :type destpoint_idx: Dict[int, float]
+        :param weight: See API_2 docstrings
+        :type weight: Dict[int, float]
+        :param allow_binding: See API_2 docstrings
+        :type allow_binding: bool
+
+
+        :rtype: None
+        """
+        self.ptrx().addPathEdge(to_std_string(path), sourcepoint_idx, destpoint_idx, weight, allow_binding)
+
     def addPathBranch(self, str path, uint sourcepoint_idx, std.map[uint, double] destpoints_indxs):
         """
         Create branching in the path from a point
@@ -1830,7 +2020,7 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         :type path: str
         :param sourcepoint_idx: An index for the source point, positive integer
         :type sourcepoint_idx: int
-        :param destpoints_indxs:
+        :param destpoints_indxs: See API_2 docstrings
         :type destpoints_indxs: Dict[int, float]
 
 
@@ -2978,7 +3168,7 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         """
         self.ptrx().setCompVesicleCount(to_std_string(c), to_std_string(v), n)
 
-    def addCompVesicle(self, str c, str v):
+    def addCompVesicle(self, str c, str v, double diam=-1.0, double dcst=-1.0):
         """
         Adds one vesicle v to compartment c
 
@@ -2986,11 +3176,14 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         :type c: str
         :param v: Name of the vesicle.
         :type v: str
-
+        :param diam: Diameter of the vesicle.
+        :type diam: float
+        :param dcst: Diffusion constant of the vesicle.
+        :type dcst: float
 
         :rtype: steps.index_t
         """
-        return self.ptrx().addCompVesicle(to_std_string(c), to_std_string(v)).get()
+        return self.ptrx().addCompVesicle(to_std_string(c), to_std_string(v), diam, dcst).get()
 
     def deleteSingleVesicle(self, str v, steps.index_t ves_unique_index):
         """
@@ -3150,6 +3343,25 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         """
         self.ptrx().setSingleVesiclePos(to_std_string(v), steps.vesicle_individual_id(ves_unique_index), pos, force)
 
+    def getSingleVesicleOnPath(self, str v, steps.index_t ves_unique_index):
+        """
+        Returns a tuple containing the name of the path to which the vesicle is bound and its current position along the path (3D point).
+        If the vesicle is not bound to a path, returns None.
+
+        :param v: Name of the vesicle.
+        :type v: str
+        :param ves_unique_index: Unique index of the individual vesicle
+        :type ves_unique_index: steps.index_t
+
+        :rtype: Tuple[str, List[float]]
+        """
+        pair = self.ptrx().getSingleVesicleOnPath(to_std_string(v), steps.vesicle_individual_id(ves_unique_index))
+        name, pos = from_std_string(pair.first), [val for val in pair.second]
+        if len(name) > 0:
+            return name, pos
+        else:
+            return None
+
     # TODO Remove this method eventually and use setSingleVesiclePos instead
     def setCompSingleVesiclePos(self, str c, str v, steps.index_t ves_unique_index, std.vector[double] pos, bool force=False):
         """
@@ -3171,6 +3383,37 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         :rtype: None
         """
         self.ptrx().setSingleVesiclePos(to_std_string(v), steps.vesicle_individual_id(ves_unique_index), pos, force)
+
+    def getSingleVesicleDcst(self, str v, steps.index_t ves_unique_index):
+        """
+        Returns the diffusion constant of vesicle of type v with unique index
+        ves_unique_index
+
+        :param v: Name of the vesicle.
+        :type v: str
+        :param ves_unique_index: Unique index of the individual vesicle
+        :type ves_unique_index: steps.index_t
+
+
+        :rtype: float
+        """
+        return self.ptrx().getSingleVesicleDcst(to_std_string(v), steps.vesicle_individual_id(ves_unique_index))
+
+    def setSingleVesicleDcst(self, str v, steps.index_t ves_unique_index, double dcst):
+        """
+        Set the diffusion constant of vesicle of type v with unique index
+        ves_unique_index to dcst
+
+        :param v: Name of the vesicle.
+        :type v: str
+        :param ves_unique_index: Unique index of the individual vesicle
+        :type ves_unique_index: steps.index_t
+        :param dcst: Diffusion constant of the vesicle
+        :type dcst: float
+
+        :rtype: None
+        """
+        self.ptrx().setSingleVesicleDcst(to_std_string(v), steps.vesicle_individual_id(ves_unique_index), dcst)
 
     def getCompVesicleSurfaceSpecCountDict(self, str c, str v, str s):
         """
@@ -3456,6 +3699,21 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         """
         return self.ptrx().getSingleLinkSpecVes(steps.linkspec_individual_id(ls_unique_index)).get()
 
+    def setSingleVesicleImmobility(self, str v, steps.index_t ves_unique_index, uint immob):
+        """
+        Set the 'immobility' of vesicle of type v and unique index
+        ves_unique_index. All non-zero numbers mean vesicle is
+        immobile.
+
+        :param v: Name of the vesicle.
+        :type v: str
+        :param ves_unique_index: Unique index of the individual vesicle
+        :type ves_unique_index: steps.index_t
+        :param immob: The immobility value
+        :type immob: int
+        """
+        self.ptrx().setSingleVesicleImmobility(to_std_string(v), steps.vesicle_individual_id(ves_unique_index), immob)
+
     def getSingleVesicleImmobility(self, str v, steps.index_t ves_unique_index):
         """
         Get the 'immobility' of vesicle of type v and unique index
@@ -3487,7 +3745,7 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         """
         return [_val1.get() for _val1 in self.ptrx().getSingleVesicleOverlapTets(to_std_string(v), steps.vesicle_individual_id(ves_unique_index))]
 
-    def setTetVesicleDcst(self, steps.index_t idx, str v, double dcst):
+    def setTetVesicleDcst(self, steps.index_t idx, str v, double dcst, bool relative = False):
         """
         Set the diffusion rate per tetrahedron of vesicles of type v. Vesicles
         will use this diffusion rate when vesicle centre is in this tet.
@@ -3498,11 +3756,38 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         :type v: str
         :param dcst: Diffusion coefficient
         :type dcst: float
-
+        :param relative: If dcst is relative
+        :type relative: bool
 
         :rtype: None
         """
-        self.ptrx().setTetVesicleDcst(steps.tetrahedron_global_id(idx), to_std_string(v), dcst)
+        self.ptrx().setTetVesicleDcst(steps.tetrahedron_global_id(idx), to_std_string(v), dcst, relative)
+
+    def getTetVesicleDcst(self, steps.index_t idx, str v):
+        """
+        Get the diffusion rate per tetrahedron of vesicles of type v. -1 is returned if not defined (default will be used). 
+
+        :param idx: Tetrahrdron index
+        :type idx: steps.index_t
+        :param v: Name of the vesicle.
+        :type v: str
+
+        :rtype: float
+        """
+        return self.ptrx().getTetVesicleDcst(steps.tetrahedron_global_id(idx), to_std_string(v))
+
+    def getTetVesicleDcstRel(self, steps.index_t idx, str v):
+        """
+        Get if the diffusion rate per tetrahedron of vesicles of type v is relative. 
+
+        :param idx: Tetrahrdron index
+        :type idx: steps.index_t
+        :param v: Name of the vesicle.
+        :type v: str
+
+        :rtype: bool
+        """
+        return self.ptrx().getTetVesicleDcstRel(steps.tetrahedron_global_id(idx), to_std_string(v))
 
     def setVesicleSurfaceLinkSpecSDiffD(self, str v, str ls, double dcst):
         """
@@ -3643,7 +3928,7 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
             std_comps.push_back(to_std_string(_elem))
         self.ptrx().addVesicleDiffusionGroup(to_std_string(v), std_comps)
 
-    def addPathVesicle(self, str path, str ves, double speed, dict spec_deps={}, stoch_stepsize=1e-9):
+    def addPathVesicle(self, str path, str ves, double speed, dict spec_deps={}, stoch_stepsize=1e-9, binding_rate=-1, min_binding_radius=0, max_binding_radius=-1, unbinding_rate=-1, allow_path_intersection=True):
         """
         Add a vesicle to this path. This means a vesicle of this type can
         interact with this path upon overlapping it
@@ -3658,6 +3943,16 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         :type spec_deps: Dict[str, int]
         :param stoch_stepsize: Stochastic step length. This may be a single float value where a single-exponential will be applied. If a list of length 2, a double-exponential will be applied by the proportionality specified in the 2nd element.
         :type stoch_stepsize: Float or list[float]
+        :param binding_rate: See API_2 docstrings
+        :type binding_rate: float
+        :param min_binding_radius: See API_2 docstrings
+        :type min_binding_radius: float
+        :param max_binding_radius: See API_2 docstrings
+        :type max_binding_radius: float
+        :param unbinding_rate: See API_2 docstrings
+        :type unbinding_rate: float
+        :param allow_path_intersection: See API_2 docstrings
+        :type allow_path_intersection: float
 
         :rtype: None
         """
@@ -3671,7 +3966,163 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         std_stoch_stepsize.reserve(len(stoch_stepsize))
         for _elem in stoch_stepsize:
             std_stoch_stepsize.push_back(_elem)
-        self.ptrx().addPathVesicle(to_std_string(path), to_std_string(ves), speed, std_spec_deps, std_stoch_stepsize)
+        self.ptrx().addPathVesicle(to_std_string(path), to_std_string(ves), speed, std_spec_deps, std_stoch_stepsize, binding_rate, min_binding_radius, max_binding_radius, unbinding_rate, allow_path_intersection)
+
+    def getTetA(self, steps.index_t idx):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in a tetrahedron.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTetA(steps.tetrahedron_global_id(idx))
+
+    def getTetExtent(self, steps.index_t idx):
+        """
+        Returns the cumulative extent of all reactions in a tetrahedron.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTetExtent(steps.tetrahedron_global_id(idx))
+
+    def getTetWeightedExtent(self, steps.index_t idx):
+        """
+        Weighting based on reactions present in the tetrahedron, and how expensive
+        those reaction are. Weighting for a singular reaction is calculated by multiplying how many times
+        the reaction has occurred (extent) by the number of reactions dependent on it. This function
+        returns the sum of these weightings for all reactions in the tetrahedron.
+
+        Can be used to estimate the computational cost of the tetrahedron.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+        :rtype: int
+        """
+
+        return self.ptrx().getTetWeightedExtent(steps.tetrahedron_global_id(idx))
+
+    def getTriA(self, steps.index_t idx):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in a triangle.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+
+        :param idx: Index of the triangle.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTriA(steps.triangle_global_id(idx))
+
+    def getTriExtent(self, steps.index_t idx):
+        """
+        Returns the cumulative extent of all reactions in a triangle.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+
+        :param idx: Index of the triangle.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTriExtent(steps.triangle_global_id(idx))
+
+    def getBatchTetA(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in each giveach given tetrahedronen triangle.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+        Values are returned in a list the size of idxs with propensity values in corresponding indices.
+
+        :param idxs: List of tetrahedron indices.
+        :rtype: List[float]
+        """
+        return [val for val in self.ptrx().getBatchTetA(idxs)]
+
+    def getBatchTetExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative extents of all reactions in each given tetrahedron.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+        Values are returned in a list the size of idxs with extent values in corresponding indices.
+
+        :param idxs: List of tetrahedron indices.
+        :rtype: List[float]
+        """
+
+        return [val for val in self.ptrx().getBatchTetExtent(idxs)]
+
+    def getBatchTetWeightedExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Weighting based on reactions present in the tetrahedron, and how expensive
+        those reaction are. Weighting for a singular reaction is calculated by multiplying how many times
+        the reaction has occurred (extent) by the number of reactions dependent on it. This function
+        returns the sum of these weightings for all reactions in each provided tetrahedron.
+
+        Can be used to estimate the computational cost of the tetrahedron.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+        :rtype: int
+        """
+
+        return [val for val in self.ptrx().getBatchTetWeightedExtent(idxs)]
+
+    def getBatchTriA(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in each given triangle.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+        Values are returned in a list the size of idxs with propensity values in corresponding indices.
+        
+        :param idxs: List of triangle indices.
+        :rtype: List[float]
+        """
+
+        return [val for val in self.ptrx().getBatchTriA(idxs)]
+
+    def getBatchTriExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative extents of all reactions in each given triangle.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+        Values are returned in a list the size of idxs with extent values in corresponding indices.
+
+        :param idxs: List of triangle indices.
+        :rtype: List[float]
+        """
+
+        return [val for val in self.ptrx().getBatchTriExtent(idxs)]
+
+    def getBatchTriWeightedExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the number of reactions and diffusions that each triangle influences.
+        Based on the chemical species defined in the reactions and diffusions for each triangle.
+        Can be used to estimate the computational cost of triangles.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+        :rtype: int
+        """
+
+        return [val for val in self.ptrx().getBatchTriWeightedExtent(idxs)]
 
     def getTetVol(self, steps.index_t idx):
         """
@@ -4504,6 +4955,21 @@ cdef class _py_TetVesicleRDEF(_py_TetAPI):
         :rtype: None
         """
         self.ptrx().setSingleRaftSpecCount(to_std_string(r), steps.raft_individual_id(raft_unique_index), to_std_string(s), count)
+
+    def setSingleRaftImmobility(self, str r, steps.index_t raft_unique_index, uint immob):
+        """
+        Set the 'immobility' of raft of type r and unique index
+        raft_unique_index. All non-zero numbers mean raft is
+        immobile.
+
+        :param r: Name of the raft.
+        :type r: str
+        :param raft_unique_index: Unique index of the individual raft.
+        :type raft_unique_index: steps.index_t
+        :param immob: Immobility of the raft
+        :type immob: int
+        """
+        self.ptrx().setSingleRaftImmobility(to_std_string(r), steps.raft_individual_id(raft_unique_index), immob)
 
     def getSingleRaftImmobility(self, str r, steps.index_t raft_unique_index):
         """
@@ -5526,11 +5992,11 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
     cdef TetVesicleVesRaft *ptrx(self):
         return <TetVesicleVesRaft*> self._ptr
 
-    def __init__(self, _py_Model model, _py_Geom geom, _py_RNG rng, int calcMembPot=0):
+    def __init__(self, _py_Model model, _py_Geom geom, _py_RNG rng, int calcMembPot=0, calcMembPot_lenient=False, double vesSDiffTol = 0.01, std.vector[int] tet_hosts = [], dict tri_hosts = {}, std.vector[int] wm_hosts = []):
         """
         Construction::
 
-            sim = steps.mpi.solver.TetVesicle(model, geom, rng, calcMembPot=0)
+            sim = steps.mpi.solver.TetVesicle(model, geom, rng, calcMembPot=0, vesSDiffTol = 0.01)
 
         Create a spatial stochastic solver based on operator-splitting, which also supports vesicles, 'rafts' and related phenomena such as exocytosis and endocytosis.
         If voltage is to be simulated, argument calcMembPot specifies the solver. E.g. calcMembPot=steps.solver.EF_DV_PETSC will utilise the PETSc library. calcMembPot=0 means that voltage will not be simulated.
@@ -5540,8 +6006,18 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         steps.geom.Geom geom
         steps.rng.RNG rng
         int calcMemPot (default=0)
+        bool calcMembPot_lenient (default=False)
+        float vesSDiffTol (default=0.01)
+        list<int> tet_hosts (default=[])
+        dict<index_t, int> tri_hosts (default={})
+        list<int> wm_hosts (default=[])
 
         """
+
+        cdef std.map[steps.triangle_global_id, int] _tri_hosts
+        for key, elem in tri_hosts.items():
+            _tri_hosts[steps.triangle_global_id(key)] = elem
+
         # We constructed a map. Now call constructor
         if model == None:
             raise TypeError('The Model object is empty.')
@@ -5549,7 +6025,7 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
             raise TypeError('The Geom object is empty.')
         if rng == None:
             raise TypeError('The RNG object is empty.')
-        self._ptr = new TetVesicleVesRaft(model.ptr(), geom.ptr(), rng.ptr(), calcMembPot)
+        self._ptr = new TetVesicleVesRaft(model.ptr(), geom.ptr(), rng.ptr(), calcMembPot, calcMembPot_lenient, vesSDiffTol, tet_hosts, _tri_hosts, wm_hosts)
 
     def getSolverName(self, ):
         """
@@ -5731,17 +6207,19 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         """
         return self.ptrx().getVesicleDT()
 
-    def createPath(self, str path):
+    def createPath(self, str path, bool bind_to_start):
         """
         Create a path
 
         :param path: Name of the path
         :type path: str
+        :param bind_to_start: See API_2 docstrings
+        :type bind_to_start: bool
 
 
         :rtype: None
         """
-        self.ptrx().createPath(to_std_string(path))
+        self.ptrx().createPath(to_std_string(path), bind_to_start)
 
     def addPathPoint(self, str path, uint point_idx, std.vector[double] position):
         """
@@ -5759,6 +6237,26 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         """
         self.ptrx().addPathPoint(to_std_string(path), point_idx, position)
 
+    def addPathEdge(self, str path, uint sourcepoint_idx, uint destpoint_idx, double weight, bool allow_binding):
+        """
+        Add a directed edge between two points of a path
+
+        :param path: Name of the path
+        :type path: str
+        :param sourcepoint_idx: An index for the source point, positive integer
+        :type sourcepoint_idx: int
+        :param destpoint_idx: See API_2 docstrings
+        :type destpoint_idx: Dict[int, float]
+        :param weight: See API_2 docstrings
+        :type weight: Dict[int, float]
+        :param allow_binding: See API_2 docstrings
+        :type allow_binding: bool
+
+
+        :rtype: None
+        """
+        self.ptrx().addPathEdge(to_std_string(path), sourcepoint_idx, destpoint_idx, weight, allow_binding)
+
     def addPathBranch(self, str path, uint sourcepoint_idx, std.map[uint, double] destpoints_indxs):
         """
         Create branching in the path from a point
@@ -5767,7 +6265,7 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         :type path: str
         :param sourcepoint_idx: An index for the source point, positive integer
         :type sourcepoint_idx: int
-        :param destpoints_indxs:
+        :param destpoints_indxs: See API_2 docstrings
         :type destpoints_indxs: Dict[int, float]
 
 
@@ -6819,7 +7317,7 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         """
         self.ptrx().setCompVesicleCount(to_std_string(c), to_std_string(v), n)
 
-    def addCompVesicle(self, str c, str v):
+    def addCompVesicle(self, str c, str v, double diam=-1.0, double dcst=-1.0):
         """
         Adds one vesicle v to compartment c
 
@@ -6827,11 +7325,14 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         :type c: str
         :param v: Name of the vesicle.
         :type v: str
-
+        :param diam: Diameter of the vesicle.
+        :type diam: float
+        :param dcst: Diffusion constant of the vesicle.
+        :type dcst: float
 
         :rtype: steps.index_t
         """
-        return self.ptrx().addCompVesicle(to_std_string(c), to_std_string(v)).get()
+        return self.ptrx().addCompVesicle(to_std_string(c), to_std_string(v), diam, dcst).get()
 
     def deleteSingleVesicle(self, str v, steps.index_t ves_unique_index):
         """
@@ -6977,6 +7478,25 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         """
         self.ptrx().setSingleVesiclePos(to_std_string(v), steps.vesicle_individual_id(ves_unique_index), pos, force)
 
+    def getSingleVesicleOnPath(self, str v, steps.index_t ves_unique_index):
+        """
+        Returns a tuple containing the name of the path to which the vesicle is bound and its current position along the path (3D point).
+        If the vesicle is not bound to a path, returns None.
+
+        :param v: Name of the vesicle.
+        :type v: str
+        :param ves_unique_index: Unique index of the individual vesicle
+        :type ves_unique_index: steps.index_t
+
+        :rtype: Tuple[str, List[float]]
+        """
+        pair = self.ptrx().getSingleVesicleOnPath(to_std_string(v), steps.vesicle_individual_id(ves_unique_index))
+        name, pos = from_std_string(pair.first), [val for val in pair.second]
+        if len(name) > 0:
+            return name, pos
+        else:
+            return None
+
     # TODO Remove this method eventually and use setSingleVesiclePos instead
     def setCompSingleVesiclePos(self, str c, str v, steps.index_t ves_unique_index, std.vector[double] pos, bool force=False):
         """
@@ -6998,6 +7518,37 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         :rtype: None
         """
         self.ptrx().setSingleVesiclePos(to_std_string(v), steps.vesicle_individual_id(ves_unique_index), pos, force)
+
+    def getSingleVesicleDcst(self, str v, steps.index_t ves_unique_index):
+        """
+        Returns the diffusion constant of vesicle of type v with unique index
+        ves_unique_index
+
+        :param v: Name of the vesicle.
+        :type v: str
+        :param ves_unique_index: Unique index of the individual vesicle
+        :type ves_unique_index: steps.index_t
+
+
+        :rtype: float
+        """
+        return self.ptrx().getSingleVesicleDcst(to_std_string(v), steps.vesicle_individual_id(ves_unique_index))
+
+    def setSingleVesicleDcst(self, str v, steps.index_t ves_unique_index, double dcst):
+        """
+        Set the diffusion constant of vesicle of type v with unique index
+        ves_unique_index to dcst
+
+        :param v: Name of the vesicle.
+        :type v: str
+        :param ves_unique_index: Unique index of the individual vesicle
+        :type ves_unique_index: steps.index_t
+        :param dcst: Diffusion constant of the vesicle
+        :type dcst: float
+
+        :rtype: None
+        """
+        self.ptrx().setSingleVesicleDcst(to_std_string(v), steps.vesicle_individual_id(ves_unique_index), dcst)
 
     def getCompVesicleSurfaceSpecCountDict(self, str c, str v, str s):
         """
@@ -7283,6 +7834,21 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         """
         return self.ptrx().getSingleLinkSpecVes(steps.linkspec_individual_id(ls_unique_index)).get()
 
+    def setSingleVesicleImmobility(self, str v, steps.index_t ves_unique_index, uint immob):
+        """
+        Set the 'immobility' of vesicle of type v and unique index
+        ves_unique_index. All non-zero numbers mean vesicle is
+        immobile.
+
+        :param v: Name of the vesicle.
+        :type v: str
+        :param ves_unique_index: Unique index of the individual vesicle
+        :type ves_unique_index: steps.index_t
+        :param immob: The immobility value
+        :type immob: int
+        """
+        self.ptrx().setSingleVesicleImmobility(to_std_string(v), steps.vesicle_individual_id(ves_unique_index), immob)
+
     def getSingleVesicleImmobility(self, str v, steps.index_t ves_unique_index):
         """
         Get the 'immobility' of vesicle of type v and unique index
@@ -7314,7 +7880,7 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         """
         return [_val1.get() for _val1 in self.ptrx().getSingleVesicleOverlapTets(to_std_string(v), steps.vesicle_individual_id(ves_unique_index))]
 
-    def setTetVesicleDcst(self, steps.index_t idx, str v, double dcst):
+    def setTetVesicleDcst(self, steps.index_t idx, str v, double dcst, bool relative = False):
         """
         Set the diffusion rate per tetrahedron of vesicles of type v. Vesicles
         will use this diffusion rate when vesicle centre is in this tet.
@@ -7325,11 +7891,38 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         :type v: str
         :param dcst: Diffusion coefficient
         :type dcst: float
-
+        :param relative: If dcst is relative
+        :type relative: bool
 
         :rtype: None
         """
-        self.ptrx().setTetVesicleDcst(steps.tetrahedron_global_id(idx), to_std_string(v), dcst)
+        self.ptrx().setTetVesicleDcst(steps.tetrahedron_global_id(idx), to_std_string(v), dcst, relative)
+
+    def getTetVesicleDcst(self, steps.index_t idx, str v):
+        """
+        Get the diffusion rate per tetrahedron of vesicles of type v. -1 is returned if not defined (default will be used). 
+
+        :param idx: Tetrahrdron index
+        :type idx: steps.index_t
+        :param v: Name of the vesicle.
+        :type v: str
+
+        :rtype: float
+        """
+        return self.ptrx().getTetVesicleDcst(steps.tetrahedron_global_id(idx), to_std_string(v))
+
+    def getTetVesicleDcstRel(self, steps.index_t idx, str v):
+        """
+        Get if the diffusion rate per tetrahedron of vesicles of type v is relative. 
+
+        :param idx: Tetrahrdron index
+        :type idx: steps.index_t
+        :param v: Name of the vesicle.
+        :type v: str
+
+        :rtype: bool
+        """
+        return self.ptrx().getTetVesicleDcstRel(steps.tetrahedron_global_id(idx), to_std_string(v))
 
     def setVesicleSurfaceLinkSpecSDiffD(self, str v, str ls, double dcst):
         """
@@ -7470,7 +8063,7 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
             std_comps.push_back(to_std_string(_elem))
         self.ptrx().addVesicleDiffusionGroup(to_std_string(v), std_comps)
 
-    def addPathVesicle(self, str path, str ves, double speed, dict spec_deps={}, stoch_stepsize=1e-9):
+    def addPathVesicle(self, str path, str ves, double speed, dict spec_deps={}, stoch_stepsize=1e-9, binding_rate=-1, min_binding_radius=0, max_binding_radius=-1, unbinding_rate=-1, allow_path_intersection=True):
         """
         Add a vesicle to this path. This means a vesicle of this type can
         interact with this path upon overlapping it
@@ -7485,6 +8078,16 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         :type spec_deps: Dict[str, int]
         :param stoch_stepsize: Stochastic step length. This may be a single float value where a single-exponential will be applied. If a list of length 2, a double-exponential will be applied by the proportionality specified in the 2nd element.
         :type stoch_stepsize: Float or list[float]
+        :param binding_rate: See API_2 docstrings
+        :type binding_rate: float
+        :param min_binding_radius: See API_2 docstrings
+        :type min_binding_radius: float
+        :param max_binding_radius: See API_2 docstrings
+        :type max_binding_radius: float
+        :param unbinding_rate: See API_2 docstrings
+        :type unbinding_rate: float
+        :param allow_path_intersection: See API_2 docstrings
+        :type allow_path_intersection: float
 
         :rtype: None
         """
@@ -7498,7 +8101,163 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         std_stoch_stepsize.reserve(len(stoch_stepsize))
         for _elem in stoch_stepsize:
             std_stoch_stepsize.push_back(_elem)
-        self.ptrx().addPathVesicle(to_std_string(path), to_std_string(ves), speed, std_spec_deps, std_stoch_stepsize)
+        self.ptrx().addPathVesicle(to_std_string(path), to_std_string(ves), speed, std_spec_deps, std_stoch_stepsize, binding_rate, min_binding_radius, max_binding_radius, unbinding_rate, allow_path_intersection)
+
+    def getTetA(self, steps.index_t idx):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in a tetrahedron.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTetA(steps.tetrahedron_global_id(idx))
+
+    def getTetExtent(self, steps.index_t idx):
+        """
+        Returns the cumulative extent of all reactions in a tetrahedron.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTetExtent(steps.tetrahedron_global_id(idx))
+    
+    def getTetWeightedExtent(self, steps.index_t idx):
+        """
+        Weighting based on reactions present in the tetrahedron, and how expensive
+        those reaction are. Weighting for a singular reaction is calculated by multiplying how many times
+        the reaction has occurred (extent) by the number of reactions dependent on it. This function
+        returns the sum of these weightings for all reactions in the tetrahedron.
+
+        Can be used to estimate the computational cost of the tetrahedron.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+        :rtype: int
+        """
+
+        return self.ptrx().getTetWeightedExtent(steps.tetrahedron_global_id(idx))
+
+    def getTriA(self, steps.index_t idx):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in a triangle.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+
+        :param idx: Index of the triangle.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTriA(steps.triangle_global_id(idx))
+
+    def getTriExtent(self, steps.index_t idx):
+        """
+        Returns the cumulative extent of all reactions in a triangle.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+
+        :param idx: Index of the triangle.
+        :type idx: steps.index_t
+
+
+
+        :rtype: float
+        """
+        return self.ptrx().getTriExtent(steps.triangle_global_id(idx))
+
+    def getBatchTetA(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in each given tetrahedron.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+        Values are returned in a list the size of idxs with propensity values in corresponding indices.
+
+        :param idxs: List of tetrahedron indices.
+        :rtype: List[float]
+        """
+        return [val for val in self.ptrx().getBatchTetA(idxs)]
+
+    def getBatchTetExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative extents of all reactions in each given tetrahedron.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+        Values are returned in a list the size of idxs with extent values in corresponding indices.
+
+        :param idxs: List of tetrahedron indices.
+        :rtype: List[float]
+        """
+
+        return [val for val in self.ptrx().getBatchTetExtent(idxs)]
+
+    def getBatchTetWeightedExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Weighting based on reactions present in the tetrahedron, and how expensive
+        those reaction are. Weighting for a singular reaction is calculated by multiplying how many times
+        the reaction has occurred (extent) by the number of reactions dependent on it. This function
+        returns the sum of these weightings for all reactions in each provided tetrahedron.
+
+        Can be used to estimate the computational cost of the tetrahedron.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+        :rtype: int
+        """
+
+        return [val for val in self.ptrx().getBatchTetWeightedExtent(idxs)]
+
+    def getBatchTriA(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative propensities, a_mu, of all reactions in each given triangle.
+        A single propensity value gives the probability per unit time that a
+        reaction will occur in the current state.
+        Values are returned in a list the size of idxs with propensity values in corresponding indices.
+        
+        :param idxs: List of triangle indices.
+        :rtype: List[float]
+        """
+
+        return [val for val in self.ptrx().getBatchTriA(idxs)]
+
+    def getBatchTriExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the cumulative extents of all reactions in each given triangle.
+        The extent of a reaction is the number of times the reaction 
+        has occurred up to the current simulation time.
+        Values are returned in a list the size of idxs with extent values in corresponding indices.
+
+        :param idxs: List of triangle indices.
+        :rtype: List[float]
+        """
+
+        return [val for val in self.ptrx().getBatchTriExtent(idxs)]
+
+    def getBatchTriWeightedExtent(self, std.vector[steps.index_t] idxs):
+        """
+        Returns the number of reactions and diffusions that each triangle influences.
+        Based on the chemical species defined in the reactions and diffusions for each triangle.
+        Can be used to estimate the computational cost of triangles.
+
+        :param idx: Index of the tetrahedron.
+        :type idx: steps.index_t
+        :rtype: int
+        """
+
+        return [val for val in self.ptrx().getBatchTriWeightedExtent(idxs)]
 
     def getTetVol(self, steps.index_t idx):
         """
@@ -8332,6 +9091,21 @@ cdef class _py_TetVesicleVesRaft(_py_TetAPI):
         :rtype: None
         """
         self.ptrx().setSingleRaftSpecCount(to_std_string(r), steps.raft_individual_id(raft_unique_index), to_std_string(s), count)
+
+    def setSingleRaftImmobility(self, str r, steps.index_t raft_unique_index, uint immob):
+        """
+        Set the 'immobility' of raft of type r and unique index
+        raft_unique_index. All non-zero numbers mean raft is
+        immobile.
+
+        :param r: Name of the raft.
+        :type r: str
+        :param raft_unique_index: Unique index of the individual raft.
+        :type raft_unique_index: steps.index_t
+        :param immob: Immobility of the raft
+        :type immob: int
+        """
+        self.ptrx().setSingleRaftImmobility(to_std_string(r), steps.raft_individual_id(raft_unique_index), immob)
 
     def getSingleRaftImmobility(self, str r, steps.index_t raft_unique_index):
         """

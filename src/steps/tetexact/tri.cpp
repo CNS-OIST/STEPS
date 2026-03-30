@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -95,9 +95,19 @@ Tri::Tri(triangle_global_id idx,
     pPoolFlags.container().resize(nspecs);
 
     uint nghkcurrs = pPatchdef->countGHKcurrs();
-    pECharge.container().resize(nghkcurrs);
-    pECharge_last.container().resize(nghkcurrs);
-    pECharge_accum.container().resize(nghkcurrs);
+    pECharge_ghk.container().resize(nghkcurrs);
+    pECharge_ghk_last.container().resize(nghkcurrs);
+    pECharge_ghk_accum.container().resize(nghkcurrs);
+
+    uint nsrcharges = pPatchdef->countSReacCharges();
+    pECharge_sr.container().resize(nsrcharges);
+    pECharge_sr_last.container().resize(nsrcharges);
+    pECharge_sr_accum.container().resize(nsrcharges);
+
+    uint nvdsrcharges = pPatchdef->countVDepSReacCharges();
+    pECharge_vdsr.container().resize(nvdsrcharges);
+    pECharge_vdsr_last.container().resize(nvdsrcharges);
+    pECharge_vdsr_accum.container().resize(nvdsrcharges);
 
     uint nohmcurrs = pPatchdef->countOhmicCurrs();
     pOCchan_timeintg.container().resize(nohmcurrs);
@@ -120,9 +130,13 @@ Tri::~Tri() {
 void Tri::checkpoint(std::fstream& cp_file) {
     util::checkpoint(cp_file, pPoolFlags);
     util::checkpoint(cp_file, pPoolCount);
-    util::checkpoint(cp_file, pECharge_accum);
+    util::checkpoint(cp_file, pECharge_ghk_accum);
+    util::checkpoint(cp_file, pECharge_ghk_last);
+    util::checkpoint(cp_file, pECharge_sr_accum);
+    util::checkpoint(cp_file, pECharge_sr_last);
+    util::checkpoint(cp_file, pECharge_vdsr_accum);
+    util::checkpoint(cp_file, pECharge_vdsr_last);
     util::checkpoint(cp_file, pECharge_accum_dt);
-    util::checkpoint(cp_file, pECharge_last);
     util::checkpoint(cp_file, pECharge_last_dt);
     util::checkpoint(cp_file, pOCtime_upd);
     util::checkpoint(cp_file, pERev);
@@ -133,9 +147,13 @@ void Tri::checkpoint(std::fstream& cp_file) {
 void Tri::restore(std::fstream& cp_file) {
     util::restore(cp_file, pPoolFlags);
     util::restore(cp_file, pPoolCount);
-    util::restore(cp_file, pECharge_accum);
+    util::restore(cp_file, pECharge_ghk_accum);
+    util::restore(cp_file, pECharge_ghk_last);
+    util::restore(cp_file, pECharge_sr_accum);
+    util::restore(cp_file, pECharge_sr_last);
+    util::restore(cp_file, pECharge_vdsr_accum);
+    util::restore(cp_file, pECharge_vdsr_last);
     util::restore(cp_file, pECharge_accum_dt);
-    util::restore(cp_file, pECharge_last);
     util::restore(cp_file, pECharge_last_dt);
     util::restore(cp_file, pOCtime_upd);
     util::restore(cp_file, pERev);
@@ -223,9 +241,18 @@ void Tri::reset() {
         kproc->reset();
     }
 
-    std::fill(pECharge.begin(), pECharge.end(), 0);
-    std::fill(pECharge_last.begin(), pECharge_last.end(), 0);
-    std::fill(pECharge_accum.begin(), pECharge_accum.end(), 0);
+    std::fill(pECharge_ghk.begin(), pECharge_ghk.end(), 0);
+    std::fill(pECharge_ghk_last.begin(), pECharge_ghk_last.end(), 0);
+    std::fill(pECharge_ghk_accum.begin(), pECharge_ghk_accum.end(), 0);
+
+    std::fill(pECharge_sr.begin(), pECharge_sr.end(), 0);
+    std::fill(pECharge_sr_last.begin(), pECharge_sr_last.end(), 0);
+    std::fill(pECharge_sr_accum.begin(), pECharge_sr_accum.end(), 0);
+
+    std::fill(pECharge_vdsr.begin(), pECharge_vdsr.end(), 0);
+    std::fill(pECharge_vdsr_last.begin(), pECharge_vdsr_last.end(), 0);
+    std::fill(pECharge_vdsr_accum.begin(), pECharge_vdsr_accum.end(), 0);
+
     pECharge_last_dt = 0;
     pECharge_accum_dt = 0;
 
@@ -238,26 +265,39 @@ void Tri::reset() {
 ////////////////////////////////////////////////////////////////////////////////
 
 void Tri::resetECharge(double dt, double efdt, double t) {
-    uint nghkcurrs = pPatchdef->countGHKcurrs();
-
-    for (auto i: solver::ghkcurr_local_id::range(nghkcurrs)) {
-        pECharge_accum[i] += pECharge[i];
+    for (auto i: pECharge_ghk.range()) {
+        pECharge_ghk_accum[i] += pECharge_ghk[i];
     }
+
+    for (auto i: pECharge_sr.range()) {
+        pECharge_sr_accum[i] += pECharge_sr[i];
+    }
+
+    for (auto i: pECharge_vdsr.range()) {
+        pECharge_vdsr_accum[i] += pECharge_vdsr[i];
+    }
+
     pECharge_accum_dt += dt;
 
     if (pECharge_accum_dt >= efdt or
         (efdt - pECharge_accum_dt) <= std::numeric_limits<double>::epsilon() * t * 8) {
         // Swap arrays
-        std::swap(pECharge_last.container(), pECharge_accum.container());
+        std::swap(pECharge_ghk_last.container(), pECharge_ghk_accum.container());
+        std::swap(pECharge_sr_last.container(), pECharge_sr_accum.container());
+        std::swap(pECharge_vdsr_last.container(), pECharge_vdsr_accum.container());
 
         // reset accumulation array and dt values
-        std::fill(pECharge_accum.begin(), pECharge_accum.end(), 0);
+        std::fill(pECharge_ghk_accum.begin(), pECharge_ghk_accum.end(), 0);
+        std::fill(pECharge_sr_accum.begin(), pECharge_sr_accum.end(), 0);
+        std::fill(pECharge_vdsr_accum.begin(), pECharge_vdsr_accum.end(), 0);
 
         pECharge_last_dt = pECharge_accum_dt;
         pECharge_accum_dt = 0;
     }
 
-    std::fill(pECharge.begin(), pECharge.end(), 0);
+    std::fill(pECharge_ghk.begin(), pECharge_ghk.end(), 0);
+    std::fill(pECharge_sr.begin(), pECharge_sr.end(), 0);
+    std::fill(pECharge_vdsr.begin(), pECharge_vdsr.end(), 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -268,8 +308,23 @@ void Tri::resetOCintegrals() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void Tri::incECharge(solver::ghkcurr_local_id lidx, int charge) {
-    pECharge.at(lidx) += charge;
+void Tri::incECharge_ghk(solver::ghkcurr_local_id lidx, int charge) {
+    AssertLog(lidx < pPatchdef->countGHKcurrs());
+    pECharge_ghk[lidx] += charge;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Tri::incECharge_sr(solver::sreac_charge_local_id lidx, int charge) {
+    AssertLog(lidx < pPatchdef->countSReacCharges());
+    pECharge_sr[lidx] += charge;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Tri::incECharge_vdsr(solver::vdepsreac_charge_local_id lidx, int charge) {
+    AssertLog(lidx < pPatchdef->countVDepSReacCharges());
+    pECharge_vdsr[lidx] += charge;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -380,10 +435,9 @@ double Tri::getGHKI(solver::ghkcurr_local_id lidx) const {
         return 0;
     }
 
-    uint nghkcurrs = pPatchdef->countGHKcurrs();
-    AssertLog(lidx < nghkcurrs);
+    AssertLog(lidx < pPatchdef->countGHKcurrs());
 
-    int efcharge = pECharge_last[lidx];
+    int efcharge = pECharge_ghk_last[lidx];
     auto efcharged = static_cast<double>(efcharge);
 
     return (efcharged * math::E_CHARGE) / pECharge_last_dt;
@@ -396,12 +450,64 @@ double Tri::getGHKI() const {
         return 0;
     }
 
-    uint nghkcurrs = pPatchdef->countGHKcurrs();
-    int efcharge = 0;
-    for (auto i: solver::ghkcurr_local_id::range(nghkcurrs)) {
-        efcharge += pECharge_last[i];
+    int efcharge = std::accumulate(pECharge_ghk_last.begin(), pECharge_ghk_last.end(), 0);
+
+    auto efcharged = static_cast<double>(efcharge);
+
+    return (efcharged * math::E_CHARGE) / pECharge_last_dt;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tri::getSReacI(solver::sreac_charge_local_id lidx) const {
+    if (pECharge_last_dt == 0) {
+        return 0;
     }
 
+    AssertLog(lidx < patchdef()->countSReacCharges());
+
+    int efcharge = pECharge_sr_last[lidx];
+    auto efcharged = static_cast<double>(efcharge);
+
+    return (efcharged * math::E_CHARGE) / pECharge_last_dt;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tri::getSReacI() const {
+    if (pECharge_last_dt == 0) {
+        return 0;
+    }
+
+    int efcharge = std::accumulate(pECharge_sr_last.begin(), pECharge_sr_last.end(), 0);
+    auto efcharged = static_cast<double>(efcharge);
+
+    return (efcharged * math::E_CHARGE) / pECharge_last_dt;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tri::getVDepSReacI(solver::vdepsreac_charge_local_id lidx) const {
+    if (pECharge_last_dt == 0) {
+        return 0;
+    }
+
+    AssertLog(lidx < patchdef()->countVDepSReacCharges());
+
+    int efcharge = pECharge_vdsr_last[lidx];
+    auto efcharged = static_cast<double>(efcharge);
+
+    return (efcharged * math::E_CHARGE) / pECharge_last_dt;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+double Tri::getVDepSReacI() const {
+    if (pECharge_last_dt == 0) {
+        return 0;
+    }
+
+    int efcharge = std::accumulate(pECharge_vdsr_last.begin(), pECharge_vdsr_last.end(), 0);
     auto efcharged = static_cast<double>(efcharge);
 
     return (efcharged * math::E_CHARGE) / pECharge_last_dt;
@@ -425,11 +531,10 @@ double Tri::computeI(double v, double dt, double simtime, double efdt) {
         double n = pOCchan_timeintg[i] / dt;
         current += (n * ocdef.getG()) * (v - getOCerev(i));
     }
-    uint nghkcurrs = pPatchdef->countGHKcurrs();
-    int efcharge = 0;
-    for (auto i: solver::ghkcurr_local_id::range(nghkcurrs)) {
-        efcharge += pECharge[i];
-    }
+
+    int efcharge = std::accumulate(pECharge_ghk.begin(), pECharge_ghk.end(), 0);
+    efcharge += std::accumulate(pECharge_sr.begin(), pECharge_sr.end(), 0);
+    efcharge += std::accumulate(pECharge_vdsr.begin(), pECharge_vdsr.end(), 0);
 
     // The contribution from GHK charge movement.
     auto efcharged = static_cast<double>(efcharge);

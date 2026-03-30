@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -83,13 +83,25 @@ void Surfsys::_handleSelfDelete() {
     for (auto const& sreac: getAllSReacs()) {
         delete sreac;
     }
+    for (auto const& sreac: getAllComplexSReacs()) {
+        delete sreac;
+    }
     for (auto const& vdsreac: getAllVDepSReacs()) {
+        delete vdsreac;
+    }
+    for (auto const& vdsreac: getAllVDepComplexSReacs()) {
         delete vdsreac;
     }
     for (auto const& oc: getAllOhmicCurrs()) {
         delete oc;
     }
+    for (auto const& oc: getAllComplexOhmicCurrs()) {
+        delete oc;
+    }
     for (auto const& ghk: getAllGHKcurrs()) {
+        delete ghk;
+    }
+    for (auto const& ghk: getAllComplexGHKcurrs()) {
         delete ghk;
     }
 
@@ -223,6 +235,17 @@ std::vector<ComplexSReac*> Surfsys::getAllComplexSReacs() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+std::vector<VDepComplexSReac*> Surfsys::getAllVDepComplexSReacs() const {
+    std::vector<VDepComplexSReac*> cplxreacs;
+    cplxreacs.reserve(pVDepComplexSReacs.size());
+    for (auto const& cplxreac: pVDepComplexSReacs) {
+        cplxreacs.push_back(cplxreac.second);
+    }
+    return cplxreacs;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 Diff& Surfsys::getDiff(std::string const& id) const {
     auto diff = pDiffs.find(id);
     if (diff == pDiffs.end()) {
@@ -277,7 +300,17 @@ std::vector<Spec*> Surfsys::getAllSpecs() const {
         specs_set.insert(specs.begin(), specs.end());
     }
 
+    for (auto const& cplxsreac: getAllVDepComplexSReacs()) {
+        const auto& specs = cplxsreac->getAllSpecs();
+        specs_set.insert(specs.begin(), specs.end());
+    }
+
     for (auto const& ghk: getAllGHKcurrs()) {
+        Spec& ghk_spec = ghk->getIon();
+        specs_set.insert(&ghk_spec);
+    }
+
+    for (auto const& ghk: getAllComplexGHKcurrs()) {
         Spec& ghk_spec = ghk->getIon();
         specs_set.insert(&ghk_spec);
     }
@@ -346,6 +379,14 @@ void Surfsys::_handleComplexSReacAdd(ComplexSReac& sreac) {
     AssertLog(&sreac.getSurfsys() == this);
     _checkSReacID(sreac.getID());
     pComplexSReacs.emplace(sreac.getID(), &sreac);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Surfsys::_handleVDepComplexSReacAdd(VDepComplexSReac& sreac) {
+    AssertLog(&sreac.getSurfsys() == this);
+    _checkSReacID(sreac.getID());
+    pVDepComplexSReacs.emplace(sreac.getID(), &sreac);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -695,6 +736,18 @@ OhmicCurr& Surfsys::getOhmicCurr(std::string const& id) const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+ComplexOhmicCurr& Surfsys::getComplexOhmicCurr(std::string const& id) const {
+    auto ohmiccurr = pComplexOhmicCurrs.find(id);
+
+    ArgErrLogIf(ohmiccurr == pComplexOhmicCurrs.end(),
+                "Model does not contain ohmic current with name '" + id + "'");
+
+    AssertLog(ohmiccurr->second != nullptr);
+    return *ohmiccurr->second;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void Surfsys::delOhmicCurr(std::string const& id) {
     OhmicCurr& ohmiccurr = getOhmicCurr(id);
     pOhmicCurrs.erase(id);
@@ -707,6 +760,17 @@ std::vector<OhmicCurr*> Surfsys::getAllOhmicCurrs() const {
     std::vector<OhmicCurr*> ohmiccurr;
     ohmiccurr.reserve(pOhmicCurrs.size());
     for (auto const& oc: pOhmicCurrs) {
+        ohmiccurr.emplace_back(oc.second);
+    }
+    return ohmiccurr;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+std::vector<ComplexOhmicCurr*> Surfsys::getAllComplexOhmicCurrs() const {
+    std::vector<ComplexOhmicCurr*> ohmiccurr;
+    ohmiccurr.reserve(pComplexOhmicCurrs.size());
+    for (auto const& oc: pComplexOhmicCurrs) {
         ohmiccurr.emplace_back(oc.second);
     }
     return ohmiccurr;
@@ -743,6 +807,14 @@ void Surfsys::_handleOhmicCurrAdd(OhmicCurr& ohmiccurr) {
     AssertLog(&ohmiccurr.getSurfsys() == this);
     _checkOhmicCurrID(ohmiccurr.getID());
     pOhmicCurrs.emplace(ohmiccurr.getID(), &ohmiccurr);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Surfsys::_handleComplexOhmicCurrAdd(ComplexOhmicCurr& ohmiccurr) {
+    AssertLog(&ohmiccurr.getSurfsys() == this);
+    _checkOhmicCurrID(ohmiccurr.getID());
+    pComplexOhmicCurrs.emplace(ohmiccurr.getID(), &ohmiccurr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -785,6 +857,17 @@ std::vector<GHKcurr*> Surfsys::getAllGHKcurrs() const {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+std::vector<ComplexGHKcurr*> Surfsys::getAllComplexGHKcurrs() const {
+    std::vector<ComplexGHKcurr*> ghkcurr;
+    ghkcurr.reserve(pComplexGHKcurrs.size());
+    for (auto const& ghk: pComplexGHKcurrs) {
+        ghkcurr.emplace_back(ghk.second);
+    }
+    return ghkcurr;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void Surfsys::_handleGHKcurrIDChange(std::string const& o, std::string const& n) {
     auto ghk_old = pGHKcurrs.find(o);
     AssertLog(ghk_old != pGHKcurrs.end());
@@ -814,6 +897,14 @@ void Surfsys::_handleGHKcurrAdd(GHKcurr& ghkcurr) {
     AssertLog(&ghkcurr.getSurfsys() == this);
     _checkGHKcurrID(ghkcurr.getID());
     pGHKcurrs.emplace(ghkcurr.getID(), &ghkcurr);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void Surfsys::_handleComplexGHKcurrAdd(ComplexGHKcurr& ghkcurr) {
+    AssertLog(&ghkcurr.getSurfsys() == this);
+    _checkGHKcurrID(ghkcurr.getID());
+    pComplexGHKcurrs.emplace(ghkcurr.getID(), &ghkcurr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -873,6 +964,15 @@ VDepSReac& Surfsys::_getVDepSReac(uint lidx) const {
 OhmicCurr& Surfsys::_getOhmicCurr(uint lidx) const {
     AssertLog(lidx < pOhmicCurrs.size());
     auto oc_it = pOhmicCurrs.begin();
+    std::advance(oc_it, lidx);
+    return *oc_it->second;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ComplexOhmicCurr& Surfsys::_getComplexOhmicCurr(uint lidx) const {
+    AssertLog(lidx < pComplexOhmicCurrs.size());
+    auto oc_it = pComplexOhmicCurrs.begin();
     std::advance(oc_it, lidx);
     return *oc_it->second;
 }

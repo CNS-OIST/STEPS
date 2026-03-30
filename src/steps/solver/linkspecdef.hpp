@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -30,6 +30,7 @@
 #include <string>
 
 #include "fwd.hpp"
+#include "math/constants.hpp"
 #include "model/linkspec.hpp"
 
 namespace steps::solver {
@@ -74,6 +75,10 @@ class LinkSpecdef {
         return pDcst;
     }
 
+    inline double getMinCos2() {
+        return pMinCos2;
+    }
+
     ////////////////////////////////////////////////////////////////////////
     // SOLVER METHODS: SETUP
     ////////////////////////////////////////////////////////////////////////
@@ -87,6 +92,10 @@ class LinkSpecdef {
     const linkspec_global_id pIdx;
     const std::string pName;
     const double pDcst;
+
+    // The minimum squared cosine (signed, so negative above angles of pi/2)
+    const double pMinCos2;
+
     bool pSetupdone{false};
 };
 

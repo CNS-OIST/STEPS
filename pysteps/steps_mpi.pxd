@@ -62,7 +62,7 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
 
     ###### Cybinding for TetOpSplitP ######
     cdef cppclass TetOpSplitP:
-        TetOpSplitP(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int, std.vector[int], std.map[steps.triangle_global_id,int], std.vector[int]) except +
+        TetOpSplitP(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int, bool, std.vector[int], std.map[steps.triangle_global_id,int], std.vector[int]) except +
         std.string getSolverName() except +
         std.string getSolverDesc() except +
         std.string getSolverAuthors() except +
@@ -127,6 +127,17 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         double getTetReacH(uint, std.string) except +
         double getTetReacA(uint, std.string) except +
         double getTetDiffA(uint, std.string) except +
+        double getTetA(steps.tetrahedron_global_id) except +
+        uint getTetExtent(steps.tetrahedron_global_id) except + 
+        uint getTetWeightedExtent(steps.tetrahedron_global_id) except +
+        double getTriA(steps.triangle_global_id) except + 
+        uint getTriExtent(steps.triangle_global_id) except + 
+        std.vector[double] getBatchTetA(std.vector[steps.index_t]) except +
+        std.vector[uint] getBatchTriExtent(std.vector[steps.index_t]) except +
+        std.vector[uint] getBatchTetWeightedExtent(std.vector[index_t]) except +
+        std.vector[uint] getBatchTriWeightedExtent(std.vector[index_t]) except +
+        std.vector[double] getBatchTriA(std.vector[steps.index_t]) except +
+        std.vector[uint] getBatchTetExtent(std.vector[steps.index_t]) except +
         double getTetV(uint) except +
         void setTetV(uint, double) except +
         bool getTetVClamped(uint) except +
@@ -146,6 +157,7 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         double getPatchSReacH(std.string, std.string) except +
         double getPatchSReacA(std.string, std.string) except +
         unsigned long long getPatchSReacExtent(std.string, std.string) except +
+        unsigned long long getPatchVDepSReacExtent(std.string, std.string) except +
         void resetPatchSReacExtent(std.string, std.string) except +
         bool getPatchVDepSReacActive(std.string, std.string) except +
         void setPatchVDepSReacActive(std.string, std.string, bool) except +
@@ -183,6 +195,10 @@ cdef extern from "mpi/tetopsplit/tetopsplit.hpp" namespace "steps::mpi::tetopspl
         double getTriOhmicI(uint, std.string) except +
         double getTriGHKI(uint) except +
         double getTriGHKI(uint, std.string) except +
+        double getTriSReacI(uint) except +
+        double getTriSReacI(uint, std.string) except +
+        double getTriVDepSReacI(uint) except +
+        double getTriVDepSReacI(uint, std.string) except +
         double getTriI(uint) except +
         double getTriIClamp(uint) except +
         void setTriIClamp(uint, double) except +
@@ -265,7 +281,7 @@ cdef extern from "mpi/tetvesicle/tetvesicle_rdef.hpp" namespace "steps::mpi::tet
 
     ###### Cybinding for TetVesicleRDEF ######
     cdef cppclass TetVesicleRDEF:
-        TetVesicleRDEF(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int) except +
+        TetVesicleRDEF(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int, bool, double, std.vector[int], std.map[steps.triangle_global_id, int], std.vector[int]) except +
         std.string getSolverName() except +
         std.string getSolverDesc() except +
         std.string getSolverAuthors() except +
@@ -285,8 +301,9 @@ cdef extern from "mpi/tetvesicle/tetvesicle_rdef.hpp" namespace "steps::mpi::tet
         uint getNSteps() except +
         double getVesicleDT() except +
         void setVesicleDT(double) except +
-        void createPath(std.string) except +
+        void createPath(std.string, bool) except +
         void addPathPoint(std.string, uint, std.vector[double]) except +
+        void addPathEdge(std.string, uint, uint, double, bool) except +
         void addPathBranch(std.string, uint, std.map[uint, double]) except +
         std.vector[double] getBatchTetSpecCounts(std.vector[steps.index_t], std.string) except +
         std.vector[double] getBatchTriSpecCounts(std.vector[steps.index_t], std.string) except +
@@ -360,7 +377,7 @@ cdef extern from "mpi/tetvesicle/tetvesicle_rdef.hpp" namespace "steps::mpi::tet
         void resetCompReacExtent(std.string, std.string) except +
         uint getCompVesicleCount(std.string, std.string) except +
         void setCompVesicleCount(std.string, std.string, uint) except +
-        steps.vesicle_individual_id addCompVesicle(std.string, std.string) except +
+        steps.vesicle_individual_id addCompVesicle(std.string, std.string, double, double) except +
         void deleteSingleVesicle(std.string, steps.vesicle_individual_id) except +
         uint getSingleVesicleSurfaceLinkSpecCount(std.string, steps.vesicle_individual_id, std.string) except +
         std.vector[steps.linkspec_individual_id] getSingleVesicleSurfaceLinkSpecIndices(std.string, steps.vesicle_individual_id, std.string) except +
@@ -371,6 +388,9 @@ cdef extern from "mpi/tetvesicle/tetvesicle_rdef.hpp" namespace "steps::mpi::tet
         std.string getSingleVesicleCompartment(std.string, steps.vesicle_individual_id) except +
         std.vector[double] getSingleVesiclePos(std.string, steps.vesicle_individual_id) except +
         void setSingleVesiclePos(std.string, steps.vesicle_individual_id, std.vector[double], bool) except +
+        double getSingleVesicleDcst(std.string, steps.vesicle_individual_id) except +
+        void setSingleVesicleDcst(std.string, steps.vesicle_individual_id, double) except +
+        std.pair[std.string, std.vector[double]] getSingleVesicleOnPath(std.string, steps.vesicle_individual_id) except +
         std.map[steps.vesicle_individual_id, uint] getCompVesicleSurfaceSpecCountDict(std.string, std.string, std.string) except +
         uint getCompVesicleSurfaceSpecCount(std.string, std.string, std.string) except +
         uint getCompVesicleInnerSpecCount(std.string, std.string, std.string) except +
@@ -388,9 +408,12 @@ cdef extern from "mpi/tetvesicle/tetvesicle_rdef.hpp" namespace "steps::mpi::tet
         std.vector[double] getSingleLinkSpecPos(steps.linkspec_individual_id) except +
         steps.linkspec_individual_id getSingleLinkSpecLinkedTo(steps.linkspec_individual_id) except +
         steps.vesicle_individual_id getSingleLinkSpecVes(steps.linkspec_individual_id) except +
+        void setSingleVesicleImmobility(std.string, steps.vesicle_individual_id, uint) except +
         uint getSingleVesicleImmobility(std.string, steps.vesicle_individual_id) except +
         std.vector[steps.tetrahedron_global_id] getSingleVesicleOverlapTets(std.string, steps.vesicle_individual_id) except +
-        void setTetVesicleDcst(steps.tetrahedron_global_id, std.string, double) except +
+        void setTetVesicleDcst(steps.tetrahedron_global_id, std.string, double, bool) except +
+        double getTetVesicleDcst(steps.tetrahedron_global_id, std.string) except +
+        bool getTetVesicleDcstRel(steps.tetrahedron_global_id, std.string) except +
         void setVesicleSurfaceLinkSpecSDiffD(std.string, std.string, double) except +
         void setVesSReacK(std.string, double) except +
         uint getVesSReacExtent(std.string) except +
@@ -402,6 +425,18 @@ cdef extern from "mpi/tetvesicle/tetvesicle_rdef.hpp" namespace "steps::mpi::tet
         void setRaftEndocytosisK(std.string, double) except +
         void addVesicleDiffusionGroup(std.string, std.vector[std.string]) except +
         void addPathVesicle(std.string, std.string, double, std.map[std.string, uint], std.vector[double]) except +
+        double getTetA(steps.tetrahedron_global_id) except +
+        uint getTetExtent(steps.tetrahedron_global_id) except + 
+        uint getTetWeightedExtent(steps.tetrahedron_global_id) except +
+        double getTriA(steps.triangle_global_id) except + 
+        uint getTriExtent(steps.triangle_global_id) except + 
+        std.vector[double] getBatchTetA(std.vector[steps.index_t]) except +
+        std.vector[uint] getBatchTriExtent(std.vector[steps.index_t]) except +
+        std.vector[uint] getBatchTetWeightedExtent(std.vector[index_t]) except +
+        std.vector[uint] getBatchTriWeightedExtent(std.vector[index_t]) except +
+        std.vector[double] getBatchTriA(std.vector[steps.index_t]) except +
+        std.vector[uint] getBatchTetExtent(std.vector[steps.index_t]) except +
+        void addPathVesicle(std.string, std.string, double, std.map[std.string, uint], std.vector[double], double, double, double, double, bool) except +
         double getTetVol(steps.tetrahedron_global_id) except +
         double getTetReducedVol(steps.tetrahedron_global_id) except +
         void setTetVol(steps.tetrahedron_global_id, double) except +
@@ -455,6 +490,7 @@ cdef extern from "mpi/tetvesicle/tetvesicle_rdef.hpp" namespace "steps::mpi::tet
         uint getPatchRaftSpecCount(std.string, std.string, std.string) except +
         uint getSingleRaftSpecCount(std.string, steps.raft_individual_id, std.string) except +
         void setSingleRaftSpecCount(std.string, steps.raft_individual_id, std.string, uint) except +
+        void setSingleRaftImmobility(std.string, steps.raft_individual_id, uint) except +
         uint getSingleRaftImmobility(std.string, steps.raft_individual_id) except +
         double getSingleRaftRaftEndocytosisK(std.string, steps.raft_individual_id, std.string) except +
         void setSingleRaftRaftEndocytosisK(std.string, steps.raft_individual_id, std.string, double) except +
@@ -505,6 +541,10 @@ cdef extern from "mpi/tetvesicle/tetvesicle_rdef.hpp" namespace "steps::mpi::tet
         void setTriOhmicErev(uint, std.string, double) except +
         double getTriOhmicI(steps.triangle_global_id, std.string) except +
         double getTriGHKI(steps.triangle_global_id, std.string) except +
+        double getTriSReacI(steps.triangle_global_id) except +
+        double getTriSReacI(steps.triangle_global_id, std.string) except +
+        double getTriVDepSReacI(steps.triangle_global_id) except +
+        double getTriVDepSReacI(steps.triangle_global_id, std.string) except +
         double getTriI(steps.triangle_global_id) except +
         double getTriIClamp(steps.triangle_global_id) except +
         void setTriIClamp(steps.triangle_global_id, double) except +
@@ -532,7 +572,7 @@ cdef extern from "mpi/tetvesicle/tetvesicle_vesraft.hpp" namespace "steps::mpi::
 
     ###### Cybinding for TetVesicleVesRaft ######
     cdef cppclass TetVesicleVesRaft:
-        TetVesicleVesRaft(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int) except +
+        TetVesicleVesRaft(steps_model.Model*, steps_wm.Geom*, shared_ptr[steps_rng.RNG], int, bool, double, std.vector[int], std.map[steps.triangle_global_id, int], std.vector[int]) except +
         std.string getSolverName() except +
         std.string getSolverDesc() except +
         std.string getSolverAuthors() except +
@@ -548,8 +588,9 @@ cdef extern from "mpi/tetvesicle/tetvesicle_vesraft.hpp" namespace "steps::mpi::
         uint getNSteps() except +
         double getVesicleDT() except +
         void setVesicleDT(double) except +
-        void createPath(std.string) except +
+        void createPath(std.string, bool) except +
         void addPathPoint(std.string, uint, std.vector[double]) except +
+        void addPathEdge(std.string, uint, uint, double, bool) except +
         void addPathBranch(std.string, uint, std.map[uint, double]) except +
         std.map[std.string, std.map[uint, std.pair[std.vector[double], std.map[uint, double]]]] getAllPaths() except +
         std.vector[double] getBatchTetSpecCounts(std.vector[steps.index_t], std.string) except +
@@ -617,7 +658,7 @@ cdef extern from "mpi/tetvesicle/tetvesicle_vesraft.hpp" namespace "steps::mpi::
         void resetCompReacExtent(std.string, std.string) except +
         uint getCompVesicleCount(std.string, std.string) except +
         void setCompVesicleCount(std.string, std.string, uint) except +
-        steps.vesicle_individual_id addCompVesicle(std.string, std.string) except +
+        steps.vesicle_individual_id addCompVesicle(std.string, std.string, double, double) except +
         void deleteSingleVesicle(std.string, steps.vesicle_individual_id) except +
         uint getSingleVesicleSurfaceLinkSpecCount(std.string, steps.vesicle_individual_id, std.string) except +
         std.vector[steps.linkspec_individual_id] getSingleVesicleSurfaceLinkSpecIndices(std.string, steps.vesicle_individual_id, std.string) except +
@@ -628,6 +669,9 @@ cdef extern from "mpi/tetvesicle/tetvesicle_vesraft.hpp" namespace "steps::mpi::
         std.string getSingleVesicleCompartment(std.string, steps.vesicle_individual_id) except +
         std.vector[double] getSingleVesiclePos(std.string, steps.vesicle_individual_id) except +
         void setSingleVesiclePos(std.string, steps.vesicle_individual_id, std.vector[double], bool) except +
+        double getSingleVesicleDcst(std.string, steps.vesicle_individual_id) except +
+        void setSingleVesicleDcst(std.string, steps.vesicle_individual_id, double) except +
+        std.pair[std.string, std.vector[double]] getSingleVesicleOnPath(std.string, steps.vesicle_individual_id) except +
         std.map[steps.vesicle_individual_id, uint] getCompVesicleSurfaceSpecCountDict(std.string, std.string, std.string) except +
         uint getCompVesicleSurfaceSpecCount(std.string, std.string, std.string) except +
         uint getCompVesicleInnerSpecCount(std.string, std.string, std.string) except +
@@ -645,9 +689,12 @@ cdef extern from "mpi/tetvesicle/tetvesicle_vesraft.hpp" namespace "steps::mpi::
         std.vector[double] getSingleLinkSpecPos(steps.linkspec_individual_id) except +
         steps.linkspec_individual_id getSingleLinkSpecLinkedTo(steps.linkspec_individual_id) except +
         steps.vesicle_individual_id getSingleLinkSpecVes(steps.linkspec_individual_id) except +
+        void setSingleVesicleImmobility(std.string, steps.vesicle_individual_id, uint) except +
         uint getSingleVesicleImmobility(std.string, steps.vesicle_individual_id) except +
         std.vector[steps.tetrahedron_global_id] getSingleVesicleOverlapTets(std.string, steps.vesicle_individual_id) except +
-        void setTetVesicleDcst(steps.tetrahedron_global_id, std.string, double) except +
+        void setTetVesicleDcst(steps.tetrahedron_global_id, std.string, double, bool) except +
+        double getTetVesicleDcst(steps.tetrahedron_global_id, std.string) except +
+        bool getTetVesicleDcstRel(steps.tetrahedron_global_id, std.string) except +
         void setVesicleSurfaceLinkSpecSDiffD(std.string, std.string, double) except +
         void setVesSReacK(std.string, double) except +
         uint getVesSReacExtent(std.string) except +
@@ -660,6 +707,18 @@ cdef extern from "mpi/tetvesicle/tetvesicle_vesraft.hpp" namespace "steps::mpi::
         void setRaftEndocytosisK(std.string, double) except +
         void addVesicleDiffusionGroup(std.string, std.vector[std.string]) except +
         void addPathVesicle(std.string, std.string, double, std.map[std.string, uint], std.vector[double]) except +
+        double getTetA(steps.tetrahedron_global_id) except + 
+        uint getTetExtent(steps.tetrahedron_global_id) except + 
+        uint getTetWeightedExtent(steps.tetrahedron_global_id) except +
+        double getTriA(steps.triangle_global_id) except + 
+        uint getTriExtent(steps.triangle_global_id) except + 
+        std.vector[double] getBatchTetA(std.vector[steps.index_t]) except +
+        std.vector[uint] getBatchTetExtent(std.vector[steps.index_t]) except +
+        std.vector[uint] getBatchTetWeightedExtent(std.vector[index_t]) except +
+        std.vector[uint] getBatchTriWeightedExtent(std.vector[index_t]) except +
+        std.vector[double] getBatchTriA(std.vector[steps.index_t]) except +
+        std.vector[uint] getBatchTriExtent(std.vector[steps.index_t]) except +
+        void addPathVesicle(std.string, std.string, double, std.map[std.string, uint], std.vector[double], double, double, double, double, bool) except +
         double getTetVol(steps.tetrahedron_global_id) except +
         double getTetReducedVol(steps.tetrahedron_global_id) except +
         void setTetVol(steps.tetrahedron_global_id, double) except +
@@ -713,6 +772,7 @@ cdef extern from "mpi/tetvesicle/tetvesicle_vesraft.hpp" namespace "steps::mpi::
         uint getPatchRaftSpecCount(std.string, std.string, std.string) except +
         uint getSingleRaftSpecCount(std.string, steps.raft_individual_id, std.string) except +
         void setSingleRaftSpecCount(std.string, steps.raft_individual_id, std.string, uint) except +
+        void setSingleRaftImmobility(std.string, steps.raft_individual_id, uint) except +
         uint getSingleRaftImmobility(std.string, steps.raft_individual_id) except +
         double getSingleRaftRaftEndocytosisK(std.string, steps.raft_individual_id, std.string) except +
         void setSingleRaftRaftEndocytosisK(std.string, steps.raft_individual_id, std.string, double) except +
@@ -762,6 +822,10 @@ cdef extern from "mpi/tetvesicle/tetvesicle_vesraft.hpp" namespace "steps::mpi::
         void setTriOhmicErev(uint, std.string, double) except +
         double getTriOhmicI(steps.triangle_global_id, std.string) except +
         double getTriGHKI(steps.triangle_global_id, std.string) except +
+        double getTriSReacI(uint) except +
+        double getTriSReacI(uint, std.string) except +
+        double getTriVDepSReacI(uint) except +
+        double getTriVDepSReacI(uint, std.string) except +
         double getTriI(steps.triangle_global_id) except +
         double getTriIClamp(steps.triangle_global_id) except +
         void setTriIClamp(steps.triangle_global_id, double) except +

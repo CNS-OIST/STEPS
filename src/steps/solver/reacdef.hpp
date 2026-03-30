@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -91,21 +91,7 @@ class Reacdef {
     int upd(spec_global_id gidx) const;
     bool reqspec(spec_global_id gidx) const;
 
-    inline solver::spec_global_id_vecCI bgnUpdColl() const noexcept {
-        return pSpec_UPD_Coll.begin();
-    }
-    inline solver::spec_global_id_vecCI endUpdColl() const noexcept {
-        return pSpec_UPD_Coll.end();
-    }
     inline const spec_global_id_vec& updColl() const noexcept {
-        return pSpec_UPD_Coll;
-    }
-
-    inline solver::spec_global_id_vec& updColl() noexcept {
-        return pSpec_UPD_Coll;
-    }
-
-    inline const solver::spec_global_id_vec& UPD_Coll() const noexcept {
         return pSpec_UPD_Coll;
     }
 

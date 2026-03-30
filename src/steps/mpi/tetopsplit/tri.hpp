@@ -2,21 +2,21 @@
  #################################################################################
 #
 #    STEPS - STochastic Engine for Pathway Simulation
-#    Copyright (C) 2007-2023 Okinawa Institute of Science and Technology, Japan.
+#    Copyright (C) 2007-2026 Okinawa Institute of Science and Technology, Japan.
 #    Copyright (C) 2003-2006 University of Antwerp, Belgium.
-#    
+#
 #    See the file AUTHORS for details.
 #    This file is part of STEPS.
-#    
+#
 #    STEPS is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License version 3,
 #    as published by the Free Software Foundation.
-#    
+#
 #    STEPS is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 #    GNU General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU General Public License
 #    along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
@@ -203,7 +203,11 @@ class Tri {
     ////////////////////////////////////////////////////////////////////////
 
     // Local index of GHK current given
-    void incECharge(solver::ghkcurr_local_id lidx, int charge);
+    void incECharge_ghk(solver::ghkcurr_local_id lidx, int charge);
+
+    void incECharge_sr(solver::sreac_charge_local_id lidx, int charge);
+
+    void incECharge_vdsr(solver::vdepsreac_charge_local_id lidx, int charge);
 
     // Should be called at the beginning of every EField time-step
     void resetECharge(double dt, double efdt, double t);
@@ -219,6 +223,12 @@ class Tri {
 
     double getGHKI() const;
     double getGHKI(solver::ghkcurr_local_id lidx) const;
+
+    double getSReacI() const;
+    double getSReacI(solver::sreac_charge_local_id lidx) const;
+
+    double getVDepSReacI() const;
+    double getVDepSReacI(solver::vdepsreac_charge_local_id lidx) const;
 
     ////////////////////////////////////////////////////////////////////////
     // MAIN FUNCTIONALITY
@@ -251,6 +261,9 @@ class Tri {
     // Set the reversal potential of an ohmic current
     void setOCerev(solver::ohmiccurr_local_id oclidx, double erev);
     double getOCerev(solver::ohmiccurr_local_id oclidx) const;
+
+    double getA() const;
+    uint getExtent() const;
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -350,11 +363,20 @@ class Tri {
     /// one EField time-step.
     // NOTE: Now arrays so as to separate into different GHK currs,
     // for data access
-    util::strongid_vector<solver::ghkcurr_local_id, int> pECharge;
-
+    util::strongid_vector<solver::ghkcurr_local_id, int> pECharge_ghk;
     // to store the latest ECharge, so that the info is available to solver
-    util::strongid_vector<solver::ghkcurr_local_id, int> pECharge_last;
-    util::strongid_vector<solver::ghkcurr_local_id, int> pECharge_accum;
+    util::strongid_vector<solver::ghkcurr_local_id, int> pECharge_ghk_last;
+    util::strongid_vector<solver::ghkcurr_local_id, int> pECharge_ghk_accum;
+
+    // Create a strongID vector only for sreacs and vdepsreacs that carry charge
+    util::strongid_vector<solver::sreac_charge_local_id, int> pECharge_sr;
+    util::strongid_vector<solver::sreac_charge_local_id, int> pECharge_sr_last;
+    util::strongid_vector<solver::sreac_charge_local_id, int> pECharge_sr_accum;
+
+    util::strongid_vector<solver::vdepsreac_charge_local_id, int> pECharge_vdsr;
+    util::strongid_vector<solver::vdepsreac_charge_local_id, int> pECharge_vdsr_last;
+    util::strongid_vector<solver::vdepsreac_charge_local_id, int> pECharge_vdsr_accum;
+
     double pECharge_last_dt;
     double pECharge_accum_dt;
 
