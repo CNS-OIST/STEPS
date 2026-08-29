@@ -1,0 +1,39 @@
+# Tells CNS-OIST/STEPS_Docker that a release has been published, so the Docker
+# image can be rebuilt against it.
+#
+# This exists because polling could not be relied on: GitHub disables scheduled
+# workflows after 60 days without repository activity, and STEPS_Docker is idle
+# between releases. Every gap between STEPS releases so far has been longer than
+# 60 days, so a schedule there would switch itself off before it ever fired.
+#
+# Needs a STEPS_DOCKER_TOKEN secret: a fine-grained PAT for CNS-OIST/STEPS_Docker
+# with contents write. The default GITHUB_TOKEN cannot reach another repository.
+name: Notify STEPS_Docker of a release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release tag to announce (for testing)
+        required: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send a repository_dispatch to STEPS_Docker
+        env:
+          GH_TOKEN: ${{ secrets.STEPS_DOCKER_TOKEN }}
+          VERSION: ${{ inputs.version || github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "STEPS_DOCKER_TOKEN is not set; cannot notify STEPS_Docker." >&2
+            exit 1
+          fi
+          gh api repos/CNS-OIST/STEPS_Docker/dispatches \
+            -f event_type=steps-release \
+            -f "client_payload[version]=$VERSION"
+          echo "Notified STEPS_Docker that $VERSION was released."
